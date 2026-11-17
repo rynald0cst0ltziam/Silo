@@ -12,7 +12,7 @@ import { DashboardMock } from "@/components/dashboard-mock";
 import { ConnectButton } from "@/components/connect/connect-button";
 
 export const metadata: Metadata = {
-  title: "Dashboard demo",
+  title: "Demo",
   description: "A sample Silo workspace with invalidation logs, hit rate and warmup status.",
   robots: { index: false, follow: false },
 };

@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String        @id @default(cuid())
+  clerkId          String        @unique
+  email            String        @unique
+  stripeCustomerId String?
+  subscription     Subscription?
+  stores           Store[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  stripeSubId      String    @unique
+  stripePriceId    String
+  status           String    // active | trialing | past_due | canceled
+  tier             String    // solo | studio | portfolio
+  billingInterval  String    // month | year
+  currentPeriodEnd DateTime
+  trialEnd         DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Store {
+  id                 String      @id @default(cuid())
+  userId             String
+  name               String
+  url                String
+  apiKey             String      @unique
+  apiKeyHash         String
+  status             String      @default("pending") // pending | scanning | optimized | error | offline
+  profile            Json?
+  config             Json?
+  configVersion      Int         @default(1)
+  lastScanAt         DateTime?
+  lastEventAt        DateTime?
+  lastSeenAt         DateTime?
+  hitRate            Float       @default(0)
+  monthlyEvents      Int         @default(0)
+  monthlyEventsReset DateTime?
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events             Event[]
+  warmupJobs         WarmupJob[]
+  metrics            Metric[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  storeId   String
+  type      String
+  payload   Json
+  purgeUrls Json?
+  warmUrls  Json?
+  processed Boolean  @default(false)
+  error     String?
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, createdAt])
+}
+
+model WarmupJob {
+  id          String    @id @default(cuid())
+  storeId     String
+  status      String    @default("pending") // pending | running | completed | failed | partial
+  urls        Json
+  progress    Int       @default(0)
+  total       Int
+  error       String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+}
+
+model Metric {
+  id         String   @id @default(cuid())
+  storeId    String
+  date       DateTime @db.Date
+  hits       Int      @default(0)
+  misses     Int      @default(0)
+  purges     Int      @default(0)
+  warms      Int      @default(0)
+  eventsUsed Int      @default(0)
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+}

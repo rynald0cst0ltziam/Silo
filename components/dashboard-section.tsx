@@ -48,7 +48,7 @@ export function DashboardSection({ compact = false }: { compact?: boolean }) {
             Sample workspace · every number traceable to an event
           </p>
           <Link
-            href="/dashboard"
+            href="/demo"
             className="group flex items-center gap-2 text-[12px] font-medium text-paper/55 transition hover:text-paper"
           >
             Open the dashboard demo

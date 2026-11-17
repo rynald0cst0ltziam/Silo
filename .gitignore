@@ -31,3 +31,6 @@ yarn-error.log*
 
 # warden local state
 .warden/
+
+# prisma generated
+lib/generated/
