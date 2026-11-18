@@ -32,5 +32,11 @@ yarn-error.log*
 # warden local state
 .warden/
 
+# claude code local state
+.claude/
+
 # prisma generated
 lib/generated/
+
+# build artifacts
+public/silo-connector.zip

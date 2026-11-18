@@ -1,5 +1,5 @@
-import { SignIn } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { SignInForm } from "@/components/auth-forms";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -9,14 +9,7 @@ export const metadata: Metadata = {
 export default function SignInPage() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-ink">
-      <SignIn
-        appearance={{
-          elements: {
-            rootBox: "mx-auto",
-            card: "bg-[#0b0d11] border border-white/10",
-          },
-        }}
-      />
+      <SignInForm />
     </div>
   );
 }

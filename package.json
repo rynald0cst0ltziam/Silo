@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/build-connector-zip.mjs && prisma generate && next build",
     "start": "next start",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -12,20 +12,24 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.10.2",
+    "@auth/prisma-adapter": "^2.11.3",
     "@fontsource-variable/space-grotesk": "^5.2.8",
     "@neondatabase/serverless": "^1.0.0",
     "@prisma/adapter-neon": "^7.10.1",
     "@prisma/client": "7",
+    "bcryptjs": "^3.0.3",
     "lucide-react": "^0.468.0",
     "next": "^15.5.4",
+    "next-auth": "^5.0.0-beta.32",
     "prisma": "7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "svix": "^2.10.0"
+    "recharts": "^3.11.0",
+    "stripe": "^23.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+import { SessionProvider } from "next-auth/react";
 import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 import { ConnectProvider } from "@/components/connect/connect-flow";
@@ -65,7 +65,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <SessionProvider>
       <html lang="en">
         <body className="min-h-screen antialiased">
           <a
@@ -82,6 +82,6 @@ export default function RootLayout({
           <Analytics />
         </body>
       </html>
-    </ClerkProvider>
+    </SessionProvider>
   );
 }

@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { UserMenu } from "@/components/user-menu";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const session = await auth();
+  if (!session?.user) redirect("/sign-in");
 
   return (
     <div className="min-h-screen bg-[#07080a]">
@@ -41,13 +41,7 @@ export default async function DashboardLayout({
               </Link>
             </nav>
           </div>
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: "h-7 w-7",
-              },
-            }}
-          />
+          <UserMenu email={session.user.email!} name={session.user.name} />
         </div>
       </header>
       <div className="container-page py-6 sm:py-8">{children}</div>
