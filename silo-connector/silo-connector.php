@@ -270,6 +270,14 @@ final class Silo_Connector {
         return null;
     }
 
+    public function page_cache(): Silo_Page_Cache {
+        return $this->page_cache;
+    }
+
+    public function warmup(): Silo_Warmup {
+        return $this->warmup;
+    }
+
     public function is_configured(): bool {
         return !empty(get_option('silo_api_key', ''));
     }
@@ -306,6 +314,11 @@ final class Silo_Connector {
 
         if (isset($_POST['silo_test_connection']) && check_admin_referer('silo_test_connection')) {
             $this->handle_test_connection();
+        }
+
+        if (isset($_POST['silo_purge_all']) && check_admin_referer('silo_purge_all')) {
+            $purged = $this->page_cache->purge_all();
+            add_settings_error('silo_settings', 'purge_ok', "Cache purged — {$purged} files removed.", 'success');
         }
     }
 
@@ -348,8 +361,25 @@ final class Silo_Connector {
             if (!empty($data['config'])) {
                 update_option('silo_config', $data['config']);
             }
-            add_settings_error('silo_settings', 'connected',
-                'Connected to Silo! Config version: ' . ($data['config']['version'] ?? 'unknown'), 'success');
+            update_option('silo_last_snapshot', $snapshot, false);
+            update_option('silo_last_scan_at', current_time('mysql'), false);
+
+            $product_count = $snapshot['product_count'] ?? 0;
+            $types = $snapshot['product_types'] ?? [];
+            $type_summary = [];
+            foreach ($types as $t => $c) {
+                $type_summary[] = "{$c} {$t}";
+            }
+            $config_ver = $data['config']['version'] ?? '?';
+            $tier = ucfirst($data['config']['tier'] ?? 'unknown');
+            $msg = "Connected — Scanned {$product_count} products (" . implode(', ', $type_summary) . "). ";
+            $msg .= "Config v{$config_ver} applied, tier: {$tier}.";
+
+            if (!empty($data['warning'])) {
+                $msg .= " Warning: " . ($data['warning']['instructions'] ?? $data['warning']['plugin'] ?? '');
+            }
+
+            add_settings_error('silo_settings', 'connected', $msg, 'success');
         } else {
             $err = $data['error'] ?? "HTTP $code";
             add_settings_error('silo_settings', 'conn_fail',
@@ -362,62 +392,320 @@ final class Silo_Connector {
         $saas_url   = get_option('silo_saas_url', 'https://app.getsilo.io');
         $config     = get_option('silo_config', []);
         $configured = $this->is_configured();
+        $connected  = $configured && !empty($config['version']);
         $stats      = $configured ? $this->page_cache->get_stats() : null;
+        $dropin_ok  = file_exists(WP_CONTENT_DIR . '/advanced-cache.php')
+                      && str_contains(file_get_contents(WP_CONTENT_DIR . '/advanced-cache.php'), 'silo-connector');
+        $wp_cache   = defined('WP_CACHE') && WP_CACHE;
+        $cache_writable = wp_is_writable(SILO_CACHE_DIR);
+        $woo_active = class_exists('WooCommerce');
+        $snapshot   = get_option('silo_last_snapshot', []);
+        $last_scan  = get_option('silo_last_scan_at', '');
+
+        $hit_rate = 0;
+        $total_requests = 0;
+        if ($stats) {
+            $total_requests = $stats['hits'] + $stats['misses'];
+            $hit_rate = $total_requests > 0 ? round(($stats['hits'] / $total_requests) * 100, 1) : 0;
+        }
         ?>
-        <div class="wrap">
-            <h1>Silo Cache Connector</h1>
+        <style>
+            .silo-wrap { max-width: 960px; margin: 20px auto 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .silo-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+            .silo-header h1 { font-size: 24px; font-weight: 700; margin: 0; color: #1a1a2e; }
+            .silo-header .silo-version { background: #e8e8f0; color: #555; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+            .silo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+            .silo-card { background: #fff; border: 1px solid #e2e4e9; border-radius: 8px; padding: 20px; }
+            .silo-card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 8px; }
+            .silo-card-value { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+            .silo-card-sub { font-size: 12px; color: #888; margin-top: 4px; }
+            .silo-section { background: #fff; border: 1px solid #e2e4e9; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+            .silo-section h2 { font-size: 16px; font-weight: 600; margin: 0 0 16px; color: #1a1a2e; }
+            .silo-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            .silo-status-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fafafa; border-radius: 6px; font-size: 13px; }
+            .silo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+            .silo-dot-green { background: #22c55e; }
+            .silo-dot-red { background: #ef4444; }
+            .silo-dot-yellow { background: #f59e0b; }
+            .silo-actions { display: flex; gap: 8px; margin-top: 16px; }
+            .silo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid #d1d5db; background: #fff; color: #374151; text-decoration: none; }
+            .silo-btn:hover { background: #f9fafb; border-color: #9ca3af; }
+            .silo-btn-primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+            .silo-btn-primary:hover { background: #2d2d4a; }
+            .silo-btn-danger { color: #dc2626; border-color: #fecaca; }
+            .silo-btn-danger:hover { background: #fef2f2; }
+            .silo-input-group { margin-bottom: 16px; }
+            .silo-input-group label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+            .silo-input-group input { width: 100%; max-width: 440px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+            .silo-input-group input:focus { outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 1px #1a1a2e; }
+            .silo-input-group .silo-hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+            .silo-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .silo-config-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+            .silo-config-item:last-child { border-bottom: 0; }
+            .silo-config-key { color: #6b7280; }
+            .silo-config-val { font-weight: 500; color: #1a1a2e; }
+            .silo-bar-wrap { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+            .silo-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+            .silo-notice { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+            .silo-notice-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+            .silo-notice-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+            @media (max-width: 782px) {
+                .silo-cards { grid-template-columns: 1fr 1fr; }
+                .silo-status-grid { grid-template-columns: 1fr; }
+                .silo-config-grid { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <div class="silo-wrap">
             <?php settings_errors('silo_settings'); ?>
 
-            <form method="post" action="options.php">
-                <?php settings_fields('silo_settings'); ?>
+            <div class="silo-header">
+                <h1>Silo</h1>
+                <span class="silo-version">v<?php echo esc_html(SILO_VERSION); ?></span>
+            </div>
 
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="silo_api_key">API Key</label></th>
-                        <td>
-                            <input type="text" id="silo_api_key" name="silo_api_key"
-                                   value="<?php echo esc_attr($api_key); ?>"
-                                   class="regular-text" autocomplete="off" />
-                            <p class="description">Paste the API key from your Silo dashboard.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="silo_saas_url">Silo URL</label></th>
-                        <td>
-                            <input type="url" id="silo_saas_url" name="silo_saas_url"
-                                   value="<?php echo esc_attr($saas_url); ?>"
-                                   class="regular-text" />
-                            <p class="description">Leave default unless self-hosting.</p>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php submit_button('Save Settings'); ?>
-            </form>
-
-            <?php if ($configured): ?>
-                <hr />
-                <h2>Connection</h2>
-                <form method="post">
-                    <?php wp_nonce_field('silo_test_connection'); ?>
-                    <p>Send your store snapshot to Silo and receive your optimized cache config.</p>
-                    <?php submit_button('Connect to Silo', 'primary', 'silo_test_connection', false); ?>
-                </form>
-
-                <hr />
-                <h2>Status</h2>
-                <table class="widefat striped" style="max-width:500px">
-                    <tr><td>Config version</td><td><?php echo esc_html($config['version'] ?? 'None'); ?></td></tr>
-                    <tr><td>Tier</td><td><?php echo esc_html($config['tier'] ?? 'Unknown'); ?></td></tr>
-                    <tr><td>Cache directory</td><td><?php echo wp_is_writable(SILO_CACHE_DIR) ? '✓ Writable' : '✗ Not writable'; ?></td></tr>
-                    <?php if ($stats): ?>
-                        <tr><td>Cache hits</td><td><?php echo number_format($stats['hits']); ?></td></tr>
-                        <tr><td>Cache misses</td><td><?php echo number_format($stats['misses']); ?></td></tr>
-                        <tr><td>Hit rate</td><td><?php echo $stats['hit_rate']; ?>%</td></tr>
-                        <tr><td>Cached pages</td><td><?php echo number_format($stats['cached_pages']); ?></td></tr>
-                    <?php endif; ?>
-                </table>
+            <?php if ($connected): ?>
+            <!-- Stats Cards -->
+            <div class="silo-cards">
+                <div class="silo-card">
+                    <div class="silo-card-label">Hit Rate</div>
+                    <div class="silo-card-value"><?php echo $hit_rate; ?>%</div>
+                    <div class="silo-bar-wrap">
+                        <div class="silo-bar-fill" style="width:<?php echo $hit_rate; ?>%;background:<?php echo $hit_rate >= 80 ? '#22c55e' : ($hit_rate >= 50 ? '#f59e0b' : '#ef4444'); ?>"></div>
+                    </div>
+                </div>
+                <div class="silo-card">
+                    <div class="silo-card-label">Cache Hits</div>
+                    <div class="silo-card-value"><?php echo number_format($stats['hits'] ?? 0); ?></div>
+                    <div class="silo-card-sub">today</div>
+                </div>
+                <div class="silo-card">
+                    <div class="silo-card-label">Cache Misses</div>
+                    <div class="silo-card-value"><?php echo number_format($stats['misses'] ?? 0); ?></div>
+                    <div class="silo-card-sub">today</div>
+                </div>
+                <div class="silo-card">
+                    <div class="silo-card-label">Cached Pages</div>
+                    <div class="silo-card-value"><?php echo number_format($stats['cached_pages'] ?? 0); ?></div>
+                    <div class="silo-card-sub">on disk</div>
+                </div>
+            </div>
             <?php endif; ?>
+
+            <!-- System Status -->
+            <div class="silo-section">
+                <h2>System Status</h2>
+                <div class="silo-status-grid">
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo $connected ? 'silo-dot-green' : ($configured ? 'silo-dot-yellow' : 'silo-dot-red'); ?>"></span>
+                        <span><?php echo $connected ? 'Connected to Silo' : ($configured ? 'API key set, not connected' : 'Not configured'); ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo $woo_active ? 'silo-dot-green' : 'silo-dot-red'; ?>"></span>
+                        <span>WooCommerce <?php echo $woo_active ? (defined('WC_VERSION') ? WC_VERSION : 'active') : 'not active'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo $dropin_ok ? 'silo-dot-green' : 'silo-dot-red'; ?>"></span>
+                        <span>advanced-cache.php <?php echo $dropin_ok ? 'installed' : 'missing'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo $wp_cache ? 'silo-dot-green' : 'silo-dot-red'; ?>"></span>
+                        <span>WP_CACHE <?php echo $wp_cache ? 'enabled' : 'disabled'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo $cache_writable ? 'silo-dot-green' : 'silo-dot-red'; ?>"></span>
+                        <span>Cache directory <?php echo $cache_writable ? 'writable' : 'not writable'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot silo-dot-green"></span>
+                        <span>PHP <?php echo PHP_VERSION; ?></span>
+                    </div>
+                </div>
+
+                <?php if ($configured): ?>
+                <div class="silo-actions">
+                    <form method="post" style="display:inline">
+                        <?php wp_nonce_field('silo_test_connection'); ?>
+                        <button type="submit" name="silo_test_connection" class="silo-btn silo-btn-primary">
+                            <?php echo $connected ? 'Reconnect' : 'Connect to Silo'; ?>
+                        </button>
+                    </form>
+                    <?php if ($connected): ?>
+                    <form method="post" style="display:inline">
+                        <?php wp_nonce_field('silo_purge_all'); ?>
+                        <button type="submit" name="silo_purge_all" class="silo-btn silo-btn-danger">Purge All Cache</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($snapshot) && is_array($snapshot)): ?>
+            <!-- Store Scan Results -->
+            <div class="silo-section">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <h2>Store Scan</h2>
+                    <?php if ($last_scan): ?>
+                    <span style="font-size:11px;color:#9ca3af">Last scan: <?php echo esc_html($last_scan); ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="silo-cards" style="margin-bottom:16px">
+                    <div class="silo-card">
+                        <div class="silo-card-label">Total Products</div>
+                        <div class="silo-card-value"><?php echo number_format($snapshot['product_count'] ?? 0); ?></div>
+                    </div>
+                    <?php if (!empty($snapshot['product_types']) && is_array($snapshot['product_types'])): ?>
+                        <?php foreach ($snapshot['product_types'] as $type => $count): ?>
+                        <div class="silo-card">
+                            <div class="silo-card-label"><?php echo esc_html(ucfirst($type)); ?></div>
+                            <div class="silo-card-value"><?php echo number_format($count); ?></div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <div class="silo-status-grid">
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo ($snapshot['stock_management'] ?? false) ? 'silo-dot-green' : 'silo-dot-yellow'; ?>"></span>
+                        <span>Stock management: <?php echo ($snapshot['stock_management'] ?? false) ? 'enabled' : 'disabled'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo ($snapshot['hpos'] ?? false) ? 'silo-dot-green' : 'silo-dot-yellow'; ?>"></span>
+                        <span>HPOS: <?php echo ($snapshot['hpos'] ?? false) ? 'enabled' : 'legacy'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo ($snapshot['variation_complexity'] ?? 'low') === 'high' ? 'silo-dot-yellow' : 'silo-dot-green'; ?>"></span>
+                        <span>Variation complexity: <?php echo esc_html($snapshot['variation_complexity'] ?? 'low'); ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <span class="silo-dot <?php echo ($snapshot['multi_currency'] ?? false) ? 'silo-dot-green' : 'silo-dot-yellow'; ?>"></span>
+                        <span>Multi-currency: <?php echo ($snapshot['multi_currency'] ?? false) ? 'active' : 'single'; ?></span>
+                    </div>
+                    <div class="silo-status-item">
+                        <?php $langs = $snapshot['multilingual'] ?? []; ?>
+                        <span class="silo-dot <?php echo count($langs) > 1 ? 'silo-dot-green' : 'silo-dot-yellow'; ?>"></span>
+                        <span>Languages: <?php echo count($langs) > 1 ? esc_html(implode(', ', $langs)) : 'single'; ?></span>
+                    </div>
+                    <?php if (!empty($snapshot['existing_cache'])): ?>
+                    <div class="silo-status-item">
+                        <span class="silo-dot silo-dot-red"></span>
+                        <span>Conflict: <?php echo esc_html($snapshot['existing_cache']); ?> detected</span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($connected): ?>
+            <!-- Active Config -->
+            <div class="silo-section">
+                <h2>Active Configuration</h2>
+                <div class="silo-config-grid">
+                    <div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Tier</span>
+                            <span class="silo-config-val"><?php echo esc_html(ucfirst($config['tier'] ?? 'unknown')); ?></span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Config version</span>
+                            <span class="silo-config-val"><?php echo esc_html($config['version'] ?? '—'); ?></span>
+                        </div>
+                        <?php if (!empty($config['ttl'])): ?>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">TTL (product)</span>
+                            <span class="silo-config-val"><?php echo number_format(($config['ttl']['product'] ?? 3600) / 60); ?> min</span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">TTL (category)</span>
+                            <span class="silo-config-val"><?php echo number_format(($config['ttl']['category'] ?? 1800) / 60); ?> min</span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">TTL (shop)</span>
+                            <span class="silo-config-val"><?php echo number_format(($config['ttl']['shop'] ?? 1800) / 60); ?> min</span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">TTL (Store API)</span>
+                            <span class="silo-config-val"><?php echo number_format(($config['ttl']['store_api'] ?? 300) / 60); ?> min</span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <?php if (!empty($config['variants'])): ?>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Device variants</span>
+                            <span class="silo-config-val"><?php echo !empty($config['variants']['device']) ? 'yes' : 'no'; ?></span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Currency variants</span>
+                            <span class="silo-config-val"><?php echo !empty($config['variants']['currency']) ? 'yes' : 'no'; ?></span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Language variants</span>
+                            <span class="silo-config-val"><?php echo !empty($config['variants']['language']) ? implode(', ', $config['variants']['language']) : 'default'; ?></span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Attribute filters</span>
+                            <span class="silo-config-val"><?php echo !empty($config['variants']['attribute_filters']) ? 'yes' : 'no'; ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($config['exclusions'])): ?>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Exclusions</span>
+                            <span class="silo-config-val"><?php echo esc_html(implode(', ', $config['exclusions'])); ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Warmup URLs/event</span>
+                            <span class="silo-config-val"><?php echo esc_html($config['limits']['warmup_urls_per_event'] ?? 50); ?></span>
+                        </div>
+                        <div class="silo-config-item">
+                            <span class="silo-config-key">Max monthly events</span>
+                            <span class="silo-config-val"><?php echo number_format($config['limits']['max_monthly_events'] ?? 100000); ?></span>
+                        </div>
+                    </div>
+                </div>
+                <?php if (!empty($config['invalidation_rules'])): ?>
+                <div style="margin-top:16px">
+                    <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:8px">Invalidation Rules</div>
+                    <?php foreach ($config['invalidation_rules'] as $trigger => $targets): ?>
+                    <div style="margin-bottom:6px">
+                        <span style="font-size:12px;font-weight:500;color:#6366f1"><?php echo esc_html(str_replace('_', ' ', $trigger)); ?></span>
+                        <span style="font-size:11px;color:#6b7280"> &mdash; <?php echo esc_html(implode(', ', $targets)); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($config['store_api']['enabled'])): ?>
+                <div style="margin-top:12px">
+                    <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:4px">Store API Caching</div>
+                    <span style="font-size:11px;color:#6b7280">Endpoints: <?php echo esc_html(implode(', ', $config['store_api']['endpoints'] ?? [])); ?></span>
+                    <?php if (!empty($config['store_api']['vary'])): ?>
+                    <br><span style="font-size:11px;color:#6b7280">Vary: <?php echo esc_html(implode(', ', $config['store_api']['vary'])); ?></span>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Settings -->
+            <div class="silo-section">
+                <h2>Settings</h2>
+                <form method="post" action="options.php">
+                    <?php settings_fields('silo_settings'); ?>
+                    <div class="silo-input-group">
+                        <label for="silo_api_key">API Key</label>
+                        <input type="text" id="silo_api_key" name="silo_api_key"
+                               value="<?php echo esc_attr($api_key); ?>" autocomplete="off" />
+                        <div class="silo-hint">From your Silo dashboard &rarr; store settings.</div>
+                    </div>
+                    <div class="silo-input-group">
+                        <label for="silo_saas_url">Silo URL</label>
+                        <input type="url" id="silo_saas_url" name="silo_saas_url"
+                               value="<?php echo esc_attr($saas_url); ?>" />
+                        <div class="silo-hint">Default: https://app.getsilo.io — change only for self-hosted or staging.</div>
+                    </div>
+                    <button type="submit" class="silo-btn silo-btn-primary">Save Settings</button>
+                </form>
+            </div>
         </div>
         <?php
     }

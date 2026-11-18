@@ -172,9 +172,6 @@ class Silo_Page_Cache {
         if (isset($_COOKIE['woocs_current_currency'])) {
             return sanitize_text_field($_COOKIE['woocs_current_currency']);
         }
-        if (function_exists('get_woocommerce_currency')) {
-            return get_woocommerce_currency();
-        }
         return 'default';
     }
 
@@ -183,9 +180,9 @@ class Silo_Page_Cache {
             return ICL_LANGUAGE_CODE;
         }
         if (function_exists('pll_current_language')) {
-            return pll_current_language('slug') ?: 'en';
+            return pll_current_language('slug') ?: 'default';
         }
-        return substr(get_locale(), 0, 2);
+        return 'default';
     }
 
     public function purge_urls(array $urls): int {

@@ -220,13 +220,11 @@ class Silo_Event_Reporter {
             $result = json_decode(wp_remote_retrieve_body($response), true);
 
             if ($status === 200 && !empty($result['purge'])) {
-                $page_cache = new Silo_Page_Cache();
-                $page_cache->purge_urls($result['purge']);
+                silo()->page_cache()->purge_urls($result['purge']);
             }
 
             if ($status === 200 && !empty($result['warm'])) {
-                $warmup = new Silo_Warmup();
-                $warmup->warm_urls($result['warm']);
+                silo()->warmup()->warm_urls($result['warm']);
             }
 
             if ($status === 429) {

@@ -47,14 +47,12 @@ class Silo_Config_Applier {
 
         // Execute purge
         if ($purge && is_array($purge)) {
-            $page_cache = new Silo_Page_Cache();
-            $results['purged'] = $page_cache->purge_urls($purge);
+            $results['purged'] = silo()->page_cache()->purge_urls($purge);
         }
 
         // Execute warm
         if ($warm && is_array($warm)) {
-            $warmup = new Silo_Warmup();
-            $results['warmed'] = $warmup->warm_urls($warm);
+            $results['warmed'] = silo()->warmup()->warm_urls($warm);
         }
 
         return new \WP_REST_Response($results, 200);

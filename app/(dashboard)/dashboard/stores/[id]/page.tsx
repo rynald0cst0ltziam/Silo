@@ -11,6 +11,8 @@ import { HitRateChart } from "@/components/hit-rate-chart";
 import { EventUsageMeter } from "@/components/event-usage-meter";
 import { WarmupProgress } from "@/components/warmup-progress";
 import { HealthIndicators } from "@/components/health-indicators";
+import { StoreProfilePanel } from "@/components/store-profile";
+import { StoreConfigDetails } from "@/components/store-config-details";
 
 export const metadata: Metadata = {
   title: "Store",
@@ -71,6 +73,9 @@ export default async function StoreDetailPage({
       take: 5,
     }),
   ]);
+
+  const storeProfile = store.profile as Record<string, unknown> | null;
+  const storeConfig = store.config as Record<string, unknown> | null;
 
   const chartData = metrics.map((m) => ({
     date: new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -166,6 +171,34 @@ export default async function StoreDetailPage({
       {/* Event usage meter */}
       <div className="mt-4 rounded-xl border border-white/8 bg-[#0b0d11] p-4">
         <EventUsageMeter used={store.monthlyEvents} max={maxEvents} />
+      </div>
+
+      {/* Store scan / profile */}
+      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[13px] font-medium text-paper/70">
+            Store scan
+          </h2>
+          {store.lastScanAt && (
+            <span className="font-mono text-[8px] text-paper/25">
+              Last scanned {new Date(store.lastScanAt).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <StoreProfilePanel profile={storeProfile as Parameters<typeof StoreProfilePanel>[0]["profile"]} />
+      </div>
+
+      {/* Active config */}
+      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[13px] font-medium text-paper/70">
+            Active configuration
+          </h2>
+          <span className="rounded border border-white/8 px-1.5 py-0.5 font-mono text-[8px] text-paper/30">
+            v{store.configVersion}
+          </span>
+        </div>
+        <StoreConfigDetails config={storeConfig as Parameters<typeof StoreConfigDetails>[0]["config"]} />
       </div>
 
       {/* Hit rate chart */}
