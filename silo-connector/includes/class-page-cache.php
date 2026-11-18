@@ -24,7 +24,7 @@ class Silo_Page_Cache {
     }
 
     public function register_cache_hooks(): void {
-        if (silo()->is_configured()) {
+        if (silo()->is_configured() && get_option('silo_cache_enabled', '1') === '1') {
             add_action('template_redirect', [$this, 'maybe_start_buffer'], -1);
             add_action('shutdown', [$this, 'maybe_write_cache'], 0);
         }

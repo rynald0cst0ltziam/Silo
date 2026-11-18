@@ -12,6 +12,10 @@ class Silo_Event_Reporter {
     private array $queued_events = [];
 
     public function register_hooks(): void {
+        if (get_option('silo_events_enabled', '1') !== '1') {
+            return;
+        }
+
         // Product updates
         add_action('woocommerce_update_product', [$this, 'on_product_update'], 10, 2);
         add_action('woocommerce_new_product_variation', [$this, 'on_variation_created'], 10, 1);
@@ -213,11 +217,14 @@ class Silo_Event_Reporter {
 
             if (is_wp_error($response)) {
                 error_log('[Silo] Event POST failed: ' . $response->get_error_message());
+                $this->log_activity($event['type'], 'POST failed: ' . $response->get_error_message());
                 continue;
             }
 
             $status = wp_remote_retrieve_response_code($response);
             $result = json_decode(wp_remote_retrieve_body($response), true);
+
+            $this->log_activity($event['type'], 'HTTP ' . $status . ' — purge:' . count($result['purge'] ?? []) . ' warm:' . count($result['warm'] ?? []));
 
             if ($status === 200 && !empty($result['purge'])) {
                 silo()->page_cache()->purge_urls($result['purge']);
@@ -238,6 +245,21 @@ class Silo_Event_Reporter {
         }
 
         $this->queued_events = [];
+    }
+
+    private function log_activity(string $event, string $detail): void {
+        $log_file = SILO_CACHE_DIR . '.activity.log';
+        $line = gmdate('Y-m-d H:i:s') . '|' . $event . '|' . $detail . "\n";
+        file_put_contents($log_file, $line, FILE_APPEND | LOCK_EX);
+
+        // Keep log under 500 lines
+        if (file_exists($log_file) && rand(1, 20) === 1) {
+            $lines = file($log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if ($lines && count($lines) > 500) {
+                $lines = array_slice($lines, -500);
+                file_put_contents($log_file, implode("\n", $lines) . "\n", LOCK_EX);
+            }
+        }
     }
 
     private function get_product_category_urls(int $product_id): array {

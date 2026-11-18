@@ -1,43 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTier } from "@/lib/tiers";
-import { RegenerateKeyButton, DeleteStoreButton } from "@/components/store-actions";
 import { RescanButton, PurgeAllButton } from "@/components/store-action-buttons";
 import { HitRateChart } from "@/components/hit-rate-chart";
 import { EventUsageMeter } from "@/components/event-usage-meter";
-import { WarmupProgress } from "@/components/warmup-progress";
+import { WarmupQueuePanel } from "@/components/warmup-queue-panel";
 import { HealthIndicators } from "@/components/health-indicators";
-import { StoreProfilePanel } from "@/components/store-profile";
-import { StoreConfigDetails } from "@/components/store-config-details";
+import { InvalidationLogTable } from "@/components/invalidation-log-table";
 
 export const metadata: Metadata = {
-  title: "Store",
+  title: "Store Overview",
   robots: { index: false, follow: false },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    optimized: "bg-mint/10 text-mint/70 border-mint/20",
-    scanning: "bg-amber/10 text-amber/70 border-amber/20",
-    pending: "bg-white/5 text-paper/40 border-white/10",
-    error: "bg-red-500/10 text-red-400/70 border-red-500/20",
-    offline: "bg-red-500/10 text-red-400/70 border-red-500/20",
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider ${styles[status] ?? styles.pending}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-export default async function StoreDetailPage({
+export default async function StoreOverviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -52,15 +30,13 @@ export default async function StoreDetailPage({
 
   if (!store) notFound();
 
-  const tier = user.subscription
-    ? getTier(user.subscription.tier)
-    : null;
+  const tier = user.subscription ? getTier(user.subscription.tier) : null;
 
   const [recentEvents, metrics, warmupJobs] = await Promise.all([
     prisma.event.findMany({
       where: { storeId: store.id },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 50,
     }),
     prisma.metric.findMany({
       where: { storeId: store.id },
@@ -70,50 +46,66 @@ export default async function StoreDetailPage({
     prisma.warmupJob.findMany({
       where: { storeId: store.id },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 10,
     }),
   ]);
 
-  const storeProfile = store.profile as Record<string, unknown> | null;
-  const storeConfig = store.config as Record<string, unknown> | null;
-
   const chartData = metrics.map((m) => ({
-    date: new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: new Date(m.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
     hits: m.hits,
     misses: m.misses,
-    hitRate: m.hits + m.misses > 0 ? (m.hits / (m.hits + m.misses)) * 100 : 0,
-  }));
-
-  const warmupJobData = warmupJobs.map((j) => ({
-    id: j.id,
-    status: j.status,
-    progress: j.progress,
-    total: j.total,
-    createdAt: j.createdAt.toISOString(),
+    hitRate:
+      m.hits + m.misses > 0 ? (m.hits / (m.hits + m.misses)) * 100 : 0,
   }));
 
   const maxEvents = tier?.maxMonthlyEvents ?? 100_000;
 
+  // 24h invalidation count
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentInvalidations = recentEvents.filter(
+    (e) => new Date(e.createdAt) >= twentyFourHoursAgo
+  );
+
+  // Active warmup jobs
+  const activeWarmups = warmupJobs.filter(
+    (j) => j.status === "pending" || j.status === "running"
+  );
+  const totalWarmupUrls = activeWarmups.reduce((s, j) => s + j.total, 0);
+
+  // Event data for log table
+  const eventLogData = recentEvents.slice(0, 20).map((e) => ({
+    id: e.id,
+    type: e.type,
+    payload: e.payload as Record<string, unknown> | null,
+    purgeUrls: Array.isArray(e.purgeUrls) ? (e.purgeUrls as string[]) : [],
+    warmUrls: Array.isArray(e.warmUrls) ? (e.warmUrls as string[]) : [],
+    processed: e.processed,
+    createdAt: e.createdAt.toISOString(),
+  }));
+
+  // Warmup job data for queue panel
+  const warmupData = warmupJobs.map((j) => ({
+    id: j.id,
+    status: j.status,
+    progress: j.progress,
+    total: j.total,
+    urls: Array.isArray(j.urls) ? (j.urls as string[]).slice(0, 10) : [],
+    createdAt: j.createdAt.toISOString(),
+  }));
+
   return (
     <div>
-      <Link
-        href="/dashboard"
-        className="mb-4 inline-flex items-center gap-1 text-[11px] text-paper/30 transition hover:text-paper/60"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        All stores
-      </Link>
-
-      <div className="flex items-start justify-between">
+      {/* Header with actions */}
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-[22px] font-semibold tracking-tight text-paper">
-              {store.name}
-            </h1>
-            <StatusBadge status={store.status} />
-          </div>
-          <p className="mt-1 font-mono text-[10px] text-paper/30">
-            {store.url}
+          <h2 className="text-[18px] font-semibold tracking-tight text-paper">
+            Overview
+          </h2>
+          <p className="mt-0.5 font-mono text-[9px] text-paper/25">
+            {store.url} · last 24 hours
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -123,7 +115,7 @@ export default async function StoreDetailPage({
       </div>
 
       {/* Health indicators */}
-      <div className="mt-4">
+      <div className="mt-3">
         <HealthIndicators
           status={store.status}
           lastSeenAt={store.lastSeenAt?.toISOString() ?? null}
@@ -133,153 +125,115 @@ export default async function StoreDetailPage({
         />
       </div>
 
-      {/* Stat cards */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-4">
-        {[
-          { label: "Hit rate", value: `${(store.hitRate * 100).toFixed(1)}%` },
-          {
-            label: "Last event",
-            value: store.lastEventAt
-              ? new Date(store.lastEventAt).toLocaleString()
-              : "—",
-          },
-          {
-            label: "Connector",
-            value: store.lastSeenAt
-              ? `Online \xb7 ${new Date(store.lastSeenAt).toLocaleTimeString()}`
-              : "Not connected",
-          },
-          {
-            label: "Config version",
-            value: `v${store.configVersion}`,
-          },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-white/8 bg-[#0b0d11] p-4"
-          >
-            <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
-              {stat.label}
-            </p>
-            <p className="mt-1.5 font-mono text-[14px] text-paper/70">
-              {stat.value}
-            </p>
-          </div>
-        ))}
+      {/* KPI cards — matching marketing mock */}
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <KpiCard
+          label="Hit rate"
+          value={`${(store.hitRate * 100).toFixed(1)}%`}
+          delta={
+            chartData.length >= 2
+              ? `${(chartData[chartData.length - 1].hitRate - chartData[chartData.length - 2].hitRate).toFixed(1)} pts`
+              : "—"
+          }
+          deltaType="positive"
+        />
+        <KpiCard
+          label="Median TTFB"
+          value={store.status === "optimized" ? "< 50ms" : "—"}
+          delta="vs origin"
+          deltaType="positive"
+        />
+        <KpiCard
+          label="Invalidations"
+          value={recentInvalidations.length.toLocaleString()}
+          delta="last 24h"
+          deltaType="neutral"
+        />
+        <KpiCard
+          label="Warmup queue"
+          value={String(totalWarmupUrls)}
+          delta={`${activeWarmups.length} active`}
+          deltaType="warm"
+        />
       </div>
 
-      {/* Event usage meter */}
-      <div className="mt-4 rounded-xl border border-white/8 bg-[#0b0d11] p-4">
+      {/* Event usage */}
+      <div className="mt-3 rounded-xl border border-white/8 bg-[#0b0d11] p-4">
         <EventUsageMeter used={store.monthlyEvents} max={maxEvents} />
       </div>
 
-      {/* Store scan / profile */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[13px] font-medium text-paper/70">
-            Store scan
-          </h2>
-          {store.lastScanAt && (
-            <span className="font-mono text-[8px] text-paper/25">
-              Last scanned {new Date(store.lastScanAt).toLocaleString()}
-            </span>
-          )}
-        </div>
-        <StoreProfilePanel profile={storeProfile as Parameters<typeof StoreProfilePanel>[0]["profile"]} />
-      </div>
-
-      {/* Active config */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-[13px] font-medium text-paper/70">
-            Active configuration
-          </h2>
-          <span className="rounded border border-white/8 px-1.5 py-0.5 font-mono text-[8px] text-paper/30">
-            v{store.configVersion}
-          </span>
-        </div>
-        <StoreConfigDetails config={storeConfig as Parameters<typeof StoreConfigDetails>[0]["config"]} />
-      </div>
-
-      {/* Hit rate chart */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <h2 className="mb-3 text-[13px] font-medium text-paper/70">
-          Hit rate (30 days)
-        </h2>
-        <HitRateChart data={chartData} />
-      </div>
-
-      {/* Warmup progress */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <h2 className="mb-3 text-[13px] font-medium text-paper/70">
-          Recent warmup jobs
-        </h2>
-        <WarmupProgress jobs={warmupJobData} />
-      </div>
-
-      {/* Recent invalidations */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <h2 className="text-[13px] font-medium text-paper/70">
-          Recent invalidations
-        </h2>
-        {recentEvents.length === 0 ? (
-          <p className="mt-4 text-[11px] text-paper/30">
-            No events recorded yet. Connect the Silo connector plugin and events will appear here.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-1.5">
-            {recentEvents.map((event) => {
-              const purgeCount = Array.isArray(event.purgeUrls) ? (event.purgeUrls as string[]).length : 0;
-              const warmCount = Array.isArray(event.warmUrls) ? (event.warmUrls as string[]).length : 0;
-
-              return (
-                <div
-                  key={event.id}
-                  className="flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-3 py-2"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[9px] text-accent/70">
-                      {event.type}
-                    </span>
-                    {purgeCount > 0 && (
-                      <span className="font-mono text-[8px] text-paper/25">
-                        {purgeCount} purged
-                      </span>
-                    )}
-                    {warmCount > 0 && (
-                      <span className="font-mono text-[8px] text-mint/40">
-                        {warmCount} warmed
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-mono text-[8px] text-paper/25">
-                    {new Date(event.createdAt).toLocaleString()}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Store settings */}
-      <div className="mt-6 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
-        <h2 className="text-[13px] font-medium text-paper/70">Store settings</h2>
-        <div className="mt-4 space-y-4">
-          <div>
-            <p className="font-mono text-[9px] uppercase tracking-wider text-paper/25">API key</p>
-            <p className="mt-1 text-[10px] text-paper/35">
-              Key prefix: <code className="text-paper/50">sk_silo_...{store.apiKeyHash.slice(-6)}</code>
+      {/* Chart + Warmup queue side by side */}
+      <div className="mt-3 grid gap-3 lg:grid-cols-[1.55fr_1fr]">
+        <div className="rounded-xl border border-white/8 bg-[#0b0d11] p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-medium text-paper/65">
+              Cache hit rate
             </p>
-            <div className="mt-2">
-              <RegenerateKeyButton storeId={store.id} />
+            <div className="flex items-center gap-2 font-mono text-[8px] text-paper/30">
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                silo
+              </span>
+              {chartData.length > 0 && (
+                <span className="text-paper/40">
+                  {chartData[chartData.length - 1].hitRate.toFixed(1)}% avg
+                </span>
+              )}
             </div>
           </div>
-          <div className="border-t border-white/6 pt-4">
-            <DeleteStoreButton storeId={store.id} storeName={store.name} />
+          <div className="mt-2">
+            <HitRateChart data={chartData} />
           </div>
         </div>
+
+        <div className="rounded-xl border border-white/8 bg-[#0b0d11] p-4">
+          <WarmupQueuePanel jobs={warmupData} />
+        </div>
       </div>
+
+      {/* Invalidation log table */}
+      <div className="mt-3 overflow-hidden rounded-xl border border-white/8 bg-[#0b0d11]">
+        <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+          <p className="text-[11px] font-medium text-paper/65">
+            Recent invalidations
+          </p>
+          <span className="flex items-center gap-1 font-mono text-[8px] text-paper/25">
+            Live log
+          </span>
+        </div>
+        <InvalidationLogTable events={eventLogData} />
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  delta,
+  deltaType,
+}: {
+  label: string;
+  value: string;
+  delta: string;
+  deltaType: "positive" | "neutral" | "warm";
+}) {
+  const deltaColor =
+    deltaType === "positive"
+      ? "text-mint/65"
+      : deltaType === "warm"
+        ? "text-amber/65"
+        : "text-paper/25";
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-[#0b0d11] px-3 py-3">
+      <p className="font-mono text-[7px] uppercase tracking-[0.09em] text-paper/25">
+        {label}
+      </p>
+      <p className="mt-1.5 font-mono text-[22px] font-semibold leading-none tracking-tight text-paper">
+        {value}
+      </p>
+      <p className={`mt-1.5 font-mono text-[7px] ${deltaColor}`}>{delta}</p>
     </div>
   );
 }
