@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 const CONCURRENCY_LIMITS: Record<string, number> = {
   small: 5,
@@ -138,7 +139,7 @@ export async function runDailyPriorityWarmup(): Promise<{
   const stores = await prisma.store.findMany({
     where: {
       status: "optimized",
-      config: { not: null },
+      config: { not: Prisma.JsonNull },
     },
     select: {
       id: true,

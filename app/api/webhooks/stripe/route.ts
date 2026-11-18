@@ -34,8 +34,9 @@ export async function POST(req: Request) {
       const firstItem = sub.items.data[0];
       const priceId = firstItem?.price.id;
       const tierInfo = priceIdToTier(priceId ?? "");
-      const periodEnd = sub.current_period_end
-        ? new Date(sub.current_period_end * 1000)
+      const periodEndRaw = (sub as unknown as Record<string, unknown>).current_period_end as number | undefined;
+      const periodEnd = periodEndRaw
+        ? new Date(periodEndRaw * 1000)
         : new Date();
 
       const user = await prisma.user.findFirst({
