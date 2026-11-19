@@ -56,7 +56,7 @@ export default async function StoreWarmupPage({
         <h2 className="text-[18px] font-semibold tracking-tight text-paper">
           Warmup
         </h2>
-        <p className="mt-0.5 font-mono text-[9px] text-paper/25">
+        <p className="mt-0.5 font-mono text-[11px] text-paper/25">
           Cache warmup queue and job history
         </p>
       </div>
@@ -75,7 +75,7 @@ export default async function StoreWarmupPage({
       {/* Active jobs */}
       {active.length > 0 && (
         <div className="mt-5">
-          <h3 className="text-[12px] font-medium text-paper/70">
+          <h3 className="text-[13px] font-medium text-paper/70">
             Active jobs
           </h3>
           <div className="mt-3 space-y-3">
@@ -88,7 +88,7 @@ export default async function StoreWarmupPage({
                   <span className="font-mono text-[9px] text-paper/50">
                     {job.progress}/{job.total} URLs
                   </span>
-                  <span className="font-mono text-[8px] uppercase text-accent/60">
+                  <span className="font-mono text-[10px] uppercase text-accent/60">
                     {job.status}
                   </span>
                 </div>
@@ -112,19 +112,19 @@ export default async function StoreWarmupPage({
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between font-mono text-[8px]"
+                        className="flex items-center justify-between font-mono text-[10px]"
                       >
                         <span className="truncate text-paper/30">{path}</span>
                       </div>
                     );
                   })}
                   {job.urls.length > 8 && (
-                    <span className="font-mono text-[7px] text-paper/20">
+                    <span className="font-mono text-[9px] text-paper/20">
                       +{job.urls.length - 8} more
                     </span>
                   )}
                 </div>
-                <div className="mt-2 flex items-center justify-between border-t border-white/6 pt-2 font-mono text-[7px] text-paper/20">
+                <div className="mt-2 flex items-center justify-between border-t border-white/6 pt-2 font-mono text-[9px] text-paper/20">
                   <span>5 concurrent workers</span>
                   <span>
                     Started{" "}
@@ -139,7 +139,7 @@ export default async function StoreWarmupPage({
 
       {/* Job history */}
       <div className="mt-5">
-        <h3 className="text-[12px] font-medium text-paper/70">Job history</h3>
+        <h3 className="text-[13px] font-medium text-paper/70">Job history</h3>
         <div className="mt-3">
           <WarmupProgress
             jobs={jobData.map((j) => ({
@@ -159,7 +159,7 @@ export default async function StoreWarmupPage({
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/8 bg-[#0b0d11] px-3 py-3">
-      <p className="font-mono text-[7px] uppercase tracking-wider text-paper/25">
+      <p className="font-mono text-[9px] uppercase tracking-wider text-paper/25">
         {label}
       </p>
       <p className="mt-1 font-mono text-[18px] font-semibold text-paper">

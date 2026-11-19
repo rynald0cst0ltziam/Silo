@@ -21,7 +21,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider ${styles[status] ?? styles.pending}`}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${styles[status] ?? styles.pending}`}
     >
       {status}
     </span>
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/dashboard/connect"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent/90"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent/90"
         >
           <Plus className="h-3.5 w-3.5" />
           Add store
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
           </p>
           <Link
             href="/dashboard/connect"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[11px] font-medium text-white transition hover:bg-accent/90"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-accent/90"
           >
             <Plus className="h-3.5 w-3.5" />
             Connect your first store
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
                   <p className="truncate text-[13px] font-medium text-paper/80">
                     {store.name}
                   </p>
-                  <p className="mt-0.5 truncate font-mono text-[9px] text-paper/30">
+                  <p className="mt-0.5 truncate font-mono text-[11px] text-paper/30">
                     {store.url}
                   </p>
                 </div>
@@ -94,20 +94,20 @@ export default async function DashboardPage() {
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/6 pt-3">
                 <div>
-                  <p className="font-mono text-[8px] text-paper/25">Hit rate</p>
+                  <p className="font-mono text-[10px] text-paper/25">Hit rate</p>
                   <p className="mt-0.5 font-mono text-[13px] text-paper/70">
                     {(store.hitRate * 100).toFixed(1)}%
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[8px] text-paper/25">Events</p>
+                  <p className="font-mono text-[10px] text-paper/25">Events</p>
                   <p className="mt-0.5 font-mono text-[13px] text-paper/70">
                     {store.monthlyEvents.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[8px] text-paper/25">Last seen</p>
-                  <p className="mt-0.5 font-mono text-[9px] text-paper/40">
+                  <p className="font-mono text-[10px] text-paper/25">Last seen</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-paper/40">
                     {store.lastSeenAt
                       ? new Date(store.lastSeenAt).toLocaleDateString()
                       : "—"}

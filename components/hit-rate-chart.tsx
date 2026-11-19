@@ -36,13 +36,13 @@ export function HitRateChart({ data }: { data: MetricPoint[] }) {
         </defs>
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 9, fill: "rgba(255,255,255,0.25)" }}
+          tick={{ fontSize: 11, fill: "rgba(255,255,255,0.25)" }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
           domain={[0, 100]}
-          tick={{ fontSize: 9, fill: "rgba(255,255,255,0.25)" }}
+          tick={{ fontSize: 11, fill: "rgba(255,255,255,0.25)" }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: number) => `${v}%`}
@@ -52,7 +52,7 @@ export function HitRateChart({ data }: { data: MetricPoint[] }) {
             background: "#0b0d11",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 8,
-            fontSize: 10,
+            fontSize: 12,
             color: "rgba(255,255,255,0.7)",
           }}
           formatter={(value) => [`${Number(value).toFixed(1)}%`, "Hit rate"]}

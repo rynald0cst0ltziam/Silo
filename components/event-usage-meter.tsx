@@ -26,10 +26,10 @@ export function EventUsageMeter({
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-paper/25">
           Monthly events
         </p>
-        <p className={`font-mono text-[10px] ${textColor}`}>
+        <p className={`font-mono text-[12px] ${textColor}`}>
           {used.toLocaleString()} / {max >= 1_000_000 ? `${(max / 1_000_000).toFixed(0)}M` : `${(max / 1_000).toFixed(0)}k`}
         </p>
       </div>
@@ -40,7 +40,7 @@ export function EventUsageMeter({
         />
       </div>
       {isCritical && (
-        <p className="mt-1 text-[9px] text-red-400/60">
+        <p className="mt-1 text-[11px] text-red-400/60">
           Approaching limit. Events will be rejected when reached.
         </p>
       )}

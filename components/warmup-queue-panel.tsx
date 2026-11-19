@@ -33,7 +33,7 @@ function statusBadge(status: string) {
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[7px] ${styles[status] ?? styles.pending}`}
+      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[9px] ${styles[status] ?? styles.pending}`}
     >
       {status === "running" && (
         <Loader2 className="h-2 w-2 animate-spin" />
@@ -67,8 +67,8 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-medium text-paper/65">Warmup queue</p>
-        <span className="font-mono text-[8px] text-amber/70">
+        <p className="text-[13px] font-medium text-paper/65">Warmup queue</p>
+        <span className="font-mono text-[12px] text-amber/70">
           {activeUrlCount > 0 ? `${activeUrlCount} active` : "idle"}
         </span>
       </div>
@@ -85,7 +85,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
               }
               return (
                 <div key={`${entry.url}-${i}`}>
-                  <div className="flex items-center justify-between gap-2 font-mono text-[8px]">
+                  <div className="flex items-center justify-between gap-2 font-mono text-[12px]">
                     <span className="truncate text-paper/35">{path}</span>
                     <span className="text-paper/25">{entry.pct}%</span>
                   </div>
@@ -100,7 +100,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
             })}
           </div>
           {urlEntries.length > 5 && (
-            <p className="mt-2 font-mono text-[7px] text-paper/20">
+            <p className="mt-2 font-mono text-[9px] text-paper/20">
               +{urlEntries.length - 5} more in queue
             </p>
           )}
@@ -109,7 +109,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
 
       {/* Job history */}
       <div className="mt-3 border-t border-white/8 pt-2">
-        <p className="mb-2 font-mono text-[7px] uppercase tracking-wider text-paper/20">
+        <p className="mb-2 font-mono text-[9px] uppercase tracking-wider text-paper/20">
           Jobs ({jobs.length})
         </p>
         <div className="space-y-1">
@@ -128,7 +128,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
                   }
                 >
                   <span
-                    className="text-[6px] text-paper/20 transition-transform"
+                    className="text-[12px] text-paper/20 transition-transform"
                     style={{
                       transform: expanded
                         ? "rotate(90deg)"
@@ -138,7 +138,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
                     ▶
                   </span>
                   {statusBadge(job.status)}
-                  <span className="font-mono text-[8px] text-paper/40">
+                  <span className="font-mono text-[12px] text-paper/40">
                     {job.progress}/{job.total}
                   </span>
                   <div className="ml-auto flex items-center gap-2">
@@ -148,7 +148,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="font-mono text-[7px] text-paper/20">
+                    <span className="font-mono text-[9px] text-paper/20">
                       {timeAgo(job.createdAt)}
                     </span>
                   </div>
@@ -158,7 +158,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
                     {job.urls.map((url, i) => (
                       <p
                         key={i}
-                        className="truncate font-mono text-[8px] text-paper/35"
+                        className="truncate font-mono text-[12px] text-paper/35"
                       >
                         {url}
                       </p>
@@ -172,7 +172,7 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
       </div>
 
       {jobs.length === 0 && (
-        <p className="mt-4 text-[10px] text-paper/30">
+        <p className="mt-4 text-[12px] text-paper/30">
           No warmup jobs. URLs warm automatically after invalidation.
         </p>
       )}

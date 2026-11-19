@@ -13,7 +13,7 @@ interface WarmupJobSummary {
 export function WarmupProgress({ jobs }: { jobs: WarmupJobSummary[] }) {
   if (jobs.length === 0) {
     return (
-      <p className="text-[11px] text-paper/30">No warmup jobs.</p>
+      <p className="text-[13px] text-paper/30">No warmup jobs.</p>
     );
   }
 
@@ -33,7 +33,7 @@ export function WarmupProgress({ jobs }: { jobs: WarmupJobSummary[] }) {
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between">
-                <span className="font-mono text-[9px] text-paper/50">
+                <span className="font-mono text-[13px] text-paper/50">
                   {job.total} URLs
                 </span>
                 <StatusLabel status={job.status} />
@@ -51,7 +51,7 @@ export function WarmupProgress({ jobs }: { jobs: WarmupJobSummary[] }) {
                 />
               </div>
             </div>
-            <span className="font-mono text-[8px] text-paper/25">
+            <span className="font-mono text-[10px] text-paper/25">
               {new Date(job.createdAt).toLocaleTimeString()}
             </span>
           </div>
@@ -71,7 +71,7 @@ function StatusLabel({ status }: { status: string }) {
   };
 
   return (
-    <span className={`font-mono text-[8px] uppercase ${styles[status] ?? "text-paper/30"}`}>
+    <span className={`font-mono text-[10px] uppercase ${styles[status] ?? "text-paper/30"}`}>
       {status}
     </span>
   );

@@ -65,7 +65,7 @@ export default async function StoreInvalidationsPage({
         <h2 className="text-[18px] font-semibold tracking-tight text-paper">
           Invalidations
         </h2>
-        <p className="mt-0.5 font-mono text-[9px] text-paper/25">
+        <p className="mt-0.5 font-mono text-[11px] text-paper/25">
           Real-time cache invalidation event log
         </p>
       </div>
@@ -73,7 +73,7 @@ export default async function StoreInvalidationsPage({
       {/* Stats row */}
       <div className="mt-4 grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-white/8 bg-[#0b0d11] px-3 py-3">
-          <p className="font-mono text-[7px] uppercase tracking-wider text-paper/25">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-paper/25">
             Events (24h)
           </p>
           <p className="mt-1 font-mono text-[18px] font-semibold text-paper">
@@ -81,7 +81,7 @@ export default async function StoreInvalidationsPage({
           </p>
         </div>
         <div className="rounded-xl border border-white/8 bg-[#0b0d11] px-3 py-3">
-          <p className="font-mono text-[7px] uppercase tracking-wider text-paper/25">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-paper/25">
             URLs purged
           </p>
           <p className="mt-1 font-mono text-[18px] font-semibold text-paper">
@@ -89,7 +89,7 @@ export default async function StoreInvalidationsPage({
           </p>
         </div>
         <div className="rounded-xl border border-white/8 bg-[#0b0d11] px-3 py-3">
-          <p className="font-mono text-[7px] uppercase tracking-wider text-paper/25">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-paper/25">
             URLs re-warmed
           </p>
           <p className="mt-1 font-mono text-[18px] font-semibold text-paper">
@@ -106,8 +106,8 @@ export default async function StoreInvalidationsPage({
       {/* Full event log */}
       <div className="mt-4 overflow-hidden rounded-xl border border-white/8 bg-[#0b0d11]">
         <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-          <p className="text-[11px] font-medium text-paper/65">Event log</p>
-          <span className="font-mono text-[8px] text-paper/25">
+          <p className="text-[13px] font-medium text-paper/65">Event log</p>
+          <span className="font-mono text-[10px] text-paper/25">
             {recentEvents.length} events
           </span>
         </div>

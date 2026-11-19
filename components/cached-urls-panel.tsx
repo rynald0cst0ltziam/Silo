@@ -56,11 +56,11 @@ export function CachedUrlsPanel({ storeId }: { storeId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-medium text-paper/65">
+        <p className="text-[13px] font-medium text-paper/65">
           Cached pages
         </p>
         {loaded && (
-          <span className="font-mono text-[8px] text-paper/30">
+          <span className="font-mono text-[10px] text-paper/30">
             {urls.length} pages · {formatSize(totalSize)}
           </span>
         )}
@@ -71,25 +71,25 @@ export function CachedUrlsPanel({ storeId }: { storeId: string }) {
           <button
             onClick={fetchCachedUrls}
             disabled={loading}
-            className="rounded border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[9px] text-paper/50 transition-colors hover:bg-white/[0.06]"
+            className="rounded border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[13px] text-paper/50 transition-colors hover:bg-white/[0.06]"
           >
             {loading ? "Loading..." : "Load cached URLs"}
           </button>
-          <p className="mt-2 font-mono text-[8px] text-paper/20">
+          <p className="mt-2 font-mono text-[10px] text-paper/20">
             Fetches live data from your store&apos;s cache directory
           </p>
         </div>
       ) : error && urls.length === 0 ? (
         <div className="mt-3">
-          <p className="font-mono text-[9px] text-red-400/70">{error}</p>
-          <p className="mt-1 font-mono text-[8px] text-paper/20">
+          <p className="font-mono text-[13px] text-red-400/70">{error}</p>
+          <p className="mt-1 font-mono text-[10px] text-paper/20">
             Store may be offline or not reachable
           </p>
         </div>
       ) : (
         <>
           {/* Stats strip */}
-          <div className="mt-2 flex gap-3 font-mono text-[8px]">
+          <div className="mt-2 flex gap-3 font-mono text-[10px]">
             <span className="text-mint/60">{freshCount} fresh</span>
             {staleCount > 0 && (
               <span className="text-amber/60">{staleCount} stale</span>
@@ -115,13 +115,13 @@ export function CachedUrlsPanel({ storeId }: { storeId: string }) {
                   <span
                     className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${entry.fresh ? "bg-mint" : "bg-amber"}`}
                   />
-                  <span className="min-w-0 flex-1 truncate font-mono text-[8px] text-paper/40">
+                  <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-paper/40">
                     {path}
                   </span>
-                  <span className="flex-shrink-0 font-mono text-[7px] text-paper/20">
+                  <span className="flex-shrink-0 font-mono text-[13px] text-paper/20">
                     {entry.device === "mobile" ? "M" : "D"}
                   </span>
-                  <span className="flex-shrink-0 font-mono text-[7px] text-paper/20">
+                  <span className="flex-shrink-0 font-mono text-[13px] text-paper/20">
                     {formatAge(entry.age)}
                   </span>
                   <div className="h-0.5 w-8 flex-shrink-0 overflow-hidden rounded-full bg-white/5">
@@ -130,7 +130,7 @@ export function CachedUrlsPanel({ storeId }: { storeId: string }) {
                       style={{ width: `${freshPct}%` }}
                     />
                   </div>
-                  <span className="flex-shrink-0 font-mono text-[7px] text-paper/15">
+                  <span className="flex-shrink-0 font-mono text-[13px] text-paper/15">
                     {formatSize(entry.size)}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export function CachedUrlsPanel({ storeId }: { storeId: string }) {
           <button
             onClick={fetchCachedUrls}
             disabled={loading}
-            className="mt-2 font-mono text-[8px] text-accent/60 hover:text-accent/80"
+            className="mt-2 font-mono text-[10px] text-accent/60 hover:text-accent/80"
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>

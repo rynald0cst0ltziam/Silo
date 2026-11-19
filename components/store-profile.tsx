@@ -38,7 +38,7 @@ export function StoreProfilePanel({ profile }: { profile: StoreProfile | null })
     <div className="space-y-5">
       {/* Product overview */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Package className="h-3.5 w-3.5" />
           Catalog
         </div>
@@ -59,7 +59,7 @@ export function StoreProfilePanel({ profile }: { profile: StoreProfile | null })
 
       {/* Capabilities detected */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <BarChart3 className="h-3.5 w-3.5" />
           Detected capabilities
         </div>
@@ -102,7 +102,7 @@ export function StoreProfilePanel({ profile }: { profile: StoreProfile | null })
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2.5">
-      <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-paper/25">
         {label}
       </p>
       <p className="mt-1 font-mono text-[16px] font-semibold text-paper/70">
@@ -123,7 +123,7 @@ function CapBadge({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-medium ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
         active
           ? "border-mint/20 bg-mint/[0.04] text-mint/70"
           : "border-white/8 bg-white/[0.02] text-paper/35"

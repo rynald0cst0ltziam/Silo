@@ -76,14 +76,14 @@ function ExpandedRow({ event }: { event: EventRow }) {
         <div className="grid gap-3 sm:grid-cols-2">
           {event.purgeUrls.length > 0 && (
             <div>
-              <p className="mb-1 font-mono text-[7px] uppercase tracking-wider text-paper/25">
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-paper/25">
                 Purged URLs ({event.purgeUrls.length})
               </p>
               <div className="max-h-28 overflow-y-auto rounded border border-white/5 bg-black/20 p-2">
                 {event.purgeUrls.map((url, i) => (
                   <p
                     key={i}
-                    className="truncate font-mono text-[8px] text-paper/40"
+                    className="truncate font-mono text-[12px] text-paper/40"
                   >
                     {url}
                   </p>
@@ -93,14 +93,14 @@ function ExpandedRow({ event }: { event: EventRow }) {
           )}
           {event.warmUrls.length > 0 && (
             <div>
-              <p className="mb-1 font-mono text-[7px] uppercase tracking-wider text-paper/25">
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-paper/25">
                 Warm URLs ({event.warmUrls.length})
               </p>
               <div className="max-h-28 overflow-y-auto rounded border border-white/5 bg-black/20 p-2">
                 {event.warmUrls.map((url, i) => (
                   <p
                     key={i}
-                    className="truncate font-mono text-[8px] text-mint/40"
+                    className="truncate font-mono text-[12px] text-mint/40"
                   >
                     {url}
                   </p>
@@ -110,11 +110,11 @@ function ExpandedRow({ event }: { event: EventRow }) {
           )}
           {event.payload && Object.keys(event.payload).length > 0 && (
             <div className="sm:col-span-2">
-              <p className="mb-1 font-mono text-[7px] uppercase tracking-wider text-paper/25">
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-wider text-paper/25">
                 Payload
               </p>
               <div className="max-h-28 overflow-y-auto rounded border border-white/5 bg-black/20 p-2">
-                <pre className="font-mono text-[8px] text-paper/35">
+                <pre className="font-mono text-[12px] text-paper/35">
                   {JSON.stringify(event.payload, null, 2)}
                 </pre>
               </div>
@@ -140,7 +140,7 @@ export function InvalidationLogTable({ events }: { events: EventRow[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="px-4 py-6 text-center text-[10px] text-paper/30">
+      <div className="px-4 py-6 text-center text-[12px] text-paper/30">
         No events recorded yet. Connect the Silo connector plugin and events
         will appear here.
       </div>
@@ -151,7 +151,7 @@ export function InvalidationLogTable({ events }: { events: EventRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-left">
         <thead>
-          <tr className="border-b border-white/7 font-mono text-[7px] uppercase tracking-[0.08em] text-paper/20">
+          <tr className="border-b border-white/7 font-mono text-[11px] uppercase tracking-[0.08em] text-paper/20">
             <th className="px-4 py-2 font-normal">Trigger</th>
             <th className="px-4 py-2 font-normal">Object</th>
             <th className="hidden px-4 py-2 font-normal sm:table-cell">
@@ -180,34 +180,34 @@ export function InvalidationLogTable({ events }: { events: EventRow[] }) {
                   className="cursor-pointer border-b border-white/5 transition-colors hover:bg-white/[0.02] last:border-0"
                   onClick={() => toggle(event.id)}
                 >
-                  <td className="whitespace-nowrap px-4 py-2 font-mono text-[9px] text-accent/80">
-                    <span className="mr-1.5 inline-block text-[7px] text-paper/20 transition-transform" style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                  <td className="whitespace-nowrap px-4 py-2 font-mono text-[11px] text-accent/80">
+                    <span className="mr-1.5 inline-block text-[11px] text-paper/20 transition-transform" style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
                       ▶
                     </span>
                     {formatTrigger(event.type)}
                   </td>
                   <td className="px-4 py-2">
-                    <p className="whitespace-nowrap text-[9px] text-paper/60">
+                    <p className="whitespace-nowrap text-[11px] text-paper/60">
                       {objectName}
                     </p>
                     {detail && (
-                      <p className="font-mono text-[7px] text-paper/20">
+                      <p className="font-mono text-[11px] text-paper/20">
                         {detail}
                       </p>
                     )}
                   </td>
-                  <td className="hidden whitespace-nowrap px-4 py-2 font-mono text-[8px] text-paper/30 sm:table-cell">
+                  <td className="hidden whitespace-nowrap px-4 py-2 font-mono text-[12px] text-paper/30 sm:table-cell">
                     {purgeCount > 0 ? `${purgeCount} URLs` : "—"}
                     {warmCount > 0 && ` · ${warmCount} warm`}
                   </td>
-                  <td className="hidden whitespace-nowrap px-4 py-2 font-mono text-[8px] text-paper/25 md:table-cell">
+                  <td className="hidden whitespace-nowrap px-4 py-2 font-mono text-[12px] text-paper/25 md:table-cell">
                     <span title={new Date(event.createdAt).toLocaleString()}>
                       {timeAgo(event.createdAt)}
                     </span>
                   </td>
                   <td className="px-4 py-2 text-right">
                     <span
-                      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[7px] ${
+                      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] ${
                         isWarming
                           ? "border-amber/20 bg-amber/8 text-amber/80"
                           : isWarmed

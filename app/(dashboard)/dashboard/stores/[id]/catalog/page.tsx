@@ -36,7 +36,7 @@ export default async function StoreCatalogPage({
           <h2 className="text-[18px] font-semibold tracking-tight text-paper">
             Catalog
           </h2>
-          <p className="mt-0.5 font-mono text-[9px] text-paper/25">
+          <p className="mt-0.5 font-mono text-[11px] text-paper/25">
             Store scan results and detected capabilities
           </p>
         </div>
@@ -46,11 +46,11 @@ export default async function StoreCatalogPage({
       {/* Store profile / scan results */}
       <div className="mt-5 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[12px] font-medium text-paper/70">
+          <h3 className="text-[13px] font-medium text-paper/70">
             Store scan
           </h3>
           {store.lastScanAt && (
-            <span className="font-mono text-[8px] text-paper/25">
+            <span className="font-mono text-[10px] text-paper/25">
               Last scanned{" "}
               {new Date(store.lastScanAt).toLocaleString()}
             </span>
@@ -62,10 +62,10 @@ export default async function StoreCatalogPage({
       {/* Active config */}
       <div className="mt-4 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[12px] font-medium text-paper/70">
+          <h3 className="text-[13px] font-medium text-paper/70">
             Active configuration
           </h3>
-          <span className="rounded border border-white/8 px-1.5 py-0.5 font-mono text-[8px] text-paper/30">
+          <span className="rounded border border-white/8 px-1.5 py-0.5 font-mono text-[10px] text-paper/30">
             v{store.configVersion}
           </span>
         </div>

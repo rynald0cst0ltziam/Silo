@@ -65,7 +65,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
     <div className="space-y-5">
       {/* TTL */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Clock className="h-3.5 w-3.5" />
           Cache TTL
         </div>
@@ -75,7 +75,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
               key={key}
               className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2"
             >
-              <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-paper/25">
                 {key.replace(/_/g, " ")}
               </p>
               <p className="mt-1 font-mono text-[14px] text-paper/70">
@@ -88,7 +88,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
 
       {/* Cache variants */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Eye className="h-3.5 w-3.5" />
           Cache variants
         </div>
@@ -119,7 +119,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
 
       {/* Invalidation rules */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Zap className="h-3.5 w-3.5" />
           Invalidation rules
         </div>
@@ -129,14 +129,14 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
               key={trigger}
               className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2"
             >
-              <p className="font-mono text-[9px] font-medium text-accent/60">
+              <p className="font-mono text-[11px] font-medium text-accent/60">
                 {trigger.replace(/_/g, " ")}
               </p>
               <div className="mt-1 flex flex-wrap gap-1">
                 {(targets as string[]).map((t) => (
                   <span
                     key={t}
-                    className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[8px] text-paper/40"
+                    className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-paper/40"
                   >
                     {t}
                   </span>
@@ -149,7 +149,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
 
       {/* Exclusions */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Filter className="h-3.5 w-3.5" />
           Cache exclusions
         </div>
@@ -157,7 +157,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
           {config.exclusions.map((ex) => (
             <span
               key={ex}
-              className="rounded border border-white/6 bg-white/[0.02] px-2 py-1 font-mono text-[9px] text-paper/40"
+              className="rounded border border-white/6 bg-white/[0.02] px-2 py-1 font-mono text-[11px] text-paper/40"
             >
               {ex}
             </span>
@@ -168,7 +168,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
       {/* Store API */}
       {config.store_api.enabled && (
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
             <Link2 className="h-3.5 w-3.5" />
             Store API caching
           </div>
@@ -177,14 +177,14 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
               {config.store_api.endpoints.map((ep) => (
                 <span
                   key={ep}
-                  className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[8px] text-paper/40"
+                  className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-paper/40"
                 >
                   {ep}
                 </span>
               ))}
             </div>
             {config.store_api.vary.length > 0 && (
-              <p className="mt-1.5 font-mono text-[8px] text-paper/25">
+              <p className="mt-1.5 font-mono text-[10px] text-paper/25">
                 Vary: {config.store_api.vary.join(", ")}
               </p>
             )}
@@ -194,13 +194,13 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
 
       {/* Limits */}
       <div>
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-paper/40">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-paper/40">
           <Shield className="h-3.5 w-3.5" />
           Tier limits
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2">
-            <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-paper/25">
               Warmup URLs / event
             </p>
             <p className="mt-1 font-mono text-[14px] text-paper/70">
@@ -208,7 +208,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
             </p>
           </div>
           <div className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2">
-            <p className="font-mono text-[8px] uppercase tracking-wider text-paper/25">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-paper/25">
               Max monthly events
             </p>
             <p className="mt-1 font-mono text-[14px] text-paper/70">
@@ -224,7 +224,7 @@ export function StoreConfigDetails({ config }: { config: SiloConfig | null }) {
 function VariantTag({ label, active }: { label: string; active: boolean }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-[8px] font-medium ${
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-[10px] font-medium ${
         active
           ? "border-accent/20 bg-accent/[0.04] text-accent/70"
           : "border-white/8 bg-white/[0.02] text-paper/30"

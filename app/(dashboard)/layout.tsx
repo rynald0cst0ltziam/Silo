@@ -26,19 +26,19 @@ export default async function DashboardLayout({
             <nav className="hidden items-center gap-1 sm:flex">
               <Link
                 href="/dashboard"
-                className="rounded-md px-3 py-1.5 text-[11px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
+                className="rounded-md px-3 py-1.5 text-[13px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
               >
                 Stores
               </Link>
               <Link
                 href="/dashboard/billing"
-                className="rounded-md px-3 py-1.5 text-[11px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
+                className="rounded-md px-3 py-1.5 text-[13px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
               >
                 Billing
               </Link>
               <Link
                 href="/dashboard/settings"
-                className="rounded-md px-3 py-1.5 text-[11px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
+                className="rounded-md px-3 py-1.5 text-[13px] font-medium text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
               >
                 Settings
               </Link>

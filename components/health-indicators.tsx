@@ -24,7 +24,7 @@ export function HealthIndicators({
       {indicators.map((ind) => (
         <div
           key={ind.label}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-medium ${ind.style}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${ind.style}`}
         >
           {ind.icon}
           {ind.label}
