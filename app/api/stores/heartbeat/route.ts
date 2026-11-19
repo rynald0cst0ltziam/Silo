@@ -13,17 +13,22 @@ export async function POST(req: Request) {
   const { storeId } = verified;
 
   let stats: { hits?: number; misses?: number; cached_pages?: number; hit_rate?: number } = {};
+  let delta: { hits?: number; misses?: number } = {};
   try {
     const body = await cloned.json();
     stats = body.stats ?? {};
+    delta = body.delta ?? {};
   } catch {
     // No body is fine — just update lastSeenAt
   }
 
-  const hits = stats.hits ?? 0;
-  const misses = stats.misses ?? 0;
-  const total = hits + misses;
-  const hitRate = total > 0 ? hits / total : 0;
+  const cumulativeHits = stats.hits ?? 0;
+  const cumulativeMisses = stats.misses ?? 0;
+  const total = cumulativeHits + cumulativeMisses;
+  const hitRate = total > 0 ? cumulativeHits / total : 0;
+
+  const deltaHits = delta.hits ?? 0;
+  const deltaMisses = delta.misses ?? 0;
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -39,14 +44,14 @@ export async function POST(req: Request) {
     prisma.metric.upsert({
       where: { storeId_date: { storeId, date: today } },
       update: {
-        hits,
-        misses,
+        hits: { increment: deltaHits },
+        misses: { increment: deltaMisses },
       },
       create: {
         storeId,
         date: today,
-        hits,
-        misses,
+        hits: deltaHits,
+        misses: deltaMisses,
       },
     }),
   ]);

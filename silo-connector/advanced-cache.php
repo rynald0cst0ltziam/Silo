@@ -1,152 +1,183 @@
 <?php
 /**
  * Silo advanced-cache.php drop-in.
- * Loaded by WordPress before plugins when WP_CACHE is true.
- * Serves cached pages from disk, bypassing PHP/WordPress for cache hits.
+ * Loaded before plugins when WP_CACHE is true.
+ * Serves cached pages from disk — zero PHP overhead on cache hits.
  *
  * @package silo-connector
  */
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
-if (php_sapi_name() === 'cli') {
-    return;
+// Hard bypass: never serve cached content for these.
+if ( 'GET' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+	return;
+}
+if ( ! empty( $_POST ) ) { // phpcs:ignore
+	return;
 }
 
-// Hard bypass: never cache these
-if (
-    !empty($_POST) ||
-    !empty($_GET['add-to-cart']) ||
-    !empty($_GET['removed_item']) ||
-    isset($_GET['no_cache']) ||
-    (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'GET')
-) {
-    return;
+// Cart/checkout cookies = dynamic content.
+$bypass_cookies = array(
+	'woocommerce_items_in_cart',
+	'woocommerce_cart_hash',
+	'wp_woocommerce_session_',
+	'wordpress_logged_in_',
+	'wordpress_sec_',
+	'comment_author_',
+);
+
+foreach ( $_COOKIE as $name => $value ) {
+	foreach ( $bypass_cookies as $prefix ) {
+		if ( str_starts_with( $name, $prefix ) ) {
+			return;
+		}
+	}
 }
 
-// Cookie-based bypass: logged in users with cart items
-$bypass_cookies = ['woocommerce_items_in_cart', 'woocommerce_cart_hash', 'wp_woocommerce_session_'];
-foreach ($_COOKIE as $name => $value) {
-    foreach ($bypass_cookies as $pattern) {
-        if (str_starts_with($name, $pattern) && !empty($value)) {
-            return;
-        }
-    }
-}
-
-// Bypass for logged-in users
-foreach ($_COOKIE as $name => $value) {
-    if (str_starts_with($name, 'wordpress_logged_in_')) {
-        return;
-    }
-}
-
-// URI-based bypass
+// URI bypass.
 $uri = $_SERVER['REQUEST_URI'] ?? '';
-$path = parse_url($uri, PHP_URL_PATH) ?? '/';
-$bypassed_paths = ['/cart', '/checkout', '/my-account', '/wp-admin', '/wp-login.php', '/wp-cron.php'];
-foreach ($bypassed_paths as $bp) {
-    if (str_starts_with($path, $bp)) {
-        return;
-    }
+$bypass_uris = array(
+	'/cart',
+	'/checkout',
+	'/my-account',
+	'/wp-admin',
+	'/wp-login.php',
+	'/wp-cron.php',
+	'/wp-json',
+	'/xmlrpc.php',
+	'/feed',
+	'add-to-cart',
+	'remove_item',
+	'?wc-ajax=',
+);
+
+foreach ( $bypass_uris as $pattern ) {
+	if ( str_contains( $uri, $pattern ) ) {
+		return;
+	}
 }
 
-// Build cache key (must match Silo_Page_Cache::maybe_write_cache)
-$scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$url      = $scheme . '://' . $host . $uri;
-$device   = silo_detect_device();
-$currency = silo_detect_currency();
-$language = silo_detect_language();
-$cache_key = md5($url . '|' . $device . '|' . $currency . '|' . $language);
-
-$cache_dir  = WP_CONTENT_DIR . '/cache/silo/';
-$cache_file = $cache_dir . substr($cache_key, 0, 2) . '/' . $cache_key . '.html';
-$meta_file  = $cache_dir . substr($cache_key, 0, 2) . '/' . $cache_key . '.json';
-
-if (!file_exists($cache_file) || !file_exists($meta_file)) {
-    // Cache miss — track it and set header for proof
-    silo_increment_stat('misses');
-    header('X-Silo-Cache: MISS');
-    return;
+// Query string bypass (search, preview, etc.).
+if ( isset( $_GET['s'] ) || isset( $_GET['preview'] ) || isset( $_GET['add-to-cart'] ) ) { // phpcs:ignore
+	return;
 }
 
-$meta = json_decode(file_get_contents($meta_file), true);
-if (!$meta) {
-    return;
+// Build cache key matching Silo_Page_Cache::maybe_write_cache().
+$scheme   = ( ! empty( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] ) ? 'https' : 'http';
+$url      = $scheme . '://' . ( $_SERVER['HTTP_HOST'] ?? 'localhost' ) . $uri;
+$ua       = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$device   = preg_match( '/Mobile|Android.*Mobile|iPhone|iPod/i', $ua ) ? 'mobile' : 'desktop';
+
+// Currency detection.
+$currency = 'default';
+if ( isset( $_GET['currency'] ) ) { // phpcs:ignore
+	$currency = $_GET['currency']; // phpcs:ignore
+} elseif ( isset( $_COOKIE['wcml_client_currency'] ) ) {
+	$currency = $_COOKIE['wcml_client_currency'];
+} elseif ( isset( $_COOKIE['woocs_current_currency'] ) ) {
+	$currency = $_COOKIE['woocs_current_currency'];
 }
 
-// TTL check
-$age = time() - ($meta['created'] ?? 0);
-$ttl = $meta['ttl'] ?? 3600;
-
-if ($age > $ttl) {
-    if ($age > $ttl * 2) {
-        silo_increment_stat('misses');
-        header('X-Silo-Cache: EXPIRED');
-        return;
-    }
-    header('X-Silo-Cache: STALE');
-} else {
-    header('X-Silo-Cache: HIT');
+// Language detection (cookie-based only — constants not available yet).
+$language = 'default';
+if ( isset( $_COOKIE['wp-wpml_current_language'] ) ) {
+	$language = $_COOKIE['wp-wpml_current_language'];
+} elseif ( isset( $_COOKIE['pll_language'] ) ) {
+	$language = $_COOKIE['pll_language'];
 }
 
-silo_increment_stat('hits');
+$cache_key = md5( $url . '|' . $device . '|' . $currency . '|' . $language );
+$cache_dir = WP_CONTENT_DIR . '/cache/silo/';
+$subdir    = $cache_dir . substr( $cache_key, 0, 2 ) . '/';
+$html_file = $subdir . $cache_key . '.html';
+$meta_file = $subdir . $cache_key . '.json';
 
-// Send headers
-$status = $meta['status'] ?? 200;
-http_response_code($status);
-header('Content-Type: ' . ($meta['content_type'] ?? 'text/html; charset=UTF-8'));
-header('X-Silo-Key: ' . $cache_key);
-header('X-Silo-Age: ' . $age);
+if ( ! file_exists( $html_file ) || ! file_exists( $meta_file ) ) {
+	return;
+}
 
-readfile($cache_file);
+$meta = json_decode( file_get_contents( $meta_file ), true ); // phpcs:ignore
+if ( ! $meta || ! isset( $meta['created'], $meta['ttl'] ) ) {
+	return;
+}
+
+$age = time() - $meta['created'];
+$ttl = $meta['ttl'];
+
+// Expired: remove and let WordPress generate fresh.
+if ( $age > $ttl * 2 ) {
+	@unlink( $html_file ); // phpcs:ignore
+	@unlink( $meta_file ); // phpcs:ignore
+	silo_increment_stat( 'miss', $cache_dir );
+	return;
+}
+
+// Stale but within grace period: serve stale, mark for revalidation.
+if ( $age > $ttl ) {
+	$html = file_get_contents( $html_file ); // phpcs:ignore
+	if ( ! $html ) {
+		return;
+	}
+
+	silo_increment_stat( 'hit', $cache_dir );
+
+	header( 'X-Silo-Cache: STALE' );
+	header( 'X-Silo-Key: ' . $cache_key );
+	header( 'X-Silo-Age: ' . $age );
+	header( 'Content-Type: ' . ( $meta['content_type'] ?? 'text/html; charset=UTF-8' ) );
+	header( 'Content-Length: ' . strlen( $html ) );
+
+	echo $html; // phpcs:ignore
+	exit;
+}
+
+// Fresh cache hit.
+$html = file_get_contents( $html_file ); // phpcs:ignore
+if ( ! $html ) {
+	return;
+}
+
+silo_increment_stat( 'hit', $cache_dir );
+
+header( 'X-Silo-Cache: HIT' );
+header( 'X-Silo-Key: ' . $cache_key );
+header( 'X-Silo-Age: ' . $age );
+header( 'Content-Type: ' . ( $meta['content_type'] ?? 'text/html; charset=UTF-8' ) );
+header( 'Content-Length: ' . strlen( $html ) );
+
+echo $html; // phpcs:ignore
 exit;
 
-function silo_detect_device(): string {
-    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    if (preg_match('/Mobile|Android.*Mobile|iPhone|iPod/i', $ua)) {
-        return 'mobile';
-    }
-    return 'desktop';
-}
+/**
+ * Increment stats file atomically.
+ * Tracks both cumulative totals and delta counters for SaaS sync.
+ */
+function silo_increment_stat( string $type, string $cache_dir ): void {
+	$stats_file = $cache_dir . '.stats.json';
 
-function silo_detect_currency(): string {
-    if (isset($_GET['currency'])) {
-        return preg_replace('/[^A-Z]/', '', strtoupper($_GET['currency']));
-    }
-    if (isset($_COOKIE['wcml_client_currency'])) {
-        return preg_replace('/[^A-Z]/', '', strtoupper($_COOKIE['wcml_client_currency']));
-    }
-    if (isset($_COOKIE['woocs_current_currency'])) {
-        return preg_replace('/[^A-Z]/', '', strtoupper($_COOKIE['woocs_current_currency']));
-    }
-    return 'default';
-}
+	$stats = array(
+		'total_hits'   => 0,
+		'total_misses' => 0,
+		'delta_hits'   => 0,
+		'delta_misses' => 0,
+		'last_reset'   => '',
+	);
 
-function silo_detect_language(): string {
-    if (isset($_COOKIE['wp-wpml_current_language'])) {
-        return preg_replace('/[^a-z_-]/i', '', $_COOKIE['wp-wpml_current_language']);
-    }
-    if (isset($_GET['lang'])) {
-        return preg_replace('/[^a-z_-]/i', '', $_GET['lang']);
-    }
-    return 'default';
-}
+	if ( file_exists( $stats_file ) ) {
+		$existing = json_decode( file_get_contents( $stats_file ), true ); // phpcs:ignore
+		if ( is_array( $existing ) ) {
+			$stats = array_merge( $stats, $existing );
+		}
+	}
 
-function silo_increment_stat(string $type): void {
-    $stats_file = WP_CONTENT_DIR . '/cache/silo/.stats.json';
-    $stats = [];
+	if ( 'hit' === $type ) {
+		$stats['total_hits']++;
+		$stats['delta_hits']++;
+	} else {
+		$stats['total_misses']++;
+		$stats['delta_misses']++;
+	}
 
-    if (file_exists($stats_file)) {
-        $stats = json_decode(file_get_contents($stats_file), true) ?: [];
-    }
-
-    $today = date('Y-m-d');
-    if (($stats['date'] ?? '') !== $today) {
-        $stats = ['date' => $today, 'hits' => 0, 'misses' => 0];
-    }
-
-    $stats[$type] = ($stats[$type] ?? 0) + 1;
-    file_put_contents($stats_file, json_encode($stats), LOCK_EX);
+	file_put_contents( $stats_file, json_encode( $stats ), LOCK_EX ); // phpcs:ignore
 }
