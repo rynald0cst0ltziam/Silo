@@ -6,7 +6,7 @@ function getStripeClient() {
     throw new Error("STRIPE_SECRET_KEY is not set");
   }
   return new Stripe(key, {
-    apiVersion: "2026-10-28.endive",
+    apiVersion: "2026-11-18.endive",
     typescript: true,
   });
 }
