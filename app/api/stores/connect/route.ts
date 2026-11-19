@@ -34,7 +34,9 @@ export async function POST(req: Request) {
   const warmUrls = config.priority_urls.slice(0, tier.warmupUrlsPerEvent);
   const now = new Date();
 
-  const [, job] = await prisma.$transaction([
+  let job: { id: string };
+  try {
+    [, job] = await Promise.all([
     prisma.store.update({
       where: { id: store.id },
       data: {
@@ -79,6 +81,13 @@ export async function POST(req: Request) {
       },
     }),
   ]);
+  } catch (err) {
+    console.error("[connect] failed to save profile", err);
+    return NextResponse.json(
+      { error: `Silo could not save the cache profile: ${err instanceof Error ? err.message.split(/\r?\n/)[0] : "unknown error"}` },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({
     status: "connected",

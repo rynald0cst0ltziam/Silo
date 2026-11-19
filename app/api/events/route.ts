@@ -140,7 +140,7 @@ export async function POST(req: Request) {
   const resetStats = incoming.some((e) => e.type === "purge.all");
   const day = utcDay(now);
 
-  await prisma.$transaction([
+  await Promise.all([
     prisma.store.update({
       where: { id: store.id },
       data: {

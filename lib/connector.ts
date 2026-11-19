@@ -174,7 +174,7 @@ export async function ingestHeartbeat(storeId: string, payload: HeartbeatPayload
   const served = hits + misses;
   const day = utcDay(now);
 
-  await prisma.$transaction([
+  await Promise.all([
     prisma.store.update({
       where: { id: storeId },
       data: { ...baseUpdate, hitRate: served > 0 ? hits / served : 0 },

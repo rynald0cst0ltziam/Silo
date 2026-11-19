@@ -75,7 +75,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const day = utcDay(now);
-  await prisma.$transaction([
+  await Promise.all([
     prisma.store.update({
       where: { id },
       data: {

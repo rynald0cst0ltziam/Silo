@@ -407,7 +407,13 @@ class Silo_Scanner {
 	}
 
 	private static function stage_store_api( array &$state ): void {
-		$routes    = array_keys( rest_get_server()->get_routes( 'wc/store/v1' ) );
+		// The full route table, filtered by prefix: namespace lookups miss Store API routes on recent WooCommerce.
+		$routes    = array_filter(
+			array_keys( rest_get_server()->get_routes() ),
+			static function ( $route ) {
+				return str_starts_with( (string) $route, '/wc/store/v1/' );
+			}
+		);
 		$cacheable = array();
 		$private   = array();
 		foreach ( $routes as $route ) {
@@ -416,6 +422,21 @@ class Silo_Scanner {
 			} elseif ( '/wc/store/v1' !== $route ) {
 				$private[] = $route;
 			}
+		}
+
+		if ( ! $cacheable && class_exists( '\Automattic\WooCommerce\StoreApi\StoreApi' ) ) {
+			// Routes were not registered in this request; use WooCommerce's standard catalog routes.
+			$cacheable = array(
+				'/wc/store/v1/products',
+				'/wc/store/v1/products/(?P<id>[\d]+)',
+				'/wc/store/v1/products/collection-data',
+				'/wc/store/v1/products/categories',
+				'/wc/store/v1/products/tags',
+				'/wc/store/v1/products/attributes',
+				'/wc/store/v1/products/reviews',
+			);
+			$private   = array( '/wc/store/v1/cart', '/wc/store/v1/checkout', '/wc/store/v1/batch', '/wc/store/v1/order' );
+			self::log( $state, 'Store API routes inferred from WooCommerce defaults' );
 		}
 
 		$state['routes']           = array(
