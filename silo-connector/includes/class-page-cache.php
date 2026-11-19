@@ -86,6 +86,8 @@ class Silo_Page_Cache {
         file_put_contents($cache_file, $html, LOCK_EX);
         file_put_contents($meta_file, json_encode($meta), LOCK_EX);
 
+        header('X-Silo-Cache: MISS');
+        header('X-Silo-Key: ' . $cache_key);
         echo $html;
     }
 
@@ -243,7 +245,52 @@ class Silo_Page_Cache {
             }
         }
 
+        $this->reset_stats();
         return $count;
+    }
+
+    public function reset_stats(): void {
+        $stats_file = $this->cache_dir . '.stats.json';
+        $stats = ['date' => date('Y-m-d'), 'hits' => 0, 'misses' => 0];
+        file_put_contents($stats_file, json_encode($stats), LOCK_EX);
+    }
+
+    public function get_cached_urls(int $limit = 100): array {
+        $urls = [];
+        if (!is_dir($this->cache_dir)) return $urls;
+
+        $iter = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->cache_dir, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iter as $file) {
+            if ($file->isFile() && $file->getExtension() === 'json' && !str_starts_with($file->getFilename(), '.')) {
+                $meta = json_decode(file_get_contents($file->getPathname()), true);
+                if ($meta && isset($meta['url'])) {
+                    $age = time() - ($meta['created'] ?? 0);
+                    $ttl = $meta['ttl'] ?? 3600;
+                    $urls[] = [
+                        'url'      => $meta['url'],
+                        'device'   => $meta['device'] ?? 'desktop',
+                        'currency' => $meta['currency'] ?? 'default',
+                        'language' => $meta['language'] ?? 'default',
+                        'age'      => $age,
+                        'ttl'      => $ttl,
+                        'fresh'    => $age <= $ttl,
+                        'size'     => $this->get_html_size($file->getPathname()),
+                    ];
+                }
+                if (count($urls) >= $limit) break;
+            }
+        }
+
+        usort($urls, fn($a, $b) => $a['age'] - $b['age']);
+        return $urls;
+    }
+
+    private function get_html_size(string $meta_path): int {
+        $html_path = str_replace('.json', '.html', $meta_path);
+        return file_exists($html_path) ? filesize($html_path) : 0;
     }
 
     public function get_stats(): array {

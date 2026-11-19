@@ -52,6 +52,9 @@ final class Silo_Connector {
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'admin_init']);
+        add_action('silo_heartbeat_cron', [$this, 'send_heartbeat']);
+        add_action('silo_initial_warmup', [$this, 'run_initial_warmup']);
+        add_filter('cron_schedules', [$this, 'add_cron_schedules']);
 
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
@@ -91,6 +94,18 @@ final class Silo_Connector {
             'callback'            => [$this, 'handle_health'],
             'permission_callback' => '__return_true',
         ]);
+
+        register_rest_route('silo/v1', '/cached-urls', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'handle_cached_urls'],
+            'permission_callback' => [$this, 'verify_hmac'],
+        ]);
+
+        register_rest_route('silo/v1', '/reset-stats', [
+            'methods'             => 'POST',
+            'callback'            => [$this, 'handle_reset_stats'],
+            'permission_callback' => [$this, 'verify_hmac'],
+        ]);
     }
 
     public function handle_connect(\WP_REST_Request $request): \WP_REST_Response {
@@ -127,6 +142,7 @@ final class Silo_Connector {
 
     public function handle_health(\WP_REST_Request $request): \WP_REST_Response {
         $config = get_option('silo_config', []);
+        $stats  = $this->page_cache->get_stats();
 
         return new \WP_REST_Response([
             'status'         => 'ok',
@@ -137,7 +153,24 @@ final class Silo_Connector {
             'php_version'    => PHP_VERSION,
             'wp_version'     => get_bloginfo('version'),
             'wc_version'     => defined('WC_VERSION') ? WC_VERSION : null,
+            'cache_stats'    => $stats,
         ], 200);
+    }
+
+    public function handle_cached_urls(\WP_REST_Request $request): \WP_REST_Response {
+        $limit = (int) ($request->get_param('limit') ?? 100);
+        $urls  = $this->page_cache->get_cached_urls(min($limit, 500));
+        $stats = $this->page_cache->get_stats();
+
+        return new \WP_REST_Response([
+            'cached_urls' => $urls,
+            'stats'       => $stats,
+        ], 200);
+    }
+
+    public function handle_reset_stats(\WP_REST_Request $request): \WP_REST_Response {
+        $this->page_cache->reset_stats();
+        return new \WP_REST_Response(['reset' => true], 200);
     }
 
     public function verify_hmac(\WP_REST_Request $request): bool {
@@ -318,7 +351,8 @@ final class Silo_Connector {
 
         if (isset($_POST['silo_purge_all']) && check_admin_referer('silo_purge_all')) {
             $purged = $this->page_cache->purge_all();
-            add_settings_error('silo_settings', 'purge_ok', "Cache purged — {$purged} files removed.", 'success');
+            $this->notify_saas_purge($purged);
+            add_settings_error('silo_settings', 'purge_ok', "Cache purged — {$purged} files removed. Stats reset.", 'success');
         }
 
         if (isset($_POST['silo_save_toggles']) && check_admin_referer('silo_save_toggles')) {
@@ -387,6 +421,8 @@ final class Silo_Connector {
             }
 
             add_settings_error('silo_settings', 'connected', $msg, 'success');
+
+            wp_schedule_single_event(time() + 2, 'silo_initial_warmup');
         } else {
             $err = $data['error'] ?? "HTTP $code";
             add_settings_error('silo_settings', 'conn_fail',
@@ -1073,6 +1109,103 @@ final class Silo_Connector {
         <?php
     }
 
+    private function notify_saas_purge(int $purged): void {
+        if (!$this->is_configured()) return;
+
+        $api_key   = $this->get_api_key();
+        $saas_url  = $this->get_saas_url();
+        $body      = wp_json_encode([
+            'type'      => 'connector_purge_all',
+            'payload'   => ['purged_files' => $purged, 'source' => 'wp_admin'],
+            'timestamp' => time(),
+        ]);
+        $timestamp = (string) time();
+        $signature = hash_hmac('sha256', $timestamp . '.' . $body, $api_key);
+
+        wp_remote_post($saas_url . '/api/events', [
+            'timeout' => 10,
+            'headers' => [
+                'Content-Type'     => 'application/json',
+                'X-Silo-Signature' => $signature,
+                'X-Silo-Timestamp' => $timestamp,
+                'X-Silo-Store-Key' => $api_key,
+            ],
+            'body' => $body,
+        ]);
+    }
+
+    public function add_cron_schedules(array $schedules): array {
+        $schedules['silo_five_minutes'] = [
+            'interval' => 300,
+            'display'  => 'Every 5 minutes (Silo)',
+        ];
+        return $schedules;
+    }
+
+    public function send_heartbeat(): void {
+        if (!$this->is_configured()) return;
+
+        $api_key   = $this->get_api_key();
+        $saas_url  = $this->get_saas_url();
+        $stats     = $this->page_cache->get_stats();
+        $body      = wp_json_encode(['stats' => $stats]);
+        $timestamp = (string) time();
+        $signature = hash_hmac('sha256', $timestamp . '.' . $body, $api_key);
+
+        wp_remote_post($saas_url . '/api/stores/heartbeat', [
+            'timeout' => 10,
+            'headers' => [
+                'Content-Type'     => 'application/json',
+                'X-Silo-Signature' => $signature,
+                'X-Silo-Timestamp' => $timestamp,
+                'X-Silo-Store-Key' => $api_key,
+            ],
+            'body' => $body,
+        ]);
+    }
+
+    public function run_initial_warmup(): void {
+        if (!$this->is_configured()) return;
+        if (get_option('silo_warmup_enabled', '1') !== '1') return;
+
+        $urls = [];
+
+        $urls[] = home_url('/');
+
+        if (function_exists('wc_get_page_id')) {
+            $shop_id = wc_get_page_id('shop');
+            if ($shop_id > 0) {
+                $shop_url = get_permalink($shop_id);
+                if ($shop_url) $urls[] = $shop_url;
+            }
+        }
+
+        $categories = get_terms([
+            'taxonomy'   => 'product_cat',
+            'orderby'    => 'count',
+            'order'      => 'DESC',
+            'number'     => 10,
+            'hide_empty' => true,
+        ]);
+        if (!is_wp_error($categories)) {
+            foreach ($categories as $cat) {
+                $url = get_term_link($cat);
+                if (!is_wp_error($url)) $urls[] = $url;
+            }
+        }
+
+        $bestsellers = $this->get_bestseller_ids(20);
+        foreach ($bestsellers as $pid) {
+            $url = get_permalink($pid);
+            if ($url) $urls[] = $url;
+        }
+
+        $urls = array_unique(array_filter($urls));
+        if (!empty($urls)) {
+            $this->warmup->warm_urls($urls);
+        }
+    }
+
     public function activate(): void {
         if (!is_dir(SILO_CACHE_DIR)) {
             wp_mkdir_p(SILO_CACHE_DIR);
@@ -1088,6 +1221,12 @@ final class Silo_Connector {
         if (!defined('WP_CACHE') || !WP_CACHE) {
             $this->set_wp_cache_constant(true);
         }
+
+        if (!wp_next_scheduled('silo_heartbeat_cron')) {
+            wp_schedule_event(time(), 'silo_five_minutes', 'silo_heartbeat_cron');
+        }
+
+        wp_schedule_single_event(time() + 5, 'silo_initial_warmup');
     }
 
     public function deactivate(): void {
@@ -1100,6 +1239,9 @@ final class Silo_Connector {
         }
 
         $this->set_wp_cache_constant(false);
+
+        $timestamp = wp_next_scheduled('silo_heartbeat_cron');
+        if ($timestamp) wp_unschedule_event($timestamp, 'silo_heartbeat_cron');
     }
 
     private function set_wp_cache_constant(bool $enable): void {

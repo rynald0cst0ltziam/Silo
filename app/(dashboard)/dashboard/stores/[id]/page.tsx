@@ -9,6 +9,7 @@ import { EventUsageMeter } from "@/components/event-usage-meter";
 import { WarmupQueuePanel } from "@/components/warmup-queue-panel";
 import { HealthIndicators } from "@/components/health-indicators";
 import { InvalidationLogTable } from "@/components/invalidation-log-table";
+import { CachedUrlsPanel } from "@/components/cached-urls-panel";
 
 export const metadata: Metadata = {
   title: "Store Overview",
@@ -189,6 +190,11 @@ export default async function StoreOverviewPage({
         <div className="rounded-xl border border-white/8 bg-[#0b0d11] p-4">
           <WarmupQueuePanel jobs={warmupData} />
         </div>
+      </div>
+
+      {/* Cache inspection */}
+      <div className="mt-3 rounded-xl border border-white/8 bg-[#0b0d11] p-4">
+        <CachedUrlsPanel storeId={store.id} />
       </div>
 
       {/* Invalidation log table */}

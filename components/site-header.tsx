@@ -19,6 +19,8 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  if (pathname.startsWith("/dashboard")) return null;
+
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 interface WarmupJob {
@@ -11,18 +12,55 @@ interface WarmupJob {
   createdAt: string;
 }
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function statusBadge(status: string) {
+  const styles: Record<string, string> = {
+    pending: "border-amber/20 bg-amber/8 text-amber/70",
+    running: "border-accent/20 bg-accent/8 text-accent/80",
+    completed: "border-mint/20 bg-mint/8 text-mint/70",
+    failed: "border-red-500/20 bg-red-500/8 text-red-400/80",
+    partial: "border-amber/20 bg-amber/8 text-amber/70",
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[7px] ${styles[status] ?? styles.pending}`}
+    >
+      {status === "running" && (
+        <Loader2 className="h-2 w-2 animate-spin" />
+      )}
+      {status}
+    </span>
+  );
+}
+
 export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   const activeJobs = jobs.filter(
-    (j) => j.status === "pending" || j.status === "running"
+    (j) => j.status === "pending" || j.status === "running",
   );
   const activeUrlCount = activeJobs.reduce((s, j) => s + j.total, 0);
 
-  // Collect all URLs from active jobs with their progress
-  const urlEntries: Array<{ url: string; pct: number; jobStatus: string }> = [];
+  const urlEntries: Array<{ url: string; pct: number; jobStatus: string }> =
+    [];
   for (const job of activeJobs) {
     const jobPct = job.total > 0 ? (job.progress / job.total) * 100 : 0;
     for (const url of job.urls) {
-      urlEntries.push({ url, pct: Math.round(jobPct), jobStatus: job.status });
+      urlEntries.push({
+        url,
+        pct: Math.round(jobPct),
+        jobStatus: job.status,
+      });
     }
   }
 
@@ -35,39 +73,16 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
         </span>
       </div>
 
-      {urlEntries.length === 0 && jobs.length === 0 ? (
-        <p className="mt-4 text-[10px] text-paper/30">
-          No warmup jobs. URLs are warmed automatically after invalidation.
-        </p>
-      ) : urlEntries.length === 0 ? (
-        <div className="mt-4">
-          <p className="text-[10px] text-paper/30">Queue empty. All URLs warmed.</p>
-          {/* Show recent completed */}
-          <div className="mt-3 space-y-2">
-            {jobs
-              .filter((j) => j.status === "completed")
-              .slice(0, 3)
-              .map((j) => (
-                <div
-                  key={j.id}
-                  className="flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-2 py-1.5"
-                >
-                  <span className="font-mono text-[8px] text-mint/50">
-                    {j.total} URLs warmed
-                  </span>
-                  <span className="font-mono text-[7px] text-paper/20">
-                    {new Date(j.createdAt).toLocaleTimeString()}
-                  </span>
-                </div>
-              ))}
-          </div>
-        </div>
-      ) : (
+      {urlEntries.length > 0 && (
         <>
           <div className="mt-3 space-y-2.5">
             {urlEntries.slice(0, 5).map((entry, i) => {
-              const path = new URL(entry.url, "https://placeholder.com")
-                .pathname;
+              let path: string;
+              try {
+                path = new URL(entry.url).pathname;
+              } catch {
+                path = entry.url;
+              }
               return (
                 <div key={`${entry.url}-${i}`}>
                   <div className="flex items-center justify-between gap-2 font-mono text-[8px]">
@@ -84,42 +99,82 @@ export function WarmupQueuePanel({ jobs }: { jobs: WarmupJob[] }) {
               );
             })}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-white/8 pt-2 font-mono text-[7px]">
-            <span className="text-paper/20">
-              {urlEntries.length > 5
-                ? `+${urlEntries.length - 5} more`
-                : `${urlEntries.length} URLs`}
-            </span>
-            <span className="text-paper/30">5 workers</span>
-          </div>
+          {urlEntries.length > 5 && (
+            <p className="mt-2 font-mono text-[7px] text-paper/20">
+              +{urlEntries.length - 5} more in queue
+            </p>
+          )}
         </>
       )}
 
-      {/* Recent completed jobs summary */}
-      {activeJobs.length > 0 && (
-        <div className="mt-3 space-y-1">
-          {activeJobs.map((job) => (
-            <div
-              key={job.id}
-              className="flex items-center gap-2 rounded border border-white/5 bg-white/[0.02] px-2 py-1.5"
-            >
-              {job.status === "running" && (
-                <Loader2 className="h-2.5 w-2.5 animate-spin text-accent/60" />
-              )}
-              <span className="font-mono text-[8px] text-paper/40">
-                {job.progress}/{job.total} URLs
-              </span>
-              <div className="ml-auto h-0.5 w-12 overflow-hidden rounded-full bg-white/5">
+      {/* Job history */}
+      <div className="mt-3 border-t border-white/8 pt-2">
+        <p className="mb-2 font-mono text-[7px] uppercase tracking-wider text-paper/20">
+          Jobs ({jobs.length})
+        </p>
+        <div className="space-y-1">
+          {jobs.slice(0, 8).map((job) => {
+            const pct =
+              job.total > 0
+                ? Math.round((job.progress / job.total) * 100)
+                : 0;
+            const expanded = expandedId === job.id;
+            return (
+              <div key={job.id}>
                 <div
-                  className="h-full rounded-full bg-accent/70"
-                  style={{
-                    width: `${job.total > 0 ? (job.progress / job.total) * 100 : 0}%`,
-                  }}
-                />
+                  className="flex cursor-pointer items-center gap-2 rounded border border-white/5 bg-white/[0.02] px-2 py-1.5 transition-colors hover:bg-white/[0.04]"
+                  onClick={() =>
+                    setExpandedId(expanded ? null : job.id)
+                  }
+                >
+                  <span
+                    className="text-[6px] text-paper/20 transition-transform"
+                    style={{
+                      transform: expanded
+                        ? "rotate(90deg)"
+                        : "rotate(0deg)",
+                    }}
+                  >
+                    ▶
+                  </span>
+                  {statusBadge(job.status)}
+                  <span className="font-mono text-[8px] text-paper/40">
+                    {job.progress}/{job.total}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <div className="h-0.5 w-10 overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className="h-full rounded-full bg-accent/70"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="font-mono text-[7px] text-paper/20">
+                      {timeAgo(job.createdAt)}
+                    </span>
+                  </div>
+                </div>
+                {expanded && job.urls.length > 0 && (
+                  <div className="ml-4 mt-1 max-h-24 overflow-y-auto rounded border border-white/5 bg-black/20 p-2">
+                    {job.urls.map((url, i) => (
+                      <p
+                        key={i}
+                        className="truncate font-mono text-[8px] text-paper/35"
+                      >
+                        {url}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
+
+      {jobs.length === 0 && (
+        <p className="mt-4 text-[10px] text-paper/30">
+          No warmup jobs. URLs warm automatically after invalidation.
+        </p>
       )}
     </div>
   );

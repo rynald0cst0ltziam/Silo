@@ -107,6 +107,7 @@ export async function POST(req: Request) {
     where: { id: storeId },
     data: {
       lastEventAt: new Date(),
+      lastSeenAt: new Date(),
       monthlyEvents: { increment: 1 },
     },
   });

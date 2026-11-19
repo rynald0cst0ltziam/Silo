@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
+import { LogoMark } from "@/components/logo";
 import { UserMenu } from "@/components/user-menu";
 
 export default async function DashboardLayout({
@@ -18,7 +18,10 @@ export default async function DashboardLayout({
         <div className="container-page flex h-14 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <Logo className="h-5 w-auto" />
+              <LogoMark />
+              <span className="font-display text-[20px] font-semibold leading-none tracking-[-0.05em] text-paper">
+                silo
+              </span>
             </Link>
             <nav className="hidden items-center gap-1 sm:flex">
               <Link

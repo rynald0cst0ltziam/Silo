@@ -65,8 +65,9 @@ $cache_file = $cache_dir . substr($cache_key, 0, 2) . '/' . $cache_key . '.html'
 $meta_file  = $cache_dir . substr($cache_key, 0, 2) . '/' . $cache_key . '.json';
 
 if (!file_exists($cache_file) || !file_exists($meta_file)) {
-    // Cache miss — track it
+    // Cache miss — track it and set header for proof
     silo_increment_stat('misses');
+    header('X-Silo-Cache: MISS');
     return;
 }
 
@@ -80,10 +81,9 @@ $age = time() - ($meta['created'] ?? 0);
 $ttl = $meta['ttl'] ?? 3600;
 
 if ($age > $ttl) {
-    // Stale — serve stale while revalidate header is sent
     if ($age > $ttl * 2) {
-        // Too stale, don't serve
         silo_increment_stat('misses');
+        header('X-Silo-Cache: EXPIRED');
         return;
     }
     header('X-Silo-Cache: STALE');

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowUpRight, Github, Linkedin, Mail } from "lucide-react";
 import { Logo } from "@/components/logo";
 
@@ -22,6 +25,8 @@ const LEGAL_LINKS = [
 ];
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/dashboard")) return null;
   return (
     <footer className="border-t border-white/8 bg-ink">
       <div className="container-page py-14 md:py-16">
