@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateApiKey } from "@/lib/api-keys";
 import { getUserTier, canCreateStore } from "@/lib/tier-enforcement";
+import { checkPublicUrl } from "@/lib/url-guard";
+import { PUBLIC_STORE_SELECT } from "@/lib/store-public";
 
 export async function GET() {
   const session = await auth();
@@ -12,7 +14,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { subscription: true, stores: { orderBy: { createdAt: "desc" } } },
+    select: { id: true, stores: { orderBy: { createdAt: "desc" }, select: PUBLIC_STORE_SELECT } },
   });
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -66,6 +68,10 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid store URL" }, { status: 400 });
   }
+  const publicCheck = await checkPublicUrl(storeUrl);
+  if (!publicCheck.ok) {
+    return NextResponse.json({ error: `${publicCheck.reason}. Use the public address of your store.` }, { status: 400 });
+  }
 
   const existing = await prisma.store.findFirst({
     where: { userId: user.id, url: storeUrl },
@@ -86,5 +92,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ store, apiKey: plain }, { status: 201 });
+  return NextResponse.json({ store: { id: store.id, name: store.name, url: store.url, status: store.status }, apiKey: plain }, { status: 201 });
 }

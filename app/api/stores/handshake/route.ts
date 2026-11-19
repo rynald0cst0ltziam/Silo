@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { readConnectorRequest } from "@/lib/hmac";
 import { rateLimit } from "@/lib/rate-limit";
 import { getUserTier } from "@/lib/tier-enforcement";
+import { checkPublicUrl } from "@/lib/url-guard";
 
 type Handshake = {
   site_url?: string;
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
     if (body.home_url) origin = new URL(body.home_url).origin;
   } catch {
     origin = store.url;
+  }
+  if (origin !== store.url) {
+    const check = await checkPublicUrl(origin);
+    if (!check.ok) {
+      return NextResponse.json({ error: `This store's address can't be used: ${check.reason}.` }, { status: 400 });
+    }
   }
 
   await prisma.store.update({

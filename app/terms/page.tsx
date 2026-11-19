@@ -16,7 +16,7 @@ export default function TermsPage() {
     >
       <h2>1. The service</h2>
       <p>
-        Silo provides an edge cache and catalog-aware invalidation service for WooCommerce
+        Silo provides a page cache and catalog-aware invalidation service for WooCommerce
         stores, together with a WordPress connector, dashboard and related documentation. Silo
         is an independent product and is not affiliated with or endorsed by WooCommerce or
         Automattic.
@@ -76,9 +76,10 @@ export default function TermsPage() {
 
       <h2>7. Availability and support</h2>
       <p>
-        We target 99.9% monthly availability for the edge and invalidation API, excluding
-        scheduled maintenance announced in advance. If the connector heartbeat is stale, Silo
-        fails closed and forwards traffic to your origin. Support is provided by email, with
+        We target 99.9% monthly availability for the invalidation API and dashboard, excluding
+        scheduled maintenance announced in advance. Your store keeps serving and purging its own
+        cache if the API is unreachable; if the connector is deactivated or its key is rejected,
+        cached pages stop being served and traffic goes to your origin. Support is provided by email, with
         response targets that vary by plan. Current platform status is published at{" "}
         <a href="/status">/status</a>.
       </p>

@@ -21,6 +21,9 @@ class Silo_Fragments {
 
 	const TTL = 3600;
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( 'wc_ajax_get_refreshed_fragments', array( __CLASS__, 'maybe_serve' ), 1 );
 	}
@@ -44,6 +47,9 @@ class Silo_Fragments {
 		return $site . 'fragments/' . md5( $currency . '|' . $language . '|' . $country . '|' . silo_request_scheme( $_SERVER ) . '|' . get_stylesheet() ) . '.json';
 	}
 
+	/**
+	 * Maybe serve.
+	 */
 	public static function maybe_serve(): void {
 		$file = self::file();
 		if ( null === $file ) {
@@ -84,6 +90,9 @@ class Silo_Fragments {
 		);
 	}
 
+	/**
+	 * Flush.
+	 */
 	public static function flush(): void {
 		$dir = Silo_Settings::site_dir() . 'fragments/';
 		if ( is_dir( $dir ) ) {

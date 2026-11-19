@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/how-it-works", label: "Product" },
+  { href: "/guide", label: "Guide" },
   { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/docs", label: "Docs" },
@@ -153,7 +154,7 @@ export function SiteHeader() {
                 className="flex items-center justify-between py-5 text-[24px] font-display tracking-[-0.03em] text-paper/85"
               >
                 <span className="flex items-baseline gap-4">
-                  <span className="font-mono text-[10px] tracking-widest text-paper/25">05</span>
+                  <span className="font-mono text-[10px] tracking-widest text-paper/25">0{LINKS.length + 1}</span>
                   Dashboard
                 </span>
                 <ArrowUpRight className="h-4 w-4 text-paper/30" />

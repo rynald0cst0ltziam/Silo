@@ -70,7 +70,7 @@ export type Faq = { q: string; a: string };
 export const PRICING_FAQS: Faq[] = [
   {
     q: "Will Silo break my cart or checkout?",
-    a: "No. Cart, checkout, my-account, and any request carrying a WooCommerce session cookie are never stored in the shared cache. They pass straight through. This is enforced at the edge by default — there is nothing to configure and no exclusion list to maintain.",
+    a: "No. Cart, checkout, my-account, and any request carrying a WooCommerce session cookie are never stored in the shared cache. They pass straight through. This is enforced on your server before a cache key is built — there is nothing to configure and no exclusion list to maintain.",
   },
   {
     q: "What happens to my existing cache plugin?",
@@ -90,7 +90,7 @@ export const PRICING_FAQS: Faq[] = [
   },
   {
     q: "What happens if the connector goes offline?",
-    a: "Silo fails closed. If the connector cannot confirm catalog state, the edge stops serving cached storefront HTML for that store and passes requests to your origin until the heartbeat returns. Stale stock is worse than a slower page, so we choose the origin every time.",
+    a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, or Silo rejects the store key, cached pages stop being served immediately and every request goes straight to WooCommerce. Stale stock is worse than a slower page, so we choose the origin every time.",
   },
   {
     q: "Can I cancel or get a refund?",
@@ -121,7 +121,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Will stale stock ever be served after a change?",
-        a: "Silo is built so stale stock is the exception, not the default. Stock reductions, refunds and manual edits resolve to a product or variation node and invalidate every response that depends on it. If the connector cannot confirm catalog state, Silo fails closed: cached storefront HTML for that store is bypassed until the heartbeat returns.",
+        a: "Silo is built so stale stock is the exception, not the default. Stock reductions, refunds and manual edits resolve to a product or variation node and invalidate every response that depends on it. Every change is purged on your server immediately, even if Silo itself is unreachable, and Silo then re-warms the affected pages.",
       },
       {
         q: "How are variable products handled?",
@@ -129,7 +129,11 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "What happens if the connector goes offline?",
-        a: "The edge stops serving cached storefront HTML for that store and passes requests to your origin until the connector heartbeat returns. Slower pages are preferable to wrong stock. The dashboard shows the last heartbeat, catalog version and exact bypass window.",
+        a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, or Silo rejects the store key, cached pages stop being served immediately and every request goes straight to WooCommerce. The dashboard shows when the connector last checked in.",
+      },
+      {
+        q: "What data leaves my store?",
+        a: "Catalog structure and cache statistics only: product IDs, names, SKUs, permalinks, product types, stock status and prices for the products that changed, plus hit, miss and warmup counts. Order events carry the order number and the affected products, never customer names, addresses, emails, payment details or cart contents. Every request is signed with HMAC-SHA256; the store key itself is never sent, only a hash that identifies it.",
       },
     ],
   },
@@ -188,6 +192,49 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         q: "How long does setup take?",
         a: "About four minutes for a typical store: add the store, install the connector, paste the key and run the scan. Large catalogs take longer to map, but the storefront can go live after the initial scan while warmup continues in the background.",
+      },
+      {
+        q: "What happens when I deactivate or delete the connector?",
+        a: "Deactivating removes the advanced-cache.php drop-in, the WP_CACHE line in wp-config.php (only if Silo added it), every scheduled task and all cached files, so nothing stale can be served. Deleting the plugin also removes its settings, its two database tables and the wp-content/cache/silo folder. A drop-in owned by another plugin is never touched.",
+      },
+    ],
+  },
+  {
+    id: "day-to-day",
+    title: "Using Silo day to day",
+    description: "What the numbers mean and how to tell Silo is doing its job.",
+    items: [
+      {
+        q: "How do I check that Silo is working?",
+        a: "Open a product page in a private window and look at the x-silo-cache response header: MISS on the first visit, HIT after that. In WordPress, WooCommerce → Silo → Status → Run live checks requests the shop page twice and shows the same MISS to HIT round trip, along with the drop-in, connection and conflict checks.",
+      },
+      {
+        q: "What does the hit rate measure?",
+        a: "The share of anonymous requests to WooCommerce pages (product pages, the shop and product archives) that were served from cache. Visitors with a cart or a login are never cached, so they are counted separately as bypassed instead of lowering the hit rate. The first visit to every page and variant renders fresh, so a quiet store climbs slowly; Purge all resets the counters on both sides.",
+      },
+      {
+        q: "Why does a page sometimes show MISS or STALE?",
+        a: "MISS means the page was rendered and stored on this request: the first visit, the first visit on mobile or in another currency, or the first visit after the product changed. STALE means the entry passed its time limit and was served once more while it re-renders in the background. BYPASS means the visitor has a cart, session or login, so the page is always live.",
+      },
+      {
+        q: "What is warmup doing?",
+        a: "After a change, Silo picks the pages that matter most (the product, the shop, its categories and your bestsellers) and the connector requests them from your own server for desktop and mobile, in the background, so the next shopper gets a cached page. The Warmup tab shows every URL as queued, warming, warm or failed, with how long it took. The number of URLs per event depends on your plan.",
+      },
+      {
+        q: "What does the catalog scan do? Does it change anything?",
+        a: "It reads your catalog: product types, variations, stock, categories, tags, brands, attribute archives, Store API routes and bestsellers. It changes nothing on the store and requests no pages. Silo turns the result into the store's cache profile. You can run it again at any time from Catalog in either dashboard.",
+      },
+      {
+        q: "Do scheduled sale prices update on time?",
+        a: "Yes. WooCommerce only processes scheduled sales once a day, so a cached page could show the old price after a sale starts or ends. Silo schedules a purge for each product at the exact moment its sale starts and ends, plus a safety pass shortly afterwards.",
+      },
+      {
+        q: "Do logged-in customers see cached pages?",
+        a: "No. Logged-in customers, shoppers with something in their cart and anyone with a WooCommerce session always get a live page, so prices, stock, wishlists and account details are always theirs.",
+      },
+      {
+        q: "Can I export my data?",
+        a: "Yes. In WordPress, the Invalidations and Warmup tabs export CSV, and Status exports the cache list as CSV and a full diagnostics report as JSON. The Silo dashboard exports the cached page list. The diagnostics file is the fastest way to get help from support.",
       },
     ],
   },
@@ -497,7 +544,7 @@ ecru/sm   in_stock  ->  in_stock`,
         type: "ol",
         items: [
           "Catalog reads. Product collections, category filters, price sort, attribute filters. These are public, cacheable, and expensive to recompute. They should be keyed by the full filter set and invalidated when a product in the result changes.",
-          "Cart reads. Anything derived from the shopper's session or cart token. Never shared, never stored at the edge, always forwarded.",
+          "Cart reads. Anything derived from the shopper's session or cart token. Never shared, never stored in the cache, always forwarded.",
           "Checkout and account reads. Nonces, addresses, payment methods, order state. Never cached, and never allowed to influence a shared cache key.",
         ],
       },
@@ -532,7 +579,7 @@ stock change: olive/md out_of_stock
       {
         type: "callout",
         title: "The boundary, stated simply",
-        text: "Public catalog reads can be shared. Anything that depends on who is asking cannot. The edge enforces this before a cache key is built, not in a settings screen.",
+        text: "Public catalog reads can be shared. Anything that depends on who is asking cannot. The connector enforces this before a cache key is built, not in a settings screen.",
       },
       {
         type: "p",

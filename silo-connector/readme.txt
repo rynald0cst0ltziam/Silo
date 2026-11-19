@@ -7,7 +7,7 @@ Requires PHP: 8.1
 Requires Plugins: woocommerce
 WC requires at least: 8.2
 WC tested up to: 9.9
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,12 @@ For WooCommerce page caching, yes. Disable page caching in those plugins (and at
 Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
+
+= 2.1.1 =
+* Security: Silo-to-store requests are bound to method and route, each signature is accepted once, and v1 signatures are refused after the first v2 request.
+* Security: the warmup token is stored on disk only as a hash; purges can only touch this site's own cache.
+* Fails closed: if Silo rejects the store key, cached pages stop being served until a valid connection returns.
+* Store API routes are detected from the full REST route table, with WooCommerce defaults as a fallback.
 
 = 2.1.0 =
 * Rebuilt connector: per-URL cache addressing (every query, device, currency and language variant purged together), atomic writes, accurate hit/miss/bypass accounting.

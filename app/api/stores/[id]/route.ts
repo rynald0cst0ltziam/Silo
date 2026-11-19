@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PUBLIC_STORE_SELECT } from "@/lib/store-public";
 
 export async function GET(
   _req: Request,
@@ -15,7 +16,8 @@ export async function GET(
 
   const store = await prisma.store.findFirst({
     where: { id, userId: session.user.id },
-    include: {
+    select: {
+      ...PUBLIC_STORE_SELECT,
       events: { orderBy: { createdAt: "desc" }, take: 20 },
       metrics: { orderBy: { date: "desc" }, take: 30 },
     },
@@ -56,8 +58,9 @@ export async function PATCH(
   const updated = await prisma.store.update({
     where: { id },
     data: {
-      ...(body.name?.trim() ? { name: body.name.trim() } : {}),
+      ...(body.name?.trim() ? { name: body.name.trim().slice(0, 120) } : {}),
     },
+    select: PUBLIC_STORE_SELECT,
   });
 
   return NextResponse.json({ store: updated });

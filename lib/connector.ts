@@ -1,6 +1,7 @@
 import { createHmac } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { checkPublicUrl } from "@/lib/url-guard";
 
 type StoreRef = { id: string; url: string; apiKey: string };
 
@@ -63,14 +64,24 @@ export async function callConnector<T = Record<string, unknown>>(
   const payload = method === "GET" ? "" : JSON.stringify(body ?? {});
   const timestamp = String(Math.floor(Date.now() / 1000));
   const signature = createHmac("sha256", store.apiKey).update(`${timestamp}.${payload}`).digest("hex");
+  // v2 binds the signature to method and route so it cannot be replayed against another endpoint.
+  const route = `/silo/v1${path.split("?")[0]}`;
+  const signatureV2 = createHmac("sha256", store.apiKey).update(`${timestamp}.${method} ${route}.${payload}`).digest("hex");
+
+  const target = await checkPublicUrl(store.url);
+  if (!target.ok) {
+    return { ok: false, status: 0, error: `Refusing to contact store: ${target.reason}` };
+  }
 
   try {
     const res = await fetch(`${storeOrigin(store.url)}/wp-json/silo/v1${path}`, {
       method,
+      redirect: "manual",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-Silo-Signature": signature,
+        "X-Silo-Signature-V2": signatureV2,
         "X-Silo-Timestamp": timestamp,
         "User-Agent": "Silo/1.0 (+https://getsilo.io)",
       },

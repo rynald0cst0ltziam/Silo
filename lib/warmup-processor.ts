@@ -3,11 +3,16 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getUserTier } from "@/lib/tier-enforcement";
 import { callConnector, utcDay } from "@/lib/connector";
 import type { WarmResult } from "@/lib/store-live";
+import { checkPublicUrl } from "@/lib/url-guard";
 
 const STALE_PENDING_MS = 10 * 60 * 1000;
 
 async function fetchUrl(url: string): Promise<WarmResult> {
   const started = Date.now();
+  const target = await checkPublicUrl(url);
+  if (!target.ok) {
+    return { url, status: "failed", code: 0, ms: 0, error: target.reason };
+  }
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; SiloWarmup/2; +https://getsilo.io)" },

@@ -129,7 +129,7 @@ export function DashboardMock({ className }: { className?: string }) {
               <ShieldCheck className="h-2.5 w-2.5 text-mint/60" />
             </div>
             <p className="mt-1.5 font-mono text-[7.5px] tracking-[0.05em] text-paper/40">
-              sk_live_•••••9f2a
+              sk_silo_•••••9f2a
             </p>
             <p className="mt-1 font-mono text-[6.5px] text-paper/20">connector v0.9.0</p>
           </div>

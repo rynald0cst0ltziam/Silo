@@ -56,30 +56,32 @@ class Silo_Status {
 	 */
 	public static function compact(): array {
 		return array(
-			'dropin'      => Silo_Installer::dropin_status(),
-			'wp_cache'    => defined( 'WP_CACHE' ) && WP_CACHE,
-			'writable'    => wp_is_writable( silo_cache_root() ),
-			'conflicts'   => self::cache_conflicts(),
-			'page_cache'  => (bool) Silo_Settings::get( 'page_cache' ),
-			'store_api'   => (bool) Silo_Settings::get( 'store_api_cache' ),
-			'warmup'      => (bool) Silo_Settings::get( 'warmup' ),
-			'pretty'      => '' !== (string) get_option( 'permalink_structure' ),
-			'scheduler'   => function_exists( 'as_enqueue_async_action' ),
-			'auth_error'  => (string) get_option( 'silo_auth_error', '' ),
-			'mode'        => 'ours' === Silo_Installer::dropin_status() && defined( 'WP_CACHE' ) && WP_CACHE ? 'dropin' : 'late',
+			'dropin'     => Silo_Installer::dropin_status(),
+			'wp_cache'   => defined( 'WP_CACHE' ) && WP_CACHE,
+			'writable'   => wp_is_writable( silo_cache_root() ),
+			'conflicts'  => self::cache_conflicts(),
+			'page_cache' => (bool) Silo_Settings::get( 'page_cache' ),
+			'store_api'  => (bool) Silo_Settings::get( 'store_api_cache' ),
+			'warmup'     => (bool) Silo_Settings::get( 'warmup' ),
+			'pretty'     => '' !== (string) get_option( 'permalink_structure' ),
+			'scheduler'  => function_exists( 'as_enqueue_async_action' ),
+			'auth_error' => (string) get_option( 'silo_auth_error', '' ),
+			'mode'       => 'ours' === Silo_Installer::dropin_status() && defined( 'WP_CACHE' ) && WP_CACHE ? 'dropin' : 'late',
 		);
 	}
 
 	/**
 	 * Full check list. Live checks call Silo and the storefront.
+	 *
+	 * @param bool $live Live.
 	 */
 	public static function checks( bool $live = false ): array {
 		$checks = array();
 		$dropin = Silo_Installer::dropin_status();
 
-		$hb_ok   = (int) get_option( 'silo_hb_ok', 0 );
-		$hb_err  = (string) get_option( 'silo_hb_error', '' );
-		$auth    = (string) get_option( 'silo_auth_error', '' );
+		$hb_ok    = (int) get_option( 'silo_hb_ok', 0 );
+		$hb_err   = (string) get_option( 'silo_hb_error', '' );
+		$auth     = (string) get_option( 'silo_auth_error', '' );
 		$checks[] = array(
 			'id'     => 'connection',
 			'label'  => __( 'Store key and connection', 'silo-connector' ),
@@ -182,6 +184,9 @@ class Silo_Status {
 		return $checks;
 	}
 
+	/**
+	 * Handshake payload.
+	 */
 	public static function handshake_payload(): array {
 		return array(
 			'site_url'          => site_url(),
@@ -205,7 +210,7 @@ class Silo_Status {
 				array(
 					'timeout'     => 15,
 					'redirection' => 0,
-					'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
+					'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core filter for loopback requests.
 					'user-agent'  => 'Mozilla/5.0 (Windows NT 10.0) SiloLoopbackTest/2',
 					'cookies'     => array(),
 				)
@@ -218,11 +223,20 @@ class Silo_Status {
 					'detail' => $response->get_error_message(),
 				);
 			}
-			$seq[] = strtoupper( (string) wp_remote_retrieve_header( $response, 'x-silo-cache' ) ) ?: 'none';
+			$state = strtoupper( (string) wp_remote_retrieve_header( $response, 'x-silo-cache' ) );
+			$seq[] = '' !== $state ? $state : 'none';
 		}
 
 		$ok = 'HIT' === $seq[1];
-		update_option( 'silo_loopback', array( 'seq' => $seq, 'ok' => $ok, 'at' => time() ), false );
+		update_option(
+			'silo_loopback',
+			array(
+				'seq' => $seq,
+				'ok'  => $ok,
+				'at'  => time(),
+			),
+			false
+		);
 
 		return array(
 			'id'     => 'loopback',

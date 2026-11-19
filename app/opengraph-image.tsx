@@ -162,7 +162,7 @@ export default async function OpengraphImage() {
           }}
         >
           {[
-            ["0.4ms", "edge lookup"],
+            ["0.4ms", "cache lookup"],
             ["99.4%", "hit rate"],
             ["5 URLs", "per stock change"],
             ["0", "carts cached"],

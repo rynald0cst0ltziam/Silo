@@ -25,6 +25,9 @@ class Silo_Page_Cache {
 	 */
 	private static $current = null;
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
 			return;
@@ -60,7 +63,7 @@ class Silo_Page_Cache {
 		if ( ! empty( $request['bypass'] ) ) {
 			Silo_Stats::bump(
 				array(
-					'bypass'                                         => 1,
+					'bypass' => 1,
 					'bypass_' . sanitize_key( (string) $request['bypass'] ) => 1,
 				)
 			);
@@ -98,6 +101,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Scope and TTL for cacheable WooCommerce pages, or null for everything else.
+	 *
+	 * @param array $config Config.
 	 */
 	private static function page_context( array $config ): ?array {
 		if ( is_search() || is_404() || is_preview() || is_feed() || is_customize_preview() || post_password_required() ) {
@@ -166,8 +171,8 @@ class Silo_Page_Cache {
 		if ( silo_last_purge( $location['site'], $location['dir'] ) >= $started ) {
 			return $buffer; // A purge landed while this page was rendering; its data may be stale.
 		}
-		$base     = $location['file'];
-		$dir      = dirname( $base ) . '/';
+		$base = $location['file'];
+		$dir  = dirname( $base ) . '/';
 		if ( ! wp_mkdir_p( $dir ) ) {
 			return $buffer;
 		}
@@ -205,10 +210,10 @@ class Silo_Page_Cache {
 		if ( ! $context['warmup'] ) {
 			Silo_Stats::bump(
 				array(
-					'misses'                     => 1,
-					'miss_ms'                    => $meta['render_ms'],
-					'miss_n'                     => 1,
-					'miss_' . $context['type']   => 1,
+					'misses'                   => 1,
+					'miss_ms'                  => $meta['render_ms'],
+					'miss_n'                   => 1,
+					'miss_' . $context['type'] => 1,
 				)
 			);
 		}
@@ -219,6 +224,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Final safety checks on the rendered response.
+	 *
+	 * @param string $buffer Buffer.
 	 */
 	private static function should_store( string $buffer ): bool {
 		if ( 200 !== http_response_code() || strlen( $buffer ) < 255 || ( defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE ) ) {
@@ -250,6 +257,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Remove every cached variant of a URL, and its paginated children.
+	 *
+	 * @param string $url URL.
 	 */
 	public static function purge_url( string $url ): int {
 		$parts = wp_parse_url( $url );
@@ -257,7 +266,10 @@ class Silo_Page_Cache {
 			return 0;
 		}
 		$host = isset( $parts['host'] ) ? $parts['host'] . ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' ) : Silo_Settings::site_host();
-		$dir  = silo_path_dir( silo_site_dir( $host ), (string) ( $parts['path'] ?? '/' ) );
+		if ( silo_host_key( $host ) !== silo_host_key( Silo_Settings::site_host() ) ) {
+			return 0; // Only this site's own cache can be purged.
+		}
+		$dir = silo_path_dir( silo_site_dir( $host ), (string) ( $parts['path'] ?? '/' ) );
 		if ( null === $dir ) {
 			return 0;
 		}
@@ -271,6 +283,8 @@ class Silo_Page_Cache {
 	}
 
 	/**
+	 * Purge URLs.
+	 *
 	 * @param string[] $urls URLs to purge.
 	 * @return array{pages:int,urls:int}
 	 */
@@ -291,6 +305,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Record when a path (or the whole site) was purged; renders that began earlier are discarded.
+	 *
+	 * @param string $marker Marker.
 	 */
 	private static function mark_purged( string $marker ): void {
 		if ( wp_mkdir_p( dirname( $marker ) ) ) {
@@ -300,6 +316,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Drop all cached pages and Store API entries for this site.
+	 *
+	 * @param bool $reset_stats Reset stats.
 	 */
 	public static function purge_everything( bool $reset_stats ): int {
 		$site  = Silo_Settings::site_dir();
@@ -318,6 +336,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Recursively delete a directory. Returns how many cached pages/entries were removed.
+	 *
+	 * @param string $dir Dir.
 	 */
 	public static function delete_tree( string $dir ): int {
 		if ( ! is_dir( $dir ) ) {
@@ -351,6 +371,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Cached pages, bytes and Store API entries (recounted at most every 30 seconds).
+	 *
+	 * @param bool $fresh Fresh.
 	 */
 	public static function inventory( bool $fresh = false ): array {
 		$cached = $fresh ? false : get_transient( 'silo_inventory' );
@@ -388,6 +410,8 @@ class Silo_Page_Cache {
 
 	/**
 	 * Cached entries with freshness, for the cache inspector.
+	 *
+	 * @param int $limit Limit.
 	 */
 	public static function entries( int $limit = 200 ): array {
 		$site = Silo_Settings::site_dir();

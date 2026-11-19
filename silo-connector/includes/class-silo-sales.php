@@ -23,6 +23,9 @@ class Silo_Sales {
 	const HOOK  = 'silo_sale_boundary';
 	const KINDS = array( 'start', 'end', 'end_safety' );
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( self::HOOK, array( __CLASS__, 'handle' ), 10, 2 );
 	}

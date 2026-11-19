@@ -17,6 +17,9 @@ class Silo_Admin {
 
 	const ACTIONS = array( 'live', 'connect', 'scan_step', 'scan_start', 'purge_all', 'warm_priority', 'save_settings', 'disconnect', 'checks', 'entries', 'events', 'event', 'export' );
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 60 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
@@ -30,6 +33,9 @@ class Silo_Admin {
 		}
 	}
 
+	/**
+	 * Menu.
+	 */
 	public static function menu(): void {
 		add_submenu_page(
 			'woocommerce',
@@ -41,11 +47,16 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * Whether screen.
+	 */
 	public static function is_screen(): bool {
 		return isset( $_GET['page'] ) && self::SLUG === $_GET['page']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**
+	 * Body class.
+	 *
 	 * @param string $classes Body classes.
 	 */
 	public static function body_class( $classes ): string {
@@ -53,10 +64,12 @@ class Silo_Admin {
 	}
 
 	/**
+	 * Assets.
+	 *
 	 * @param string $hook Admin page hook.
 	 */
 	public static function assets( $hook ): void {
-		if ( ! self::is_screen() ) {
+		if ( 'woocommerce_page_' . self::SLUG !== $hook && ! self::is_screen() ) {
 			return;
 		}
 		wp_enqueue_style( 'silo-admin', SILO_URL . 'assets/css/admin.css', array(), SILO_VERSION );
@@ -73,6 +86,9 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * Render.
+	 */
 	public static function render(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_die( esc_html__( 'You do not have permission to manage Silo.', 'silo-connector' ) );
@@ -81,6 +97,9 @@ class Silo_Admin {
 		echo '<noscript><p class="silo-noscript">' . esc_html__( 'Silo needs JavaScript enabled to show live cache data.', 'silo-connector' ) . '</p></noscript></div>';
 	}
 
+	/**
+	 * Activation redirect.
+	 */
 	public static function activation_redirect(): void {
 		if ( ! get_transient( 'silo_activation_redirect' ) ) {
 			return;
@@ -93,6 +112,9 @@ class Silo_Admin {
 		exit;
 	}
 
+	/**
+	 * Notice connect.
+	 */
 	public static function notice_connect(): void {
 		if ( Silo_Settings::is_connected() || self::is_screen() || ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
@@ -110,11 +132,16 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * Notice missing woocommerce.
+	 */
 	public static function notice_missing_woocommerce(): void {
 		echo '<div class="notice notice-error"><p>' . esc_html__( 'Silo for WooCommerce requires WooCommerce to be installed and active.', 'silo-connector' ) . '</p></div>';
 	}
 
 	/**
+	 * Action links.
+	 *
 	 * @param array $links Plugin action links.
 	 */
 	public static function action_links( $links ): array {
@@ -133,52 +160,60 @@ class Silo_Admin {
 		$connected = Silo_Settings::is_connected();
 
 		return array(
-			'connected' => $connected,
-			'site'      => array(
+			'connected'    => $connected,
+			'site'         => array(
 				'host' => Silo_Settings::site_host(),
 				'home' => home_url( '/' ),
 				'shop' => function_exists( 'wc_get_page_permalink' ) ? (string) wc_get_page_permalink( 'shop' ) : '',
 				'name' => get_bloginfo( 'name' ),
 			),
-			'store'     => $store,
-			'saas_url'  => $saas,
+			'store'        => $store,
+			'saas_url'     => $saas,
 			'saas_default' => Silo_Settings::build_value( 'saas_url' ),
-			'dashboard' => ( '' !== $saas && ! empty( $store['id'] ) ) ? $saas . '/dashboard/stores/' . rawurlencode( (string) $store['id'] ) : '',
-			'key_hint'  => '' !== $key ? substr( $key, 0, 8 ) . '•••' . substr( $key, -4 ) : '',
-			'version'   => SILO_VERSION,
-			'stats'     => $connected ? Silo_Stats::summary() : null,
-			'inventory' => $connected ? Silo_Page_Cache::inventory() : null,
-			'events24'  => $connected ? Silo_Log::count_last_day() : null,
-			'events'    => $connected ? Silo_Log::recent( 25 ) : array(),
-			'queued'    => $connected ? Silo_Log::count_state( 'queued' ) : 0,
-			'warmup'    => $connected ? Silo_Warmup::snapshot( 24 ) : null,
-			'scan'      => Silo_Scanner::public_state(),
-			'heartbeat' => array(
+			'dashboard'    => ( '' !== $saas && ! empty( $store['id'] ) ) ? $saas . '/dashboard/stores/' . rawurlencode( (string) $store['id'] ) : '',
+			'key_hint'     => '' !== $key ? substr( $key, 0, 8 ) . '•••' . substr( $key, -4 ) : '',
+			'version'      => SILO_VERSION,
+			'stats'        => $connected ? Silo_Stats::summary() : null,
+			'inventory'    => $connected ? Silo_Page_Cache::inventory() : null,
+			'events24'     => $connected ? Silo_Log::count_last_day() : null,
+			'events'       => $connected ? Silo_Log::recent( 25 ) : array(),
+			'queued'       => $connected ? Silo_Log::count_state( 'queued' ) : 0,
+			'warmup'       => $connected ? Silo_Warmup::snapshot( 24 ) : null,
+			'scan'         => Silo_Scanner::public_state(),
+			'heartbeat'    => array(
 				'ok'    => (int) get_option( 'silo_hb_ok', 0 ),
 				'sent'  => (int) get_option( 'silo_hb_last', 0 ),
 				'ms'    => (int) get_option( 'silo_hb_ms', 0 ),
 				'error' => (string) get_option( 'silo_hb_error', '' ),
 			),
-			'env'       => Silo_Status::compact(),
-			'settings'  => Silo_Settings::all(),
-			'config'    => array(
+			'env'          => Silo_Status::compact(),
+			'settings'     => Silo_Settings::all(),
+			'config'       => array(
 				'version'  => (int) ( $config['version'] ?? 0 ),
 				'tier'     => (string) ( $config['tier'] ?? ( $store['tier'] ?? '' ) ),
 				'ttl'      => (array) ( $config['ttl'] ?? array() ),
 				'variants' => (array) ( $config['variants'] ?? array() ),
 				'limits'   => (array) ( $config['limits'] ?? array() ),
 			),
-			'now'       => time(),
+			'now'          => time(),
 		);
 	}
 
-	private static function guard(): void {
-		check_ajax_referer( 'silo_admin', 'nonce' );
+	/**
+	 * Guard.
+	 */
+	private static function require_capability(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'You do not have permission to manage Silo.', 'silo-connector' ) ), 403 );
 		}
 	}
 
+	/**
+	 * Fail.
+	 *
+	 * @param string $message Message.
+	 * @param int    $status Status.
+	 */
 	private static function fail( string $message, int $status = 400 ): void {
 		wp_send_json_error( array( 'message' => $message ), $status );
 	}
@@ -187,7 +222,8 @@ class Silo_Admin {
 	 * Poll endpoint. Also keeps the heartbeat and event dispatch moving while someone watches.
 	 */
 	public static function ajax_live(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		if ( Silo_Settings::is_connected() ) {
 			Silo_Events::maybe_kick();
 			Silo_Page_Cache::drain_refresh_queue();
@@ -198,8 +234,12 @@ class Silo_Admin {
 		wp_send_json_success( self::live_state() );
 	}
 
+	/**
+	 * AJAX handler: connect.
+	 */
 	public static function ajax_connect(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$key  = isset( $_POST['key'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['key'] ) ) ) : '';
 		$saas = isset( $_POST['saas_url'] ) ? untrailingslashit( esc_url_raw( wp_unslash( $_POST['saas_url'] ) ) ) : '';
 		if ( '' === $saas ) {
@@ -223,7 +263,7 @@ class Silo_Admin {
 		}
 
 		update_option( 'silo_api_key', $key, false );
-		if ( $saas !== Silo_Settings::build_value( 'saas_url' ) ) {
+		if ( Silo_Settings::build_value( 'saas_url' ) !== $saas ) {
 			update_option( 'silo_saas_url', $saas, false );
 		} else {
 			delete_option( 'silo_saas_url' );
@@ -242,13 +282,21 @@ class Silo_Admin {
 		wp_send_json_success( self::live_state() );
 	}
 
+	/**
+	 * AJAX handler: scan step.
+	 */
 	public static function ajax_scan_step(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		wp_send_json_success( Silo_Scanner::public_state( Silo_Scanner::step() ) );
 	}
 
+	/**
+	 * AJAX handler: scan start.
+	 */
 	public static function ajax_scan_start(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		if ( ! Silo_Settings::is_connected() ) {
 			self::fail( __( 'Connect the store first.', 'silo-connector' ) );
 		}
@@ -256,8 +304,12 @@ class Silo_Admin {
 		wp_send_json_success( Silo_Scanner::public_state( $state ) );
 	}
 
+	/**
+	 * AJAX handler: purge all.
+	 */
 	public static function ajax_purge_all(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$count = Silo_Page_Cache::purge_everything( true );
 		Silo_Events::log_purge_all( 'admin', $count, Silo_Settings::is_connected() );
 		wp_send_json_success(
@@ -268,8 +320,12 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * AJAX handler: warm priority.
+	 */
 	public static function ajax_warm_priority(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$response = Silo_Api::post( '/api/warmup/request', array( 'reason' => 'manual' ), 15 );
 		if ( is_wp_error( $response ) || 200 !== $response['code'] ) {
 			self::fail( Silo_Api::error_message( $response ), 502 );
@@ -285,8 +341,12 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * AJAX handler: save settings.
+	 */
 	public static function ajax_save_settings(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$raw      = isset( $_POST['settings'] ) ? json_decode( wp_unslash( $_POST['settings'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$before   = Silo_Settings::all();
 		$settings = Silo_Settings::update( is_array( $raw ) ? $raw : array() );
@@ -303,19 +363,31 @@ class Silo_Admin {
 		wp_send_json_success( self::live_state() );
 	}
 
+	/**
+	 * AJAX handler: disconnect.
+	 */
 	public static function ajax_disconnect(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		Silo_Settings::disconnect();
 		wp_send_json_success( self::live_state() );
 	}
 
+	/**
+	 * AJAX handler: checks.
+	 */
 	public static function ajax_checks(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		wp_send_json_success( Silo_Status::checks( true ) );
 	}
 
+	/**
+	 * AJAX handler: entries.
+	 */
 	public static function ajax_entries(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		wp_send_json_success(
 			array(
 				'entries'   => Silo_Page_Cache::entries( 300 ),
@@ -324,8 +396,12 @@ class Silo_Admin {
 		);
 	}
 
+	/**
+	 * AJAX handler: events.
+	 */
 	public static function ajax_events(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$group  = isset( $_POST['group'] ) ? sanitize_key( wp_unslash( $_POST['group'] ) ) : '';
 		$before = isset( $_POST['before'] ) ? absint( $_POST['before'] ) : 0;
 		wp_send_json_success( Silo_Log::recent( 40, $group, $before ) );
@@ -336,7 +412,8 @@ class Silo_Admin {
 	 */
 	public static function ajax_export(): void {
 		global $wpdb;
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
 
 		switch ( $kind ) {
@@ -371,20 +448,20 @@ class Silo_Admin {
 			case 'diagnostics':
 				wp_send_json_success(
 					array(
-						'generated_at' => gmdate( 'c' ),
-						'site'         => home_url( '/' ),
-						'connector'    => SILO_VERSION,
-						'wordpress'    => get_bloginfo( 'version' ),
-						'woocommerce'  => defined( 'WC_VERSION' ) ? WC_VERSION : '',
-						'php'          => PHP_VERSION,
-						'checks'       => Silo_Status::checks( false ),
-						'environment'  => Silo_Status::compact(),
-						'settings'     => Silo_Settings::all(),
-						'profile'      => Silo_Settings::remote_config(),
-						'stats'        => Silo_Stats::summary(),
-						'inventory'    => Silo_Page_Cache::inventory( true ),
-						'warmup'       => Silo_Warmup::counts(),
-						'last_scan'    => Silo_Scanner::public_state(),
+						'generated_at'   => gmdate( 'c' ),
+						'site'           => home_url( '/' ),
+						'connector'      => SILO_VERSION,
+						'wordpress'      => get_bloginfo( 'version' ),
+						'woocommerce'    => defined( 'WC_VERSION' ) ? WC_VERSION : '',
+						'php'            => PHP_VERSION,
+						'checks'         => Silo_Status::checks( false ),
+						'environment'    => Silo_Status::compact(),
+						'settings'       => Silo_Settings::all(),
+						'profile'        => Silo_Settings::remote_config(),
+						'stats'          => Silo_Stats::summary(),
+						'inventory'      => Silo_Page_Cache::inventory( true ),
+						'warmup'         => Silo_Warmup::counts(),
+						'last_scan'      => Silo_Scanner::public_state(),
 						'active_plugins' => array_values( (array) get_option( 'active_plugins', array() ) ),
 					)
 				);
@@ -394,8 +471,12 @@ class Silo_Admin {
 		}
 	}
 
+	/**
+	 * AJAX handler: event.
+	 */
 	public static function ajax_event(): void {
-		self::guard();
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
 		$event = Silo_Log::find( isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0 );
 		if ( ! $event ) {
 			self::fail( __( 'Event not found.', 'silo-connector' ), 404 );

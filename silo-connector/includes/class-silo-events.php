@@ -96,6 +96,9 @@ class Silo_Events {
 	 */
 	private static $registered = false;
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( self::DISPATCH_HOOK, array( __CLASS__, 'dispatch' ) );
 
@@ -109,7 +112,7 @@ class Silo_Events {
 		add_action( 'woocommerce_product_object_updated_props', array( __CLASS__, 'on_updated_props' ), 20, 2 );
 		add_action( 'post_updated', array( __CLASS__, 'on_post_updated' ), 20, 3 );
 		add_action( 'transition_post_status', array( __CLASS__, 'on_status_transition' ), 20, 3 );
-		add_action( 'woocommerce_product_set_visibility', array( __CLASS__, 'on_visibility' ), 20, 2 );
+		add_action( 'woocommerce_product_set_visibility', array( __CLASS__, 'on_visibility' ), 20, 1 );
 		add_action( 'wp_trash_post', array( __CLASS__, 'on_before_remove' ), 5 );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_before_remove' ), 5 );
 		add_action( 'untrashed_post', array( __CLASS__, 'on_untrashed' ), 20 );
@@ -147,10 +150,11 @@ class Silo_Events {
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrade' ), 20, 2 );
 	}
 
-	/* --------------------------------------------------------------------- */
-	/* Collection                                                             */
-	/* --------------------------------------------------------------------- */
+	// Collection.
 
+	/**
+	 * Register flush.
+	 */
 	private static function register_flush(): void {
 		if ( ! self::$registered ) {
 			self::$registered = true;
@@ -194,6 +198,9 @@ class Silo_Events {
 		self::register_flush();
 	}
 
+	/**
+	 * Context.
+	 */
 	private static function context(): string {
 		if ( doing_action( 'woocommerce_scheduled_sales' ) || doing_action( Silo_Sales::HOOK ) ) {
 			return 'scheduled_sale';
@@ -213,11 +220,18 @@ class Silo_Events {
 		return is_admin() ? 'admin' : 'storefront';
 	}
 
+	/**
+	 * Whether product post.
+	 *
+	 * @param int $post_id Post ID.
+	 */
 	private static function is_product_post( int $post_id ): bool {
 		return in_array( get_post_type( $post_id ), array( 'product', 'product_variation' ), true );
 	}
 
 	/**
+	 * Hook callback: new product.
+	 *
 	 * @param int        $id      Product ID.
 	 * @param WC_Product $product Product.
 	 */
@@ -226,6 +240,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: new variation.
+	 *
 	 * @param int        $id        Variation ID.
 	 * @param WC_Product $variation Variation.
 	 */
@@ -297,10 +313,11 @@ class Silo_Events {
 	}
 
 	/**
-	 * @param int    $product_id Product ID.
-	 * @param string $visibility New visibility.
+	 * Catalog visibility changed (shop, search, hidden).
+	 *
+	 * @param int $product_id Product ID.
 	 */
-	public static function on_visibility( $product_id, $visibility ): void {
+	public static function on_visibility( $product_id ): void {
 		self::touch( (int) $product_id, 'visibility', array( 'catalog_visibility' ) );
 	}
 
@@ -330,6 +347,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: untrashed.
+	 *
 	 * @param int $post_id Post ID.
 	 */
 	public static function on_untrashed( $post_id ): void {
@@ -339,6 +358,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: stock.
+	 *
 	 * @param WC_Product $product Product whose stock quantity was set.
 	 */
 	public static function on_stock( $product ): void {
@@ -348,6 +369,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: stock status.
+	 *
 	 * @param int        $id      Product ID.
 	 * @param string     $status  New stock status.
 	 * @param WC_Product $product Product.
@@ -357,6 +380,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: order stock reduced.
+	 *
 	 * @param WC_Order $order Order.
 	 */
 	public static function on_order_stock_reduced( $order ): void {
@@ -364,6 +389,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: order stock restored.
+	 *
 	 * @param WC_Order $order Order.
 	 */
 	public static function on_order_stock_restored( $order ): void {
@@ -371,6 +398,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: order refunded.
+	 *
 	 * @param int $order_id  Order ID.
 	 * @param int $refund_id Refund ID.
 	 */
@@ -382,6 +411,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Track order.
+	 *
 	 * @param WC_Order|mixed $order     Order.
 	 * @param string         $type      Event type.
 	 * @param int            $refund_id Refund ID.
@@ -442,11 +473,18 @@ class Silo_Events {
 		}
 	}
 
+	/**
+	 * Whether product taxonomy.
+	 *
+	 * @param string $taxonomy Taxonomy.
+	 */
 	private static function is_product_taxonomy( string $taxonomy ): bool {
 		return in_array( $taxonomy, array( 'product_cat', 'product_tag', 'product_brand' ), true ) || str_starts_with( $taxonomy, 'pa_' );
 	}
 
 	/**
+	 * Capture term link.
+	 *
 	 * @param int    $term_id  Term ID.
 	 * @param int    $tt_id    Term taxonomy ID.
 	 * @param string $taxonomy Taxonomy.
@@ -461,6 +499,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Capture term link delete.
+	 *
 	 * @param int    $term_id  Term ID.
 	 * @param string $taxonomy Taxonomy.
 	 */
@@ -469,6 +509,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: term edited.
+	 *
 	 * @param int    $term_id  Term ID.
 	 * @param int    $tt_id    Term taxonomy ID.
 	 * @param string $taxonomy Taxonomy.
@@ -480,6 +522,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: term deleted.
+	 *
 	 * @param int     $term_id      Term ID.
 	 * @param int     $tt_id        Term taxonomy ID.
 	 * @param string  $taxonomy     Taxonomy.
@@ -508,6 +552,14 @@ class Silo_Events {
 		}
 	}
 
+	/**
+	 * Track term.
+	 *
+	 * @param int          $term_id Term ID.
+	 * @param string       $taxonomy Taxonomy.
+	 * @param string       $type Type.
+	 * @param WP_Term|null $snapshot Snapshot.
+	 */
 	private static function track_term( int $term_id, string $taxonomy, string $type, ?WP_Term $snapshot = null ): void {
 		$term = $snapshot ?? get_term( $term_id, $taxonomy );
 		if ( ! $term instanceof WP_Term ) {
@@ -541,6 +593,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: comment post.
+	 *
 	 * @param int        $comment_id Comment ID.
 	 * @param int|string $approved   Approval state.
 	 */
@@ -552,6 +606,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: comment status.
+	 *
 	 * @param string     $new_status New status.
 	 * @param string     $old_status Old status.
 	 * @param WP_Comment $comment    Comment.
@@ -563,6 +619,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: option.
+	 *
 	 * @param string $option Option name.
 	 * @param mixed  $old    Old value.
 	 * @param mixed  $value  New value.
@@ -646,6 +704,9 @@ class Silo_Events {
 		self::touch( $product, 'sale', array( 'sale_price', 'price' ) );
 	}
 
+	/**
+	 * Hook callback: theme change.
+	 */
 	public static function on_theme_change(): void {
 		self::$global['system.theme'] = array(
 			'reason' => 'Theme or Customizer change',
@@ -655,6 +716,8 @@ class Silo_Events {
 	}
 
 	/**
+	 * Hook callback: upgrade.
+	 *
 	 * @param WP_Upgrader $upgrader Upgrader.
 	 * @param array       $extra    Details.
 	 */
@@ -669,9 +732,7 @@ class Silo_Events {
 		}
 	}
 
-	/* --------------------------------------------------------------------- */
-	/* Consolidation and local invalidation                                  */
-	/* --------------------------------------------------------------------- */
+	// Consolidation and local invalidation.
 
 	/**
 	 * End of request: consolidate, purge locally, persist, schedule dispatch.
@@ -754,10 +815,15 @@ class Silo_Events {
 		self::schedule_dispatch();
 	}
 
-	private static function flush_global( array $global ): void {
+	/**
+	 * Purge everything for store-wide changes and log each cause.
+	 *
+	 * @param array $changes Change type => reason and detail.
+	 */
+	private static function flush_global( array $changes ): void {
 		$started = microtime( true );
 		$count   = Silo_Page_Cache::purge_everything( false );
-		foreach ( $global as $type => $info ) {
+		foreach ( $changes as $type => $info ) {
 			Silo_Log::insert(
 				array(
 					'type'     => $type,
@@ -788,6 +854,9 @@ class Silo_Events {
 
 	/**
 	 * Full picture of a changed product (or the snapshot captured before deletion).
+	 *
+	 * @param int   $root Root.
+	 * @param array $entry Entry.
 	 */
 	private static function describe_entry( int $root, array $entry ): ?array {
 		if ( ! empty( $entry['snapshot'] ) ) {
@@ -857,6 +926,13 @@ class Silo_Events {
 		);
 	}
 
+	/**
+	 * Term URLs.
+	 *
+	 * @param int    $product_id Product ID.
+	 * @param string $taxonomy Taxonomy.
+	 * @param bool   $with_ancestors With ancestors.
+	 */
 	private static function term_urls( int $product_id, string $taxonomy, bool $with_ancestors = false ): array {
 		$terms = get_the_terms( $product_id, $taxonomy );
 		if ( ! is_array( $terms ) ) {
@@ -882,6 +958,8 @@ class Silo_Events {
 
 	/**
 	 * Archive pages of public attribute taxonomies (pa_*) the product belongs to.
+	 *
+	 * @param WC_Product $product Product.
 	 */
 	private static function attribute_urls( WC_Product $product ): array {
 		$urls = array();
@@ -894,7 +972,8 @@ class Silo_Events {
 			if ( ! $object || ! $object->public ) {
 				continue;
 			}
-			foreach ( $attribute->get_terms() ?: array() as $term ) {
+			$terms = $attribute->get_terms();
+			foreach ( is_array( $terms ) ? $terms : array() as $term ) {
 				$link = get_term_link( $term );
 				if ( is_string( $link ) ) {
 					$urls[] = $link;
@@ -906,10 +985,12 @@ class Silo_Events {
 
 	/**
 	 * Grouped products list their children with live price and stock.
+	 *
+	 * @param int $product_id Product ID.
 	 */
 	private static function grouped_parents( int $product_id ): array {
 		global $wpdb;
-		$ids = $wpdb->get_col(
+		$ids  = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT pm.post_id FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id AND p.post_status = 'publish' WHERE pm.meta_key = '_children' AND ( pm.meta_value LIKE %s OR pm.meta_value LIKE %s ) LIMIT 20",
 				'%i:' . $product_id . ';%',
@@ -925,6 +1006,8 @@ class Silo_Events {
 
 	/**
 	 * Flat list of every URL in a description.
+	 *
+	 * @param array $description Description.
 	 */
 	private static function flatten_urls( array $description ): array {
 		$urls = array();
@@ -938,6 +1021,12 @@ class Silo_Events {
 		return array_values( array_unique( $urls ) );
 	}
 
+	/**
+	 * Product event.
+	 *
+	 * @param array $description Description.
+	 * @param array $entry Entry.
+	 */
 	private static function product_event( array $description, array $entry ): array {
 		$reasons = array_keys( $entry['reasons'] );
 		$props   = $entry['props'];
@@ -984,6 +1073,13 @@ class Silo_Events {
 		);
 	}
 
+	/**
+	 * Order event.
+	 *
+	 * @param int   $order_id Order ID.
+	 * @param array $order Order.
+	 * @param array $items Items.
+	 */
 	private static function order_event( int $order_id, array $order, array $items ): array {
 		$ids = array();
 		foreach ( $items as $item ) {
@@ -1019,6 +1115,12 @@ class Silo_Events {
 		);
 	}
 
+	/**
+	 * Term event.
+	 *
+	 * @param int   $term_id Term ID.
+	 * @param array $term Term.
+	 */
 	private static function term_event( int $term_id, array $term ): array {
 		$labels = array(
 			'product_cat'   => 'category',
@@ -1048,6 +1150,11 @@ class Silo_Events {
 		);
 	}
 
+	/**
+	 * Detail line.
+	 *
+	 * @param array $description Description.
+	 */
 	private static function detail_line( array $description ): string {
 		$parts = array();
 		if ( ! empty( $description['variations'] ) ) {
@@ -1068,10 +1175,13 @@ class Silo_Events {
 		return implode( ' · ', $parts );
 	}
 
-	/* --------------------------------------------------------------------- */
-	/* Dispatch to Silo                                                       */
-	/* --------------------------------------------------------------------- */
+	// Dispatch to Silo.
 
+	/**
+	 * Schedule dispatch.
+	 *
+	 * @param int $delay Delay.
+	 */
 	public static function schedule_dispatch( int $delay = 0 ): void {
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
 			if ( ! as_has_scheduled_action( self::DISPATCH_HOOK, array(), 'silo' ) ) {
@@ -1146,7 +1256,7 @@ class Silo_Events {
 			}
 
 			if ( 401 === $response['code'] || 403 === $response['code'] ) {
-				update_option( 'silo_auth_error', Silo_Api::error_message( $response ), false );
+				Silo_Settings::set_auth_error( Silo_Api::error_message( $response ) );
 				foreach ( $rows as $row ) {
 					Silo_Log::update( (int) $row->id, array( 'state' => 'failed' ) );
 				}
@@ -1160,7 +1270,7 @@ class Silo_Events {
 				return;
 			}
 
-			delete_option( 'silo_auth_error' );
+			Silo_Settings::set_auth_error( '' );
 			$results = array();
 			foreach ( (array) ( $response['body']['results'] ?? array() ) as $result ) {
 				if ( isset( $result['ref'] ) ) {
@@ -1241,6 +1351,8 @@ class Silo_Events {
 	 * Record a site-wide purge requested from either dashboard.
 	 *
 	 * @param string $origin 'admin' or 'silo'.
+	 * @param int    $pages Pages.
+	 * @param bool   $send Send.
 	 */
 	public static function log_purge_all( string $origin, int $pages, bool $send ): void {
 		Silo_Log::insert(

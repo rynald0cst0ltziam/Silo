@@ -17,6 +17,9 @@ class Silo_Api {
 
 	/**
 	 * Request headers for a body signed with the given key.
+	 *
+	 * @param string      $body Body.
+	 * @param string|null $key Key.
 	 */
 	public static function headers( string $body, ?string $key = null ): array {
 		$key       = $key ?? Silo_Settings::api_key();
@@ -35,6 +38,12 @@ class Silo_Api {
 	/**
 	 * POST JSON to the Silo API.
 	 *
+	 * @param string      $path Path.
+	 * @param array       $data Data.
+	 * @param int         $timeout Timeout.
+	 * @param bool        $blocking Blocking.
+	 * @param string|null $key Key.
+	 * @param string|null $base Base.
 	 * @return array{code:int,body:array,ms:int}|WP_Error
 	 */
 	public static function post( string $path, array $data, int $timeout = 15, bool $blocking = true, ?string $key = null, ?string $base = null ) {
@@ -101,6 +110,8 @@ class Silo_Api {
 
 	/**
 	 * Verify a signed request from Silo (permission callback for inbound REST routes).
+	 *
+	 * @param WP_REST_Request $request Request.
 	 */
 	public static function verify( WP_REST_Request $request ): bool {
 		$key = Silo_Settings::api_key();
@@ -114,7 +125,29 @@ class Silo_Api {
 			return false;
 		}
 
-		$expected = hash_hmac( 'sha256', $timestamp . '.' . $request->get_body(), $key );
-		return hash_equals( $expected, $signature );
+		$v2 = (string) $request->get_header( 'x_silo_signature_v2' );
+		if ( '' !== $v2 ) {
+			// Bound to method and route: a signature for one endpoint is useless on another.
+			$signature = $v2;
+			$expected  = hash_hmac( 'sha256', $timestamp . '.' . $request->get_method() . ' ' . $request->get_route() . '.' . $request->get_body(), $key );
+			if ( ! get_option( 'silo_sig_v2' ) ) {
+				update_option( 'silo_sig_v2', 1, false );
+			}
+		} elseif ( get_option( 'silo_sig_v2' ) ) {
+			return false; // Silo signs with v2 now; a v1-only request is a downgrade attempt.
+		} else {
+			$expected = hash_hmac( 'sha256', $timestamp . '.' . $request->get_body(), $key );
+		}
+		if ( ! hash_equals( $expected, $signature ) ) {
+			return false;
+		}
+
+		// Each signature is accepted once: a captured request cannot be replayed inside the window.
+		$seen = 'silo_sig_' . substr( $signature, 0, 40 );
+		if ( get_transient( $seen ) ) {
+			return false;
+		}
+		set_transient( $seen, 1, 330 );
+		return true;
 	}
 }

@@ -59,7 +59,7 @@ export default function PrivacyPage() {
       <p>
         Silo does not receive your customers&apos; names, addresses, email addresses, order
         contents, cart contents or payment details. Cart, checkout and account requests are
-        forwarded at the edge and are never stored in the shared cache. If a support request
+        forwarded by the connector and are never stored in the shared cache. If a support request
         includes customer data, we ask you to redact it before sending.
       </p>
 
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
       <ul>
         <li>To provide the service: authenticate you, connect stores, run invalidations and warmup.</li>
         <li>To operate billing, trials, refunds and support.</li>
-        <li>To secure the service, detect abuse and debug connector or edge failures.</li>
+        <li>To secure the service, detect abuse and debug connector or cache failures.</li>
         <li>To improve the product using aggregated, de-identified usage patterns.</li>
         <li>To meet legal, tax and accounting obligations.</li>
       </ul>

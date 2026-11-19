@@ -70,6 +70,29 @@ export async function POST(req: Request) {
       continue;
     }
 
+    // Connector retries after timeouts: an event already recorded is answered again, never re-counted.
+    if (ref) {
+      const existing = await prisma.event.findFirst({
+        where: { storeId: store.id, meta: { path: ["ref"], equals: ref } },
+        select: { id: true, purgeUrls: true, warmUrls: true, durationMs: true, meta: true },
+      });
+      if (existing) {
+        const job = await prisma.warmupJob.findFirst({ where: { eventId: existing.id }, select: { id: true } });
+        const meta = (existing.meta ?? {}) as { store_api?: unknown };
+        results.push({
+          ref,
+          event_id: existing.id,
+          purge: existing.purgeUrls ?? [],
+          warm: existing.warmUrls ?? [],
+          store_api: meta.store_api ?? { mode: "products", product_ids: [] },
+          warmup_job_id: job?.id ?? null,
+          duration_ms: existing.durationMs ?? 0,
+          duplicate: true,
+        });
+        continue;
+      }
+    }
+
     const countsAgainstPlan = isCounted(type);
     if (countsAgainstPlan && used >= tier.maxMonthlyEvents) {
       results.push({ ref, error: `Monthly event limit reached (${used.toLocaleString()}/${tier.maxMonthlyEvents.toLocaleString()})`, code: "EVENT_LIMIT" });

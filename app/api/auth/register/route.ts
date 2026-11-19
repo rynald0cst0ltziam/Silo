@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rl = rateLimit(req);
+  if (!rl.allowed) return rl.response!;
+
   let body: { email: string; password: string; name?: string };
   try {
     body = await req.json();
@@ -14,6 +18,14 @@ export async function POST(req: Request) {
 
   if (!email?.trim() || !password) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+  }
+
+  if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+  }
+
+  if (typeof password !== "string" || password.length > 200) {
+    return NextResponse.json({ error: "Password is too long" }, { status: 400 });
   }
 
   if (password.length < 8) {
@@ -37,7 +49,7 @@ export async function POST(req: Request) {
       data: {
         email: email.trim().toLowerCase(),
         passwordHash,
-        name: name?.trim() || null,
+        name: typeof name === "string" && name.trim() ? name.trim().slice(0, 120) : null,
       },
     });
 

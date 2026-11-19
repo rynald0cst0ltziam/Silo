@@ -30,22 +30,33 @@ class Silo_Store_API_Cache {
 	 */
 	private static $served = '';
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'serve' ), 10, 3 );
 		add_filter( 'rest_post_dispatch', array( __CLASS__, 'store' ), 99, 3 );
 	}
 
+	/**
+	 * Config.
+	 */
 	private static function config(): ?array {
 		$config = silo_load_site_config( Silo_Settings::site_dir() );
 		return ( $config && ! empty( $config['store_api'] ) ) ? $config : null;
 	}
 
+	/**
+	 * Dir.
+	 */
 	private static function dir(): string {
 		return Silo_Settings::site_dir() . 'api/';
 	}
 
 	/**
 	 * Only anonymous, nonce-free GETs on catalog routes qualify.
+	 *
+	 * @param WP_REST_Request $request Request.
 	 */
 	private static function eligible( WP_REST_Request $request ): bool {
 		if ( 'GET' !== $request->get_method() || ! preg_match( self::CACHEABLE, $request->get_route() ) ) {
@@ -64,14 +75,19 @@ class Silo_Store_API_Cache {
 		return empty( $config['variants']['country'] ) || null !== silo_request_country( $_SERVER );
 	}
 
+	/**
+	 * Key.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
 	private static function key( WP_REST_Request $request ): string {
 		$params = $request->get_query_params();
 		unset( $params['_locale'] );
 		ksort( $params );
 		$config   = (array) self::config();
 		$variants = (array) ( $config['variants'] ?? array() );
-		$currency = ! empty( $variants['currency'] ) ? silo_request_currency( $_GET, $_COOKIE ) : '';
-		$language = ! empty( $variants['language_cookie'] ) ? silo_request_language( $_GET, $_COOKIE ) : '';
+		$currency = ! empty( $variants['currency'] ) ? silo_request_currency( $_GET, $_COOKIE ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only storefront variant (currency), sanitised by silo_token().
+		$language = ! empty( $variants['language_cookie'] ) ? silo_request_language( $_GET, $_COOKIE ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only storefront variant (language), sanitised by silo_token().
 		$country  = ! empty( $variants['country'] ) ? (string) silo_request_country( $_SERVER ) : '';
 
 		return md5( $request->get_route() . '|' . wp_json_encode( $params ) . '|' . $currency . '|' . $language . '|' . $country );

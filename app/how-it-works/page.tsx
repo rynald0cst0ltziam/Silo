@@ -221,7 +221,7 @@ export default function HowItWorksPage() {
               </h2>
             </div>
             <p className="lede-dark max-w-[410px]">
-              Not a checkbox. Not an exclusion list someone forgets to update. The edge decides
+              Not a checkbox. Not an exclusion list someone forgets to update. The connector decides
               before a cache key exists.
             </p>
           </div>
@@ -276,15 +276,15 @@ export default function HowItWorksPage() {
               <div>
                 <p className="text-[14px] font-medium">If the connector goes dark, Silo fails closed.</p>
                 <p className="mt-1 max-w-[620px] text-[12.5px] leading-relaxed text-paper/45">
-                  No confirmed catalog state means no cached storefront HTML for that store. The
-                  edge forwards to your origin until the heartbeat returns. Stale stock is worse
-                  than a slower page.
+                  Changes are purged on your server even when Silo is unreachable. If the connector is
+                  deactivated or its key is rejected, cached pages stop being served and every request
+                  goes to WooCommerce. Stale stock is worse than a slower page.
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 font-mono text-[9px] text-paper/35">
               <ShieldCheck className="h-3.5 w-3.5 text-mint/70" />
-              heartbeat &lt; 30s
+              on-site purge first
             </div>
           </div>
         </div>

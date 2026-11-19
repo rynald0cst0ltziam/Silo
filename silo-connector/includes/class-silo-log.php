@@ -20,11 +20,19 @@ class Silo_Log {
 
 	const KEEP_ROWS = 2000;
 
+	/**
+	 * Table.
+	 */
 	public static function table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'silo_events';
 	}
 
+	/**
+	 * Insert.
+	 *
+	 * @param array $row Row.
+	 */
 	public static function insert( array $row ): int {
 		global $wpdb;
 		$now = current_time( 'mysql', true );
@@ -49,6 +57,12 @@ class Silo_Log {
 		return (int) $wpdb->insert_id;
 	}
 
+	/**
+	 * Update.
+	 *
+	 * @param int   $id ID.
+	 * @param array $changes Changes.
+	 */
 	public static function update( int $id, array $changes ): void {
 		global $wpdb;
 		foreach ( array( 'payload', 'scope' ) as $json ) {
@@ -60,22 +74,38 @@ class Silo_Log {
 		$wpdb->update( self::table(), $changes, array( 'id' => $id ) );
 	}
 
+	/**
+	 * Ref.
+	 */
 	public static function ref(): string {
 		return str_replace( '-', '', wp_generate_uuid4() );
 	}
 
+	/**
+	 * Queued.
+	 *
+	 * @param int $limit Limit.
+	 */
 	public static function queued( int $limit = 25 ): array {
 		global $wpdb;
 		$table = self::table();
 		return (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE state = 'queued' ORDER BY id ASC LIMIT %d", $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
+	/**
+	 * Count state.
+	 *
+	 * @param string $state State.
+	 */
 	public static function count_state( string $state ): int {
 		global $wpdb;
 		$table = self::table();
 		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE state = %s", $state ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
+	/**
+	 * Oldest queued age.
+	 */
 	public static function oldest_queued_age(): int {
 		global $wpdb;
 		$table  = self::table();
@@ -102,6 +132,11 @@ class Silo_Log {
 
 	/**
 	 * Rows for the admin UI, newest first.
+	 *
+	 * @param int    $limit Limit.
+	 * @param string $group Group.
+	 * @param int    $before_id Before ID.
+	 * @param bool   $with_detail With detail.
 	 */
 	public static function recent( int $limit = 30, string $group = '', int $before_id = 0, bool $with_detail = false ): array {
 		global $wpdb;
@@ -137,6 +172,11 @@ class Silo_Log {
 		return array_map( array( __CLASS__, 'present' ), $rows );
 	}
 
+	/**
+	 * Find.
+	 *
+	 * @param int $id ID.
+	 */
 	public static function find( int $id ): ?array {
 		global $wpdb;
 		$table = self::table();
@@ -146,6 +186,9 @@ class Silo_Log {
 
 	/**
 	 * Mark every event whose warmup job finished.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param string $state State.
 	 */
 	public static function complete_warm_job( string $job_id, string $state ): void {
 		global $wpdb;
@@ -165,6 +208,9 @@ class Silo_Log {
 		);
 	}
 
+	/**
+	 * Prune.
+	 */
 	public static function prune(): void {
 		global $wpdb;
 		$table = self::table();
@@ -176,6 +222,8 @@ class Silo_Log {
 
 	/**
 	 * Shape a row for JSON output.
+	 *
+	 * @param array $row Row.
 	 */
 	private static function present( array $row ): array {
 		$out = array(

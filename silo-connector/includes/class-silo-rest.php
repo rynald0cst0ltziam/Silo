@@ -13,10 +13,16 @@ defined( 'ABSPATH' ) || exit;
  */
 class Silo_Rest {
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
 	}
 
+	/**
+	 * Routes.
+	 */
 	public static function routes(): void {
 		$routes = array(
 			'/status'      => array( 'GET', 'status' ),
@@ -41,11 +47,19 @@ class Silo_Rest {
 		}
 	}
 
+	/**
+	 * Status.
+	 */
 	public static function status(): WP_REST_Response {
 		update_option( 'silo_hb_ok', time(), false );
 		return new WP_REST_Response( Silo_Heartbeat::payload(), 200 );
 	}
 
+	/**
+	 * Purge.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
 	public static function purge( WP_REST_Request $request ): WP_REST_Response {
 		if ( $request->get_param( 'all' ) ) {
 			$reset = false !== $request->get_param( 'reset_stats' );
@@ -80,6 +94,9 @@ class Silo_Rest {
 		);
 	}
 
+	/**
+	 * Reset stats.
+	 */
 	public static function reset_stats(): WP_REST_Response {
 		$stats = Silo_Stats::reset();
 		return new WP_REST_Response(
@@ -91,16 +108,37 @@ class Silo_Rest {
 		);
 	}
 
+	/**
+	 * Scan.
+	 */
 	public static function scan(): WP_REST_Response {
 		if ( Silo_Scanner::is_running() ) {
-			return new WP_REST_Response( array( 'started' => false, 'running' => true, 'state' => Silo_Scanner::public_state() ), 200 );
+			return new WP_REST_Response(
+				array(
+					'started' => false,
+					'running' => true,
+					'state'   => Silo_Scanner::public_state(),
+				),
+				200
+			);
 		}
 		$state = Silo_Scanner::start_background( 'silo' );
-		return new WP_REST_Response( array( 'started' => true, 'state' => Silo_Scanner::public_state( $state ) ), 202 );
+		return new WP_REST_Response(
+			array(
+				'started' => true,
+				'state'   => Silo_Scanner::public_state( $state ),
+			),
+			202
+		);
 	}
 
+	/**
+	 * Cached URLs.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
 	public static function cached_urls( WP_REST_Request $request ): WP_REST_Response {
-		$limit = max( 1, min( 500, (int) ( $request->get_param( 'limit' ) ?: 100 ) ) );
+		$limit = max( 1, min( 500, (int) ( $request->get_param( 'limit' ) ? $request->get_param( 'limit' ) : 100 ) ) );
 		return new WP_REST_Response(
 			array(
 				'cached_urls' => Silo_Page_Cache::entries( $limit ),
@@ -111,6 +149,11 @@ class Silo_Rest {
 		);
 	}
 
+	/**
+	 * Apply.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
 	public static function apply( WP_REST_Request $request ): WP_REST_Response {
 		$config  = $request->get_param( 'config' );
 		$applied = is_array( $config ) && Silo_Settings::apply_remote_config( $config );
@@ -123,7 +166,7 @@ class Silo_Rest {
 		}
 		$warm = array_filter( (array) $request->get_param( 'warm' ), 'is_string' );
 		if ( $warm ) {
-			$warmed = Silo_Warmup::enqueue( $warm, (string) ( $request->get_param( 'job_id' ) ?: 'apply' ), 'apply' );
+			$warmed = Silo_Warmup::enqueue( $warm, (string) ( $request->get_param( 'job_id' ) ? $request->get_param( 'job_id' ) : 'apply' ), 'apply' );
 		}
 
 		return new WP_REST_Response(
@@ -137,12 +180,17 @@ class Silo_Rest {
 		);
 	}
 
+	/**
+	 * Warm.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
 	public static function warm( WP_REST_Request $request ): WP_REST_Response {
 		$urls = array_filter( (array) $request->get_param( 'urls' ), 'is_string' );
 		if ( ! $urls ) {
 			return new WP_REST_Response( array( 'error' => 'No URLs provided' ), 400 );
 		}
-		$queued = Silo_Warmup::enqueue( $urls, (string) ( $request->get_param( 'job_id' ) ?: '' ), (string) ( $request->get_param( 'source' ) ?: 'silo' ) );
+		$queued = Silo_Warmup::enqueue( $urls, (string) $request->get_param( 'job_id' ), (string) ( $request->get_param( 'source' ) ? $request->get_param( 'source' ) : 'silo' ) );
 		return new WP_REST_Response( array( 'queued' => $queued ), 202 );
 	}
 }

@@ -63,7 +63,7 @@ const EVENTS = [
 const TROUBLE = [
   {
     q: "The page returns x-silo-cache: BYPASS",
-    a: "BYPASS is the safety boundary doing its job. Check for a WooCommerce session cookie, an Authorization header or a logged-in user. If the request is genuinely anonymous, confirm the connector heartbeat is under 30 seconds and that no other page cache is active on the same URL.",
+    a: "BYPASS is the safety boundary doing its job. Check for a WooCommerce session cookie, an Authorization header or a logged-in user. If the request is genuinely anonymous, confirm WooCommerce → Silo shows the connector online and that no other page cache is active on the same URL.",
   },
   {
     q: "The connector shows offline",
@@ -75,7 +75,7 @@ const TROUBLE = [
   },
   {
     q: "Warmup queue is stuck",
-    a: "Warmup is intentionally lower priority than shopper traffic. If the queue is not moving, check origin response times and 429s. Reduce warmup concurrency in Settings → Warmup. A store that rate-limits its own origin will not warm faster with more workers.",
+    a: "Warmup is intentionally lower priority than shopper traffic. If the queue is not moving, check origin response times and 429s. Lower Warmup concurrency under WooCommerce → Silo → Settings. A store that rate-limits its own origin will not warm faster with more workers.",
   },
   {
     q: "A customer sees another customer's cart",
@@ -190,9 +190,9 @@ export default function DocsPage() {
                     <p>
                       In the Silo dashboard, choose <strong>Stores → Add store</strong>. Name it,
                       enter the storefront URL, then copy the key. It begins with{" "}
-                      <code>sk_live_</code> and is scoped to one store only.
+                      <code>sk_silo_</code> and is scoped to one store only.
                     </p>
-                    <Code>{`sk_live_4f2a8c91e7b03d6a`}</Code>
+                    <Code>{`sk_silo_Qm8vT2xF9aLp3RkZ7wNcY4dH`}</Code>
                   </Step>
 
                   <Step number="2" title="Install the connector">
@@ -230,11 +230,11 @@ export default function DocsPage() {
   | grep -i x-silo
 
 x-silo-cache: HIT
-x-silo-scope: product:1042, archive:shirts, api:3f91
-x-silo-event: 01JCF8...`}</Code>
+x-silo-age: 128
+x-silo-scope: product:1042`}</Code>
                     <p>
-                      Every cached response carries the nodes it was built from. That scope is
-                      what Silo invalidates, not the whole storefront.
+                      Every cached response says what it is (a product, an archive or the shop) and how old it is.
+                      When that product changes, Silo invalidates it and its archives, not the whole storefront.
                     </p>
                   </Step>
                 </div>

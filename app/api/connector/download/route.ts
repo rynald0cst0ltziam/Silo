@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PLUGIN_DIR = path.join(process.cwd(), "silo-connector");
-const SKIP = /(^|\/)(\.[^/]+|node_modules|silo-build\.php)(\/|$)/;
+const SKIP = /(^|\/)(\.[^/]+|node_modules|silo-build\.php|phpcs\.xml\.dist)(\/|$)/;
 
 async function collect(dir: string, base = ""): Promise<ZipEntry[]> {
   const entries: ZipEntry[] = [];

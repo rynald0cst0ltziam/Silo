@@ -23,10 +23,16 @@ class Silo_Warmup {
 	const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SiloWarmup/2 (+https://getsilo.io)';
 	const UA_MOBILE  = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile SiloWarmup/2 (+https://getsilo.io)';
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( self::HOOK, array( __CLASS__, 'run' ) );
 	}
 
+	/**
+	 * Table.
+	 */
 	public static function table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'silo_warmup';
@@ -85,6 +91,11 @@ class Silo_Warmup {
 		return $added;
 	}
 
+	/**
+	 * Schedule.
+	 *
+	 * @param int $delay Delay.
+	 */
 	public static function schedule( int $delay = 0 ): void {
 		if ( ! Silo_Settings::get( 'warmup' ) ) {
 			return;
@@ -196,7 +207,7 @@ class Silo_Warmup {
 		}
 
 		$token   = Silo_Settings::warm_token();
-		$verify  = (bool) apply_filters( 'https_local_ssl_verify', false ); // Same policy WordPress applies to loopback requests.
+		$verify  = (bool) apply_filters( 'https_local_ssl_verify', false ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Same policy WordPress core applies to loopback requests.
 		$multi   = curl_multi_init(); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_multi_init -- Parallel loopback warmup with per-request timing.
 		$handles = array();
 		$headers = array();
@@ -208,7 +219,7 @@ class Silo_Warmup {
 			) as $device => $agent ) {
 				$key             = (int) $row->id . ':' . $device;
 				$headers[ $key ] = array();
-				// phpcs:disable WordPress.WP.AlternativeFunctions
+				// phpcs:disable WordPress.WP.AlternativeFunctions -- Parallel loopback warmup needs curl_multi for per-request timing.
 				$handle = curl_init( $row->url );
 				curl_setopt_array(
 					$handle,
@@ -232,12 +243,12 @@ class Silo_Warmup {
 					)
 				);
 				curl_multi_add_handle( $multi, $handle );
-				// phpcs:enable
+				// phpcs:enable WordPress.WP.AlternativeFunctions
 				$handles[ $key ] = $handle;
 			}
 		}
 
-		// phpcs:disable WordPress.WP.AlternativeFunctions
+		// phpcs:disable WordPress.WP.AlternativeFunctions -- Parallel loopback warmup needs curl_multi for per-request timing.
 		do {
 			$status = curl_multi_exec( $multi, $active );
 			if ( $active ) {
@@ -257,7 +268,7 @@ class Silo_Warmup {
 			curl_close( $handle );
 		}
 		curl_multi_close( $multi );
-		// phpcs:enable
+		// phpcs:enable WordPress.WP.AlternativeFunctions
 
 		$results = array();
 		foreach ( $rows as $row ) {
@@ -290,7 +301,7 @@ class Silo_Warmup {
 						'timeout'     => 25,
 						'redirection' => 0,
 						'user-agent'  => $agent,
-						'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ),
+						'sslverify'   => (bool) apply_filters( 'https_local_ssl_verify', false ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress core filter for loopback requests.
 						'headers'     => array( 'X-Silo-Warmup' => $token ),
 					)
 				);
@@ -309,6 +320,9 @@ class Silo_Warmup {
 
 	/**
 	 * Turn raw responses into a queue status.
+	 *
+	 * @param array $desktop Desktop.
+	 * @param array $mobile Mobile.
 	 */
 	private static function classify( array $desktop, array $mobile ): array {
 		$result = array(
@@ -388,6 +402,8 @@ class Silo_Warmup {
 
 	/**
 	 * Active queue plus recent results for the admin UI.
+	 *
+	 * @param int $recent Recent.
 	 */
 	public static function snapshot( int $recent = 40 ): array {
 		global $wpdb;

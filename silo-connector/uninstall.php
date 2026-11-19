@@ -55,6 +55,8 @@ function silo_uninstall_wp_cache_flag( $set = null ): bool {
 
 /**
  * Recursively delete a directory inside wp-content/cache/silo.
+ *
+ * @param string $dir Dir.
  */
 function silo_uninstall_rmdir( string $dir ): void {
 	if ( ! is_dir( $dir ) ) {

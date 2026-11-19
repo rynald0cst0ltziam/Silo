@@ -16,10 +16,16 @@ defined( 'ABSPATH' ) || exit;
  */
 class Silo_Stats {
 
+	/**
+	 * File.
+	 */
 	public static function file(): string {
 		return Silo_Settings::site_dir() . 'stats.json';
 	}
 
+	/**
+	 * Read.
+	 */
 	public static function read(): array {
 		$file = self::file();
 		if ( ! is_file( $file ) ) {
@@ -41,6 +47,9 @@ class Silo_Stats {
 		return is_array( $stats ) && ! empty( $stats['epoch'] ) ? wp_parse_args( $stats, silo_stats_blank() ) : self::reset();
 	}
 
+	/**
+	 * Reset.
+	 */
 	public static function reset(): array {
 		$stats = silo_stats_blank();
 		$dir   = Silo_Settings::site_dir();
@@ -51,6 +60,11 @@ class Silo_Stats {
 		return $stats;
 	}
 
+	/**
+	 * Bump.
+	 *
+	 * @param array $increments Increments.
+	 */
 	public static function bump( array $increments ): void {
 		silo_stats_bump( Silo_Settings::site_dir(), $increments );
 	}
@@ -89,11 +103,11 @@ class Silo_Stats {
 			array(
 				'by_type'        => $by_type,
 				'bypass_reasons' => $reasons,
-				'total'        => $served + (int) $stats['bypass'],
-				'hit_rate'     => $served > 0 ? round( ( (int) $stats['hits'] / $served ) * 100, 1 ) : 0.0,
-				'avg_hit_ms'   => $hit_avg,
-				'avg_miss_ms'  => $miss_av,
-				'api_hit_rate' => ( $stats['api_hits'] + $stats['api_misses'] ) > 0 ? round( ( $stats['api_hits'] / ( $stats['api_hits'] + $stats['api_misses'] ) ) * 100, 1 ) : 0.0,
+				'total'          => $served + (int) $stats['bypass'],
+				'hit_rate'       => $served > 0 ? round( ( (int) $stats['hits'] / $served ) * 100, 1 ) : 0.0,
+				'avg_hit_ms'     => $hit_avg,
+				'avg_miss_ms'    => $miss_av,
+				'api_hit_rate'   => ( $stats['api_hits'] + $stats['api_misses'] ) > 0 ? round( ( $stats['api_hits'] / ( $stats['api_hits'] + $stats['api_misses'] ) ) * 100, 1 ) : 0.0,
 			)
 		);
 	}

@@ -16,6 +16,9 @@ class Silo_Heartbeat {
 
 	const HOOK = 'silo_heartbeat';
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 		add_action( self::HOOK, array( __CLASS__, 'cron' ) );
@@ -23,6 +26,8 @@ class Silo_Heartbeat {
 	}
 
 	/**
+	 * Schedules.
+	 *
 	 * @param array $schedules Cron schedules.
 	 */
 	public static function schedules( $schedules ): array {
@@ -33,6 +38,9 @@ class Silo_Heartbeat {
 		return $schedules;
 	}
 
+	/**
+	 * Schedule.
+	 */
 	public static function schedule(): void {
 		add_filter( 'cron_schedules', array( __CLASS__, 'schedules' ) ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 		if ( ! wp_next_scheduled( self::HOOK ) ) {
@@ -40,10 +48,16 @@ class Silo_Heartbeat {
 		}
 	}
 
+	/**
+	 * Unschedule.
+	 */
 	public static function unschedule(): void {
 		wp_clear_scheduled_hook( self::HOOK );
 	}
 
+	/**
+	 * Cron.
+	 */
 	public static function cron(): void {
 		if ( ! Silo_Settings::is_connected() ) {
 			return;
@@ -71,6 +85,9 @@ class Silo_Heartbeat {
 		Silo_Page_Cache::drain_refresh_queue();
 	}
 
+	/**
+	 * Payload.
+	 */
 	public static function payload(): array {
 		$stats     = Silo_Stats::summary();
 		$inventory = Silo_Page_Cache::inventory();
@@ -104,6 +121,8 @@ class Silo_Heartbeat {
 
 	/**
 	 * Send now. Blocking sends also pick up a newer config if Silo has one.
+	 *
+	 * @param bool $blocking Blocking.
 	 */
 	public static function send( bool $blocking ): ?array {
 		update_option( 'silo_hb_last', time(), true );
@@ -115,7 +134,7 @@ class Silo_Heartbeat {
 		if ( is_wp_error( $response ) || 200 !== $response['code'] ) {
 			update_option( 'silo_hb_error', Silo_Api::error_message( $response ), false );
 			if ( ! is_wp_error( $response ) && in_array( $response['code'], array( 401, 403 ), true ) ) {
-				update_option( 'silo_auth_error', Silo_Api::error_message( $response ), false );
+				Silo_Settings::set_auth_error( Silo_Api::error_message( $response ) );
 			}
 			return null;
 		}
@@ -123,7 +142,7 @@ class Silo_Heartbeat {
 		update_option( 'silo_hb_ok', time(), false );
 		update_option( 'silo_hb_ms', (int) $response['ms'], false );
 		delete_option( 'silo_hb_error' );
-		delete_option( 'silo_auth_error' );
+		Silo_Settings::set_auth_error( '' );
 
 		if ( ! empty( $response['body']['config'] ) && is_array( $response['body']['config'] ) ) {
 			Silo_Settings::apply_remote_config( $response['body']['config'] );

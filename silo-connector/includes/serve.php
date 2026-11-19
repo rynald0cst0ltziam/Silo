@@ -56,7 +56,7 @@ if ( ! function_exists( 'silo_serve_request' ) ) {
 
 		// Warmup requests from the connector always regenerate instead of reading.
 		$warm = (string) ( $_SERVER['HTTP_X_SILO_WARMUP'] ?? '' );
-		if ( '' !== $warm && ! empty( $config['warm_token'] ) && hash_equals( (string) $config['warm_token'], $warm ) ) {
+		if ( '' !== $warm && ! empty( $config['warm_hash'] ) && hash_equals( (string) $config['warm_hash'], hash( 'sha256', $warm ) ) ) {
 			$GLOBALS['silo_request']['warmup'] = true;
 			return;
 		}

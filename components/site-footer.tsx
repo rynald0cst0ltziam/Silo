@@ -7,6 +7,7 @@ import { Logo } from "@/components/logo";
 
 const PRODUCT_LINKS = [
   { href: "/how-it-works", label: "How it works" },
+  { href: "/guide", label: "Guide" },
   { href: "/pricing", label: "Pricing" },
   { href: "/demo", label: "Dashboard demo" },
   { href: "/status", label: "System status" },

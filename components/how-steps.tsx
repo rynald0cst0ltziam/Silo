@@ -99,7 +99,7 @@ function StepVisual({ kind }: { kind: (typeof STEPS)[number]["visual"] }) {
         <div className="mt-2.5 flex items-center gap-1.5 rounded border border-white/9 bg-white/[0.02] px-2 py-1.5">
           <KeyRound className="h-2.5 w-2.5 text-paper/30" />
           <span className="font-mono text-[8px] tracking-[0.18em] text-paper/35">
-            sk_live_••••••••••••
+            sk_silo_••••••••••••
           </span>
         </div>
         <p className="mt-2 font-mono text-[7px] text-paper/25">

@@ -156,7 +156,7 @@ export function Features() {
                 </h3>
                 <p className="mt-1.5 max-w-[650px] text-[13px] leading-relaxed text-ink/55">
                   Session cookies, cart tokens, nonces and authenticated users are forwarded at
-                  the edge before a cache key exists. Zero exclusions to maintain. Zero cart
+                  your server before a cache key exists. Zero exclusions to maintain. Zero cart
                   state in shared storage.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">

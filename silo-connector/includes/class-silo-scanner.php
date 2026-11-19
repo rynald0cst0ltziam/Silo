@@ -20,10 +20,10 @@ defined( 'ABSPATH' ) || exit;
  */
 class Silo_Scanner {
 
-	const OPTION   = 'silo_scan';
-	const HOOK     = 'silo_scan_run';
-	const BATCH    = 400;
-	const STAGES   = array(
+	const OPTION = 'silo_scan';
+	const HOOK   = 'silo_scan_run';
+	const BATCH  = 400;
+	const STAGES = array(
 		'environment' => array(
 			'label'  => 'Reading store environment',
 			'from'   => 0,
@@ -56,19 +56,31 @@ class Silo_Scanner {
 		),
 	);
 
+	/**
+	 * Register hooks.
+	 */
 	public static function init(): void {
 		add_action( self::HOOK, array( __CLASS__, 'run_background' ) );
 	}
 
+	/**
+	 * State.
+	 */
 	public static function state(): array {
 		$state = get_option( self::OPTION, array() );
 		return is_array( $state ) ? $state : array();
 	}
 
+	/**
+	 * Reset.
+	 */
 	public static function reset(): void {
 		delete_option( self::OPTION );
 	}
 
+	/**
+	 * Whether running.
+	 */
 	public static function is_running(): bool {
 		$state = self::state();
 		return 'running' === ( $state['status'] ?? '' );
@@ -84,17 +96,17 @@ class Silo_Scanner {
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish'" );
 
 		$state = array(
-			'id'          => Silo_Log::ref(),
-			'status'      => 'running',
-			'origin'      => $origin,
-			'stage'       => 'environment',
-			'percent'     => 0,
-			'started_at'  => time(),
-			'finished_at' => 0,
-			'error'       => '',
-			'cursor'      => 0,
-			'total'       => $total,
-			'counts'      => array(
+			'id'              => Silo_Log::ref(),
+			'status'          => 'running',
+			'origin'          => $origin,
+			'stage'           => 'environment',
+			'percent'         => 0,
+			'started_at'      => time(),
+			'finished_at'     => 0,
+			'error'           => '',
+			'cursor'          => 0,
+			'total'           => $total,
+			'counts'          => array(
 				'products'   => 0,
 				'variations' => 0,
 				'archives'   => 0,
@@ -103,8 +115,8 @@ class Silo_Scanner {
 				'edges'      => 0,
 				'nodes'      => 0,
 			),
-			'types'       => array(),
-			'stock'       => array(
+			'types'           => array(),
+			'stock'           => array(
 				'managed'     => 0,
 				'instock'     => 0,
 				'outofstock'  => 0,
@@ -115,13 +127,13 @@ class Silo_Scanner {
 				'outofstock'  => 0,
 				'onbackorder' => 0,
 			),
-			'taxonomies'  => array(),
-			'env'         => array(),
-			'routes'      => array(),
-			'priority'    => array(),
-			'bestsellers' => array(),
-			'log'         => array(),
-			'result'      => array(),
+			'taxonomies'      => array(),
+			'env'             => array(),
+			'routes'          => array(),
+			'priority'        => array(),
+			'bestsellers'     => array(),
+			'log'             => array(),
+			'result'          => array(),
 		);
 		self::log( $state, sprintf( 'Scan started · %s published products', number_format_i18n( $total ) ) );
 		update_option( self::OPTION, $state, false );
@@ -202,6 +214,11 @@ class Silo_Scanner {
 		}
 	}
 
+	/**
+	 * Start background.
+	 *
+	 * @param string $origin Origin.
+	 */
 	public static function start_background( string $origin ): array {
 		$state = self::start( $origin );
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
@@ -212,23 +229,38 @@ class Silo_Scanner {
 		return $state;
 	}
 
+	/**
+	 * Advance.
+	 *
+	 * @param array  $state State.
+	 * @param string $next Next.
+	 */
 	private static function advance( array &$state, string $next ): void {
 		$state['stage']   = $next;
 		$state['percent'] = self::STAGES[ $next ]['from'];
 	}
 
+	/**
+	 * Log.
+	 *
+	 * @param array  $state State.
+	 * @param string $message Message.
+	 */
 	private static function log( array &$state, string $message ): void {
 		$state['log'][] = array(
 			't' => time(),
 			'm' => $message,
 		);
-		$state['log'] = array_slice( $state['log'], -14 );
+		$state['log']   = array_slice( $state['log'], -14 );
 	}
 
-	/* --------------------------------------------------------------------- */
-	/* Stages                                                                 */
-	/* --------------------------------------------------------------------- */
+	// Stages.
 
+	/**
+	 * Scan stage: environment.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_environment( array &$state ): void {
 		global $wpdb;
 
@@ -282,6 +314,11 @@ class Silo_Scanner {
 		self::advance( $state, 'catalog' );
 	}
 
+	/**
+	 * Scan stage: catalog.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_catalog( array &$state ): void {
 		global $wpdb;
 
@@ -328,7 +365,7 @@ class Silo_Scanner {
 		$state['stock']['managed'] += (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id IN ({$in}) AND meta_key = '_manage_stock' AND meta_value = 'yes'" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		// Variations: each one is its own cache node.
-		$rows = (array) $wpdb->get_results( "SELECT COALESCE(l.stock_status, 'instock') AS stock_status, COUNT(*) AS n FROM {$wpdb->posts} v LEFT JOIN {$lookup} l ON l.product_id = v.ID WHERE v.post_type = 'product_variation' AND v.post_status IN ('publish','private') AND v.post_parent IN ({$in}) GROUP BY stock_status", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$rows       = (array) $wpdb->get_results( "SELECT COALESCE(l.stock_status, 'instock') AS stock_status, COUNT(*) AS n FROM {$wpdb->posts} v LEFT JOIN {$lookup} l ON l.product_id = v.ID WHERE v.post_type = 'product_variation' AND v.post_status IN ('publish','private') AND v.post_parent IN ({$in}) GROUP BY stock_status", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$variations = 0;
 		foreach ( $rows as $row ) {
 			$variations += (int) $row['n'];
@@ -360,6 +397,11 @@ class Silo_Scanner {
 		);
 	}
 
+	/**
+	 * Scan stage: taxonomies.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_taxonomies( array &$state ): void {
 		$taxonomies = array(
 			'product_cat' => __( 'Categories', 'silo-connector' ),
@@ -406,6 +448,11 @@ class Silo_Scanner {
 		self::advance( $state, 'store_api' );
 	}
 
+	/**
+	 * Scan stage: store api.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_store_api( array &$state ): void {
 		// The full route table, filtered by prefix: namespace lookups miss Store API routes on recent WooCommerce.
 		$routes    = array_filter(
@@ -448,6 +495,11 @@ class Silo_Scanner {
 		self::advance( $state, 'priority' );
 	}
 
+	/**
+	 * Scan stage: priority.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_priority( array &$state ): void {
 		global $wpdb;
 
@@ -516,6 +568,11 @@ class Silo_Scanner {
 		self::advance( $state, 'sync' );
 	}
 
+	/**
+	 * Scan stage: sync.
+	 *
+	 * @param array $state State.
+	 */
 	private static function stage_sync( array &$state ): void {
 		$snapshot = self::snapshot( $state );
 		$response = Silo_Api::post( '/api/stores/connect', array( 'snapshot' => $snapshot ), 30 );
@@ -546,7 +603,7 @@ class Silo_Scanner {
 		$job   = (string) ( $body['warmup']['job_id'] ?? '' );
 		$added = ( $warm && '' !== $job ) ? Silo_Warmup::enqueue( $warm, $job, 'scan' ) : 0;
 
-		$state['result'] = array(
+		$state['result']  = array(
 			'config_version' => (int) ( $config['version'] ?? 0 ),
 			'tier'           => (string) ( $config['tier'] ?? '' ),
 			'warm_job'       => $job,
@@ -578,6 +635,8 @@ class Silo_Scanner {
 
 	/**
 	 * Snapshot sent to Silo when the scan completes.
+	 *
+	 * @param array $state State.
 	 */
 	public static function snapshot( array $state ): array {
 		$types     = $state['types'];
@@ -639,6 +698,11 @@ class Silo_Scanner {
 		);
 	}
 
+	/**
+	 * Conflict slug.
+	 *
+	 * @param array $conflicts Conflicts.
+	 */
 	private static function conflict_slug( array $conflicts ): ?string {
 		if ( ! $conflicts ) {
 			return null;
@@ -651,8 +715,8 @@ class Silo_Scanner {
 	 */
 	private static function languages(): array {
 		if ( defined( 'ICL_SITEPRESS_VERSION' ) ) {
-			$codes = array_keys( (array) apply_filters( 'wpml_active_languages', array(), array( 'skip_missing' => 0 ) ) );
-			$mode  = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' );
+			$codes = array_keys( (array) apply_filters( 'wpml_active_languages', array(), array( 'skip_missing' => 0 ) ) ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API filter.
+			$mode  = (int) apply_filters( 'wpml_setting', 1, 'language_negotiation_type' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML's public API filter.
 			return array(
 				'plugin' => 'WPML',
 				'codes'  => $codes,
@@ -722,6 +786,8 @@ class Silo_Scanner {
 
 	/**
 	 * Push progress to Silo so the dashboard animates the same scan.
+	 *
+	 * @param array $state State.
 	 */
 	private static function report( array $state ): void {
 		if ( '' === Silo_Settings::api_key() ) {
@@ -732,6 +798,8 @@ class Silo_Scanner {
 
 	/**
 	 * State without internal cursors, safe to render.
+	 *
+	 * @param array|null $state State.
 	 */
 	public static function public_state( ?array $state = null ): array {
 		$state = $state ?? self::state();

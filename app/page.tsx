@@ -17,7 +17,7 @@ import { PLANS } from "@/lib/content";
 import { siteUrl } from "@/lib/utils";
 
 const STATS = [
-  { value: 0.4, decimals: 1, suffix: "ms", label: "median edge lookup" },
+  { value: 0.4, decimals: 1, suffix: "ms", label: "median cache lookup" },
   { value: 99.4, decimals: 1, suffix: "%", label: "cache hit rate at steady state" },
   { value: 5, decimals: 0, suffix: "", label: "URLs touched per stock change" },
   { value: 0, decimals: 0, suffix: "", label: "cart requests ever cached" },
