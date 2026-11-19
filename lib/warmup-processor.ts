@@ -1,187 +1,110 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
+import { getUserTier } from "@/lib/tier-enforcement";
+import { callConnector, utcDay } from "@/lib/connector";
+import type { WarmResult } from "@/lib/store-live";
 
-const CONCURRENCY_LIMITS: Record<string, number> = {
-  small: 5,
-  medium: 10,
-  large: 20,
-};
+const STALE_PENDING_MS = 10 * 60 * 1000;
 
-function getConcurrency(productCount: number): number {
-  if (productCount > 10000) return CONCURRENCY_LIMITS.large;
-  if (productCount > 1000) return CONCURRENCY_LIMITS.medium;
-  return CONCURRENCY_LIMITS.small;
-}
-
-async function fetchUrl(url: string): Promise<boolean> {
+async function fetchUrl(url: string): Promise<WarmResult> {
+  const started = Date.now();
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "User-Agent": "Silo-Warmup/1.0",
-        "X-Silo-Warmup": "1",
-      },
-      signal: AbortSignal.timeout(15000),
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; SiloWarmup/2; +https://getsilo.io)" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(15_000),
+      cache: "no-store",
     });
-    return response.ok;
-  } catch {
-    return false;
+    await res.arrayBuffer();
+    const cache = (res.headers.get("x-silo-cache") ?? "").toUpperCase();
+    return {
+      url,
+      status: res.status === 200 ? (cache ? "warm" : "skipped") : "failed",
+      code: res.status,
+      ms: Date.now() - started,
+      cache,
+      error: res.status === 200 ? (cache ? "" : "Not a cacheable WooCommerce page") : `HTTP ${res.status}`,
+    };
+  } catch (err) {
+    return { url, status: "failed", code: 0, ms: Date.now() - started, error: err instanceof Error ? err.message : "Request failed" };
   }
 }
 
-async function warmBatch(urls: string[], concurrency: number): Promise<{ warmed: number; failed: string[] }> {
-  let warmed = 0;
-  const failed: string[] = [];
-
-  for (let i = 0; i < urls.length; i += concurrency) {
-    const batch = urls.slice(i, i + concurrency);
-    const results = await Promise.allSettled(batch.map(fetchUrl));
-
-    for (let j = 0; j < results.length; j++) {
-      const result = results[j];
-      if (result.status === "fulfilled" && result.value) {
-        warmed++;
-      } else {
-        failed.push(batch[j]);
-      }
-    }
-  }
-
-  return { warmed, failed };
-}
-
-export async function processWarmupJobs(maxJobs: number = 10): Promise<{
-  processed: number;
-  totalWarmed: number;
-  totalFailed: number;
-}> {
+/**
+ * Fallback: the connector normally warms its own pages. Jobs it never picked up
+ * (connector offline, background runner blocked) are warmed from here.
+ */
+export async function processWarmupJobs(maxJobs = 10) {
   const jobs = await prisma.warmupJob.findMany({
-    where: { status: "pending" },
+    where: { status: "pending", createdAt: { lt: new Date(Date.now() - STALE_PENDING_MS) } },
     orderBy: { createdAt: "asc" },
     take: maxJobs,
-    include: {
-      store: {
-        select: { profile: true },
-      },
-    },
   });
 
   let totalWarmed = 0;
   let totalFailed = 0;
 
   for (const job of jobs) {
-    await prisma.warmupJob.update({
-      where: { id: job.id },
-      data: { status: "running" },
-    });
+    await prisma.warmupJob.update({ where: { id: job.id }, data: { status: "running", startedAt: new Date(), source: `${job.source}+fallback` } });
 
-    const profile = job.store.profile as Record<string, unknown> | null;
-    const productCount = (profile?.product_count as number) ?? 0;
-    const concurrency = getConcurrency(productCount);
-    const urls = job.urls as string[];
-
-    const { warmed, failed } = await warmBatch(urls, concurrency);
-
-    // Retry failed URLs once
-    let retryWarmed = 0;
-    if (failed.length > 0) {
-      const retry = await warmBatch(failed, concurrency);
-      retryWarmed = retry.warmed;
+    const urls = (Array.isArray(job.urls) ? job.urls : []) as string[];
+    const results: WarmResult[] = [];
+    for (let i = 0; i < urls.length; i += 5) {
+      results.push(...(await Promise.all(urls.slice(i, i + 5).map(fetchUrl))));
     }
 
-    const totalJobWarmed = warmed + retryWarmed;
-    const totalJobFailed = failed.length - retryWarmed;
-    totalWarmed += totalJobWarmed;
-    totalFailed += totalJobFailed;
-
-    const finalStatus = totalJobFailed === 0
-      ? "completed"
-      : totalJobWarmed > 0
-        ? "partial"
-        : "failed";
+    const warmed = results.filter((r) => r.status !== "failed").length;
+    const failed = results.length - warmed;
+    totalWarmed += warmed;
+    totalFailed += failed;
 
     await prisma.warmupJob.update({
       where: { id: job.id },
       data: {
-        status: finalStatus,
-        progress: totalJobWarmed,
+        status: failed === 0 ? "completed" : warmed > 0 ? "partial" : "failed",
+        progress: warmed,
+        failed,
+        results: results as unknown as Prisma.InputJsonValue,
         completedAt: new Date(),
-        ...(totalJobFailed > 0 ? { error: `${totalJobFailed} URLs failed after retry` } : {}),
+        error: failed ? `${failed} URLs failed (warmed by Silo fallback)` : null,
       },
     });
 
-    // Update daily metric
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    await prisma.metric.upsert({
-      where: {
-        storeId_date: { storeId: job.storeId, date: today },
-      },
-      create: {
-        storeId: job.storeId,
-        date: today,
-        warms: totalJobWarmed,
-      },
-      update: {
-        warms: { increment: totalJobWarmed },
-      },
-    });
+    if (warmed) {
+      const day = utcDay();
+      await prisma.metric.upsert({
+        where: { storeId_date: { storeId: job.storeId, date: day } },
+        update: { warms: { increment: warmed } },
+        create: { storeId: job.storeId, date: day, warms: warmed },
+      });
+    }
   }
 
   return { processed: jobs.length, totalWarmed, totalFailed };
 }
 
-export async function runDailyPriorityWarmup(): Promise<{
-  stores: number;
-  totalWarmed: number;
-}> {
+/**
+ * Daily priority pass: bestsellers, shop and top categories, warmed by each connector.
+ */
+export async function runDailyPriorityWarmup() {
   const stores = await prisma.store.findMany({
-    where: {
-      status: "optimized",
-      config: { not: Prisma.JsonNull },
-    },
-    select: {
-      id: true,
-      url: true,
-      config: true,
-      profile: true,
-    },
+    where: { status: "optimized", config: { not: Prisma.JsonNull } },
+    select: { id: true, url: true, apiKey: true, config: true, user: { select: { subscription: true } } },
   });
 
-  let totalWarmed = 0;
-
+  let queued = 0;
   for (const store of stores) {
-    const config = store.config as Record<string, unknown> | null;
-    if (!config) continue;
+    const config = store.config as { priority_urls?: string[] } | null;
+    const tier = getUserTier(store.user.subscription);
+    const urls = (config?.priority_urls ?? []).slice(0, tier.warmupUrlsPerEvent);
+    if (!urls.length) continue;
 
-    const priorityUrls = config.priority_urls as string[] | undefined;
-    if (!priorityUrls?.length) continue;
-
-    const profile = store.profile as Record<string, unknown> | null;
-    const productCount = (profile?.product_count as number) ?? 0;
-    const concurrency = getConcurrency(productCount);
-
-    const { warmed } = await warmBatch(priorityUrls, concurrency);
-    totalWarmed += warmed;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    await prisma.metric.upsert({
-      where: {
-        storeId_date: { storeId: store.id, date: today },
-      },
-      create: {
-        storeId: store.id,
-        date: today,
-        warms: warmed,
-      },
-      update: {
-        warms: { increment: warmed },
-      },
+    const job = await prisma.warmupJob.create({
+      data: { storeId: store.id, urls, total: urls.length, status: "pending", source: "daily" },
     });
+    const pushed = await callConnector(store, "POST", "/warm", { urls, job_id: job.id, source: "daily" });
+    if (pushed.ok) queued += urls.length;
   }
 
-  return { stores: stores.length, totalWarmed };
+  return { stores: stores.length, totalWarmed: queued };
 }

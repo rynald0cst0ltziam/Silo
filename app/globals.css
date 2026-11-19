@@ -551,6 +551,15 @@
   }
 }
 
+@keyframes silo-new {
+  0% {
+    background-color: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 @keyframes sweep {
   0% {
     transform: translateX(-100%);

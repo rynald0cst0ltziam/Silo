@@ -21,7 +21,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${styles[status] ?? styles.pending}`}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[12px] uppercase tracking-wider ${styles[status] ?? styles.pending}`}
     >
       {status}
     </span>
@@ -41,10 +41,10 @@ export default async function DashboardPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-paper">
+          <h1 className="text-[26px] font-semibold tracking-tight text-paper">
             Stores
           </h1>
-          <p className="mt-1 text-[12px] text-paper/40">
+          <p className="mt-1 text-[14px] text-paper/40">
             {stores.length === 0
               ? "Connect your first WooCommerce store."
               : `${stores.length} store${stores.length !== 1 ? "s" : ""} connected`}
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/dashboard/connect"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent/90"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[15px] font-medium text-white transition hover:bg-accent/90"
         >
           <Plus className="h-3.5 w-3.5" />
           Add store
@@ -61,13 +61,13 @@ export default async function DashboardPage() {
 
       {stores.length === 0 ? (
         <div className="mt-12 flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 py-16 text-center">
-          <p className="text-[13px] text-paper/50">No stores connected yet.</p>
-          <p className="mt-1 text-[11px] text-paper/30">
+          <p className="text-[15px] text-paper/50">No stores connected yet.</p>
+          <p className="mt-1 text-[13px] text-paper/30">
             Add a store to start caching your WooCommerce catalog.
           </p>
           <Link
             href="/dashboard/connect"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-accent/90"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[15px] font-medium text-white transition hover:bg-accent/90"
           >
             <Plus className="h-3.5 w-3.5" />
             Connect your first store
@@ -83,10 +83,10 @@ export default async function DashboardPage() {
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-paper/80">
+                  <p className="truncate text-[15px] font-medium text-paper/80">
                     {store.name}
                   </p>
-                  <p className="mt-0.5 truncate font-mono text-[11px] text-paper/30">
+                  <p className="mt-0.5 truncate font-mono text-[13px] text-paper/30">
                     {store.url}
                   </p>
                 </div>
@@ -94,20 +94,20 @@ export default async function DashboardPage() {
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/6 pt-3">
                 <div>
-                  <p className="font-mono text-[10px] text-paper/25">Hit rate</p>
-                  <p className="mt-0.5 font-mono text-[13px] text-paper/70">
+                  <p className="font-mono text-[12px] text-paper/25">Hit rate</p>
+                  <p className="mt-0.5 font-mono text-[15px] text-paper/70">
                     {(store.hitRate * 100).toFixed(1)}%
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] text-paper/25">Events</p>
-                  <p className="mt-0.5 font-mono text-[13px] text-paper/70">
+                  <p className="font-mono text-[12px] text-paper/25">Events</p>
+                  <p className="mt-0.5 font-mono text-[15px] text-paper/70">
                     {store.monthlyEvents.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[10px] text-paper/25">Last seen</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-paper/40">
+                  <p className="font-mono text-[12px] text-paper/25">Last seen</p>
+                  <p className="mt-0.5 font-mono text-[13px] text-paper/40">
                     {store.lastSeenAt
                       ? new Date(store.lastSeenAt).toLocaleDateString()
                       : "—"}

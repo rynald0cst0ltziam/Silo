@@ -1,60 +1,67 @@
-=== Silo — WooCommerce Cache Connector ===
+=== Silo for WooCommerce ===
 Contributors: silosystems
-Tags: cache, woocommerce, performance, invalidation, inventory
+Tags: woocommerce, cache, page cache, store api, performance
 Requires at least: 6.4
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 8.1
+Requires Plugins: woocommerce
 WC requires at least: 8.2
-WC tested up to: 9.4
-Stable tag: 1.0.0
+WC tested up to: 9.9
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Connects your WooCommerce store to Silo for inventory-aware surgical cache invalidation.
+Inventory-aware page and Store API cache for WooCommerce, with surgical invalidation and priority warmup orchestrated by Silo.
 
 == Description ==
 
-Silo is the only cache built specifically for WooCommerce. When a stock level changes, Silo knows exactly which product page, category archive, variation payload, and Store API response to invalidate — then re-warms the pages that matter.
+Silo is a cache built only for WooCommerce catalog traffic. When stock, a price or a product changes, Silo invalidates exactly the product page, its variations, the archives that list it and the Store API responses that contain it, then re-warms the pages that matter. Everything else stays warm.
 
-This connector plugin:
+This connector:
 
-* Serves cached pages from disk with sub-millisecond lookups
-* Reports WooCommerce events (stock changes, orders, product updates) to the Silo SaaS
-* Receives and applies cache configuration from your Silo dashboard
-* Executes targeted purge and warmup instructions
-* Never caches cart, checkout, or account pages
-* Supports HPOS, Product Blocks, Store API, multilingual, and multi-currency setups
+* Scans the catalog into a graph: product types, variations, stock, categories, tags, brands, attribute archives and Store API routes.
+* Serves product pages, the shop page and product archives from disk before WordPress loads (advanced-cache.php drop-in).
+* Caches anonymous Store API catalog responses per filter set, and invalidates only the sets that can contain a changed product.
+* Listens to WooCommerce events (stock changes, order stock reductions and restores, refunds, price and sale changes, product edits, publishing, term edits, reviews) and purges on the store immediately.
+* Sends each change to Silo in the background, which resolves the full scope and warmup plan.
+* Warms priority pages from your own server for desktop and mobile, in parallel, through Action Scheduler.
+* Never caches cart, checkout, account pages or any request carrying a WooCommerce session, cart cookie, login or Authorization header.
+* Supports HPOS, Product Blocks, multilingual (WPML, Polylang, TranslatePress) and multi-currency setups.
+
+Silo does not minify assets, optimise images, clean the database or touch anything outside WooCommerce catalog caching. Keep your existing tools for those jobs, and disable their page caching.
 
 == Installation ==
 
-1. Upload the `silo-connector` folder to `/wp-content/plugins/`
-2. Activate the plugin through the 'Plugins' menu
-3. Go to WooCommerce → Silo Cache
-4. Paste your API key from your Silo dashboard
-5. The connector will handshake with Silo and begin caching
+1. In the Silo dashboard, add the store and copy its key (sk_silo_…).
+2. Download the connector from the same screen, then in WordPress go to Plugins → Add New → Upload Plugin and activate it.
+3. Open WooCommerce → Silo, paste the key and choose Connect & scan catalog.
+4. Watch the scan map the catalog. When it completes, caching and invalidation are live and priority pages warm in the background.
 
 == Frequently Asked Questions ==
 
-= Does this replace WP Rocket / LiteSpeed / W3 Total Cache? =
+= How do I confirm a page is cached? =
 
-For page caching, yes. Silo's page cache is purpose-built for WooCommerce and understands inventory. You should disable page caching in other plugins to avoid conflicts. Other features (minification, CDN, etc.) can remain active.
+Request a product page in a private window and look for the `x-silo-cache` response header: `MISS` on the first request, `HIT` afterwards. Logged-in or carted sessions show `BYPASS`, which is the session boundary working.
 
-= Does this work with HPOS? =
+= Does this replace WP Rocket, LiteSpeed or W3 Total Cache? =
 
-Yes. Silo detects HPOS automatically and uses the correct order tables.
+For WooCommerce page caching, yes. Disable page caching in those plugins (and at your host) to avoid two caches serving the same URLs. Their asset optimisation and CDN features can stay on. If another plugin owns advanced-cache.php, Silo leaves it alone and serves from plugins_loaded instead.
 
-= What about variable products? =
+= What happens on deactivation and uninstall? =
 
-Silo tracks each variation independently. When one variation's stock changes, only the affected pages are invalidated — not the entire catalog.
+Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
 
-= 1.0.0 =
-* Initial release
-* Page cache with disk-based serving via advanced-cache.php drop-in
-* WooCommerce event reporting (stock, orders, products, variations, sales)
-* Config apply endpoint for SaaS-pushed configuration
-* Concurrent warmup with tier-based URL limits
-* Admin settings page under WooCommerce menu
-* HMAC-SHA256 request signing
-* HPOS, multilingual, and multi-currency detection
+= 2.1.0 =
+* Rebuilt connector: per-URL cache addressing (every query, device, currency and language variant purged together), atomic writes, accurate hit/miss/bypass accounting.
+* Live animated catalog scan in WordPress and in the Silo dashboard.
+* Background, batched event dispatch with immediate on-site purge; checkout requests are never slowed down.
+* Parallel desktop + mobile warmup with per-URL results reported live.
+* Store API cache with a strict header whitelist and per-product invalidation.
+* New admin app: overview, catalog, invalidations, warmup, status and settings.
+* Complete cleanup on deactivation and uninstall.
+
+== Credits ==
+
+Interface typeface: Space Grotesk by Florian Karsten, licensed under the SIL Open Font License 1.1 (assets/fonts/OFL.txt).

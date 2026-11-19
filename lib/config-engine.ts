@@ -1,5 +1,9 @@
 import type { TierConfig } from "@/lib/tiers";
 
+/**
+ * Catalog snapshot sent by the connector when a scan completes.
+ * Fields after `existing_cache` were added in connector 2.1; all are optional for older connectors.
+ */
 export interface StoreSnapshot {
   url: string;
   product_count: number;
@@ -11,6 +15,32 @@ export interface StoreSnapshot {
   multi_currency: boolean;
   bestsellers: number[];
   existing_cache: string | null;
+
+  home_url?: string;
+  shop_url?: string;
+  variation_count?: number;
+  stock?: { managed?: number; instock?: number; outofstock?: number; onbackorder?: number };
+  variation_stock?: { instock?: number; outofstock?: number; onbackorder?: number };
+  hide_out_of_stock?: boolean;
+  taxonomies?: Record<string, { label: string; terms: number; archives: number; public: boolean }>;
+  attributes?: Array<{ taxonomy: string; label: string; terms: number; public: boolean }>;
+  category_count?: number;
+  tag_count?: number;
+  archive_count?: number;
+  store_api_routes?: string[];
+  private_route_count?: number;
+  language_cookie?: boolean;
+  geolocation?: string;
+  calc_taxes?: boolean;
+  currencies?: string[];
+  priority_urls?: string[];
+  exclude_paths?: string[];
+  conflicts?: string[];
+  graph?: { nodes: number; edges: number };
+  environment?: Record<string, unknown>;
+  connector_version?: string;
+  scanned_at?: string;
+  scan_ms?: number;
 }
 
 export interface SiloConfig {
@@ -23,6 +53,8 @@ export interface SiloConfig {
   variants: {
     device: boolean;
     language: string[];
+    language_cookie: boolean;
+    country: boolean;
     currency: boolean;
     geo_tax: boolean;
     attribute_filters: boolean;
@@ -55,7 +87,7 @@ export function generateConfig(
   snapshot: StoreSnapshot,
   currentVersion: number = 0,
 ): SiloConfig {
-  const languages = snapshot.multilingual?.length ? snapshot.multilingual : ["en"];
+  const languages = snapshot.multilingual?.length ? snapshot.multilingual : [];
   const isMultiLang = languages.length > 1;
   const isMultiCurrency = snapshot.multi_currency ?? false;
   const isHighVariation = snapshot.variation_complexity === "high";
@@ -63,15 +95,23 @@ export function generateConfig(
   const productCount = snapshot.product_count ?? 0;
 
   const ttl = computeTtl(productCount, hasStockMgmt);
-  const priorityUrls = snapshot.bestsellers?.length
-    ? snapshot.bestsellers.map((id) => `${snapshot.url}/?p=${id}`)
-    : [];
+  // Real permalinks from the scan. Older connectors only sent IDs; ?p= URLs redirect and cannot be cached.
+  const priorityUrls = (snapshot.priority_urls ?? []).filter((u) => typeof u === "string" && u.startsWith("http"));
 
   const storeApiVary: string[] = [];
   if (isMultiCurrency) storeApiVary.push("currency");
   if (isMultiLang) storeApiVary.push("language");
 
-  const invalidationRules = buildInvalidationRules(isHighVariation, hasStockMgmt);
+  const exclusions = [
+    "/cart",
+    "/checkout",
+    "/my-account",
+    ...(snapshot.exclude_paths ?? []),
+    "query:add-to-cart",
+    "query:wc-ajax",
+    "session:woocommerce",
+    "logged_in",
+  ];
 
   return {
     version: currentVersion + 1,
@@ -83,108 +123,63 @@ export function generateConfig(
     variants: {
       device: true,
       language: languages,
+      language_cookie: Boolean(snapshot.language_cookie) && isMultiLang,
+      // "Geolocate" (without page-caching support) renders prices per visitor country.
+      country: snapshot.geolocation === "geolocation" && Boolean(snapshot.calc_taxes),
       currency: isMultiCurrency,
       geo_tax: isMultiCurrency,
       attribute_filters: isHighVariation,
       pagination: true,
     },
-    exclusions: [
-      "/cart",
-      "/checkout",
-      "/my-account",
-      "/wp-admin",
-      "query:add-to-cart",
-      "query:removed_item",
-      "logged_in_with_cart",
-    ],
+    exclusions: [...new Set(exclusions)],
     ttl,
     priority_products: snapshot.bestsellers ?? [],
-    priority_urls: priorityUrls.slice(0, tier.warmupUrlsPerEvent),
-    invalidation_rules: invalidationRules,
+    priority_urls: priorityUrls.slice(0, Math.max(tier.warmupUrlsPerEvent, 25)),
+    invalidation_rules: buildInvalidationRules(isHighVariation, hasStockMgmt),
     store_api: {
       enabled: true,
-      endpoints: ["/wc/store/v1/products", "/wc/store/v1/cart"],
+      endpoints: snapshot.store_api_routes?.length
+        ? snapshot.store_api_routes
+        : ["/wc/store/v1/products", "/wc/store/v1/products/collection-data"],
       vary: storeApiVary,
     },
     hooks_required: [
       "woocommerce_product_object_updated_props",
       "woocommerce_product_set_stock",
       "woocommerce_variation_set_stock",
-      "woocommerce_order_status_changed",
-      "woocommerce_update_product",
-      "woocommerce_new_product_variation",
+      "woocommerce_product_set_stock_status",
+      "woocommerce_reduce_order_stock",
+      "woocommerce_restore_order_stock",
+      "woocommerce_order_refunded",
+      "woocommerce_new_product",
+      "edited_term",
+      "set_object_terms",
     ],
   };
 }
 
-function computeTtl(
-  productCount: number,
-  hasStockMgmt: boolean,
-): SiloConfig["ttl"] {
-  // Larger catalogs get longer TTLs (fewer invalidations per product)
-  // Stores with stock management get shorter product TTLs (stock changes more often)
+function computeTtl(productCount: number, hasStockMgmt: boolean): SiloConfig["ttl"] {
+  // Event-driven invalidation keeps entries correct; TTL is only the safety net.
   const productBase = hasStockMgmt ? 3600 : 7200;
-  const categoryBase = 1800;
-  const shopBase = 1800;
-
   if (productCount > 10000) {
-    return {
-      product: productBase,
-      category: categoryBase * 2,
-      shop: shopBase * 2,
-      store_api: 600,
-    };
+    return { product: productBase * 2, category: 3600, shop: 3600, store_api: 600 };
   }
-
   if (productCount > 1000) {
-    return {
-      product: productBase,
-      category: categoryBase,
-      shop: shopBase,
-      store_api: 300,
-    };
+    return { product: productBase, category: 1800, shop: 1800, store_api: 300 };
   }
-
-  // Small catalogs: shorter TTLs, more aggressive warming
-  return {
-    product: Math.round(productBase * 0.75),
-    category: Math.round(categoryBase * 0.75),
-    shop: Math.round(shopBase * 0.75),
-    store_api: 180,
-  };
+  return { product: productBase, category: 1800, shop: 1800, store_api: 300 };
 }
 
-function buildInvalidationRules(
-  isHighVariation: boolean,
-  hasStockMgmt: boolean,
-): SiloConfig["invalidation_rules"] {
-  const onProductUpdate = [
-    "product_url",
-    "categories",
-    "tags",
-    "shop_variants",
-    "store_api_products",
-  ];
-
-  const onStockChange = [
-    "product_url",
-    "categories",
-    "shop_variants",
-  ];
-
-  const onOrder = [
-    "affected_products",
-    "categories",
-  ];
+function buildInvalidationRules(isHighVariation: boolean, hasStockMgmt: boolean): SiloConfig["invalidation_rules"] {
+  const onProductUpdate = ["product_url", "grouped_parents", "store_api_products"];
+  const onStockChange = ["product_url", "categories", "tags", "attributes", "shop", "store_api_collections"];
+  const onOrder = ["affected_products", "categories", "shop", "store_api_collections"];
 
   if (isHighVariation) {
-    onProductUpdate.push("variation_urls");
-    onStockChange.push("variation_urls", "parent_product");
+    onStockChange.push("variation_nodes", "parent_product");
   }
-
-  if (hasStockMgmt) {
-    onStockChange.push("store_api_products");
-    onOrder.push("store_api_products");
+  if (!hasStockMgmt) {
+    onStockChange.splice(onStockChange.indexOf("store_api_collections"), 1, "store_api_products");
   }
 
   return {
@@ -194,24 +189,28 @@ function buildInvalidationRules(
   };
 }
 
+const CONFLICT_INSTRUCTIONS: Record<string, string> = {
+  "wp-rocket": "Disable page caching in WP Rocket (Settings → Cache). Keep its file optimisation and CDN features.",
+  "w3-total-cache": "Disable Page Cache in W3 Total Cache (Performance → General Settings). Browser and object caching can stay.",
+  "litespeed-cache": "Turn off Enable Cache in LiteSpeed Cache (Cache → Cache). Keep image optimisation.",
+  "wp-super-cache": "Turn caching off in WP Super Cache (Settings → WP Super Cache → Easy).",
+  "wp-fastest-cache": "Disable the cache system in WP Fastest Cache.",
+  flyingpress: "Disable page caching in FlyingPress. Keep its asset optimisation.",
+  breeze: "Disable Breeze page cache (Settings → Breeze → Basic options).",
+  "siteground-optimizer": "Disable Dynamic Caching in SiteGround Optimizer.",
+  "wp-optimize": "Disable page caching in WP-Optimize (Cache tab).",
+  "mamba-cache": "Deactivate Mamba Cache page caching — Silo replaces it.",
+};
+
 export function detectCacheConflicts(existingCache: string | null): {
   hasConflict: boolean;
   plugin: string | null;
   instructions: string | null;
 } {
   if (!existingCache) return { hasConflict: false, plugin: null, instructions: null };
-
-  const instructions: Record<string, string> = {
-    "wp-rocket": "Disable page caching in WP Rocket (Settings → Cache → Enable caching: uncheck). Keep minification and CDN features.",
-    "w3-total-cache": "Disable Page Cache in W3 Total Cache (Performance → Page Cache → Enable: uncheck). Browser and object caching can remain.",
-    "litespeed-cache": "Disable page cache in LiteSpeed Cache (LiteSpeed Cache → Cache → Enable Cache: Off). Keep image optimization.",
-    "wp-fastest-cache": "Delete cache and deactivate WP Fastest Cache page caching. Or set to cache timeout 0.",
-    "wp-optimize": "Disable page caching in WP-Optimize (WP-Optimize → Cache → Enable page caching: uncheck).",
-  };
-
   return {
     hasConflict: true,
     plugin: existingCache,
-    instructions: instructions[existingCache] ?? `Disable page caching in ${existingCache} to avoid conflicts with Silo.`,
+    instructions: CONFLICT_INSTRUCTIONS[existingCache] ?? `Disable page caching in ${existingCache} to avoid two caches serving the same URLs.`,
   };
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { UserMenu } from "@/components/user-menu";
 import { ArrowRight, ArrowUpRight, Menu, X } from "lucide-react";
 import { Logo, LogoMark } from "@/components/logo";
 import { ConnectButton } from "@/components/connect/connect-button";
@@ -18,8 +20,8 @@ const LINKS = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  if (pathname.startsWith("/dashboard")) return null;
+  const { data: session, status } = useSession();
+  const signedIn = status === "authenticated" && !!session?.user;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -68,20 +70,38 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden px-2 text-[13px] font-medium text-paper/60 transition hover:text-paper sm:block"
-            >
-              Log in
-            </Link>
-            <div className="hidden sm:block">
-              <ConnectButton
-                size="sm"
-                className="h-8 px-3 text-[12px]"
-              >
-                Connect store
-              </ConnectButton>
-            </div>
+            {signedIn ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    "hidden h-8 items-center rounded-lg border px-3 text-[12.5px] font-medium transition sm:inline-flex",
+                    pathname.startsWith("/dashboard")
+                      ? "border-accent/35 bg-accent/10 text-accent-hi"
+                      : "border-white/12 text-paper/75 hover:border-white/25 hover:text-paper",
+                  )}
+                >
+                  Dashboard
+                </Link>
+                <UserMenu email={session!.user!.email ?? ""} name={session!.user!.name} />
+              </>
+            ) : status === "loading" ? (
+              <span className="hidden h-8 w-40 sm:block" aria-hidden="true" />
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden px-2 text-[13px] font-medium text-paper/60 transition hover:text-paper sm:block"
+                >
+                  Log in
+                </Link>
+                <div className="hidden sm:block">
+                  <ConnectButton size="sm" className="h-8 px-3 text-[12px]">
+                    Connect store
+                  </ConnectButton>
+                </div>
+              </>
+            )}
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
@@ -141,17 +161,22 @@ export function SiteHeader() {
             </div>
 
             <div className="mt-8 space-y-3">
-              <ConnectButton size="lg" full onClick={() => setMenuOpen(false)}>
-                Connect your store
-                <ArrowRight className="h-4 w-4" />
-              </ConnectButton>
-              <Link
-                href="/login"
-                className="btn btn-secondary w-full"
-                onClick={() => setMenuOpen(false)}
-              >
-                Log in to Silo
-              </Link>
+              {signedIn ? (
+                <Link href="/dashboard" className="btn btn-primary w-full" onClick={() => setMenuOpen(false)}>
+                  Open dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <>
+                  <ConnectButton size="lg" full onClick={() => setMenuOpen(false)}>
+                    Connect your store
+                    <ArrowRight className="h-4 w-4" />
+                  </ConnectButton>
+                  <Link href="/login" className="btn btn-secondary w-full" onClick={() => setMenuOpen(false)}>
+                    Log in to Silo
+                  </Link>
+                </>
+              )}
               <div className="flex items-center justify-between pt-5 text-[11px] text-paper/35">
                 <span className="flex items-center gap-2">
                   <LogoMark className="h-5 w-5 rounded-md p-[3px]" />

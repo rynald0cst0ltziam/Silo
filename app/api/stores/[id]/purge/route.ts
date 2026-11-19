@@ -1,28 +1,27 @@
 import { NextResponse } from "next/server";
-import { createHmac } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserTier } from "@/lib/tier-enforcement";
+import { callConnector, utcDay } from "@/lib/connector";
+import type { SiloConfig } from "@/lib/config-engine";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+type PurgeResponse = { purged?: number; urls?: number; type?: string; stats?: Record<string, unknown> };
+
+/**
+ * Purge from the dashboard. "All" clears every cached page and Store API entry on the
+ * store, resets statistics on both sides, and re-warms priority pages.
+ */
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-
   const store = await prisma.store.findFirst({
     where: { id, userId: session.user.id },
-    select: { id: true, url: true, apiKey: true },
+    select: { id: true, url: true, apiKey: true, config: true },
   });
-
-  if (!store) {
-    return NextResponse.json({ error: "Store not found" }, { status: 404 });
-  }
+  if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 });
 
   let body: { urls?: string[]; purgeAll?: boolean };
   try {
@@ -30,143 +29,68 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { urls, purgeAll } = body;
 
-  if (!purgeAll && (!urls || urls.length === 0)) {
+  const urls = (body.urls ?? []).filter((u) => typeof u === "string").slice(0, 500);
+  if (!body.purgeAll && urls.length === 0) {
+    return NextResponse.json({ error: "Provide urls or purgeAll: true" }, { status: 400 });
+  }
+
+  const result = await callConnector<PurgeResponse>(store, "POST", "/purge", body.purgeAll ? { all: true, reset_stats: true } : { urls });
+  if (!result.ok) {
     return NextResponse.json(
-      { error: "Provide urls array or purgeAll: true" },
-      { status: 400 },
+      { error: `The connector could not be reached (${result.error}). Nothing was purged — run Purge all from WooCommerce → Silo instead.` },
+      { status: 502 },
     );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { subscription: true },
-  });
-
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, include: { subscription: true } });
   const tier = getUserTier(user?.subscription ?? null);
-
-  let purgeUrls: string[];
-
-  if (purgeAll) {
-    purgeUrls = [`${store.url.replace(/\/+$/, "")}/*`];
-  } else {
-    purgeUrls = urls!.slice(0, 500);
-  }
-
-  const warmUrls = purgeUrls
-    .filter((u) => !u.includes("*"))
-    .slice(0, tier.warmupUrlsPerEvent);
+  const config = store.config as unknown as SiloConfig | null;
+  const warmUrls = body.purgeAll ? (config?.priority_urls ?? []).slice(0, tier.warmupUrlsPerEvent) : urls.slice(0, tier.warmupUrlsPerEvent);
+  const purged = Number(result.data.purged ?? 0);
+  const now = new Date();
 
   const event = await prisma.event.create({
     data: {
       storeId: id,
-      type: "manual_purge",
-      payload: { purgeAll: !!purgeAll, urlCount: purgeUrls.length },
-      purgeUrls,
+      type: body.purgeAll ? "purge.all" : "manual.purge",
+      object: body.purgeAll ? "Purged from Silo dashboard" : `${urls.length} URLs purged from Silo dashboard`,
+      detail: `${purged.toLocaleString()} cached entries removed${body.purgeAll ? " · stats reset" : ""}`,
+      payload: { purgeAll: !!body.purgeAll, urlCount: urls.length, purged },
+      purgeUrls: body.purgeAll ? [] : urls,
       warmUrls,
       processed: true,
+      counted: !body.purgeAll,
+      durationMs: 1,
     },
   });
 
-  const updateData: Record<string, unknown> = {
-    lastEventAt: new Date(),
-    monthlyEvents: { increment: 1 },
-  };
-
-  if (purgeAll) {
-    updateData.hitRate = 0;
-  }
-
-  await prisma.store.update({
-    where: { id },
-    data: updateData,
-  });
-
-  if (purgeAll) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    await prisma.metric.upsert({
-      where: { storeId_date: { storeId: id, date: today } },
-      update: { hits: 0, misses: 0 },
-      create: { storeId: id, date: today, hits: 0, misses: 0 },
+  let jobId: string | null = null;
+  if (warmUrls.length) {
+    const job = await prisma.warmupJob.create({
+      data: { storeId: id, urls: warmUrls, total: warmUrls.length, status: "pending", source: "purge", eventId: event.id },
     });
+    jobId = job.id;
+    await callConnector(store, "POST", "/warm", { urls: warmUrls, job_id: job.id, source: "purge" });
   }
 
-  if (warmUrls.length > 0) {
-    await prisma.warmupJob.create({
+  const day = utcDay(now);
+  await prisma.$transaction([
+    prisma.store.update({
+      where: { id },
       data: {
-        storeId: id,
-        urls: warmUrls,
-        total: warmUrls.length,
-        status: "pending",
+        lastEventAt: now,
+        ...(body.purgeAll
+          ? { hitRate: 0, ...(result.data.stats ? { stats: result.data.stats as Prisma.InputJsonValue } : {}) }
+          : { monthlyEvents: { increment: 1 } }),
       },
-    });
-  }
+    }),
+    prisma.metric.upsert({
+      where: { storeId_date: { storeId: id, date: day } },
+      update: body.purgeAll ? { hits: 0, misses: 0, bypasses: 0, purges: { increment: purged } } : { purges: { increment: purged }, eventsUsed: { increment: 1 } },
+      create: { storeId: id, date: day, purges: purged, eventsUsed: body.purgeAll ? 0 : 1 },
+    }),
+  ]);
 
-  // Send purge command to the connector
-  let connectorResult: { purged?: number; error?: string } = {};
-  try {
-    const storeUrl = store.url.replace(/\/+$/, "");
-    const purgeBody = JSON.stringify(purgeAll ? {} : { urls: purgeUrls });
-    const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = createHmac("sha256", store.apiKey)
-      .update(`${timestamp}.${purgeBody}`)
-      .digest("hex");
-
-    const connectorResp = await fetch(`${storeUrl}/wp-json/silo/v1/purge`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Silo-Signature": signature,
-        "X-Silo-Timestamp": timestamp,
-        "X-Silo-Store-Key": store.apiKey,
-      },
-      body: purgeBody,
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (connectorResp.ok) {
-      connectorResult = await connectorResp.json();
-    } else {
-      connectorResult = { error: `HTTP ${connectorResp.status}` };
-    }
-  } catch (err) {
-    connectorResult = {
-      error: err instanceof Error ? err.message : "Connection failed",
-    };
-  }
-
-  // Also reset connector stats if purgeAll
-  if (purgeAll) {
-    try {
-      const resetBody = JSON.stringify({});
-      const timestamp = String(Math.floor(Date.now() / 1000));
-      const signature = createHmac("sha256", store.apiKey)
-        .update(`${timestamp}.${resetBody}`)
-        .digest("hex");
-
-      const storeUrl = store.url.replace(/\/+$/, "");
-      await fetch(`${storeUrl}/wp-json/silo/v1/reset-stats`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Silo-Signature": signature,
-          "X-Silo-Timestamp": timestamp,
-          "X-Silo-Store-Key": store.apiKey,
-        },
-        body: resetBody,
-        signal: AbortSignal.timeout(5000),
-      });
-    } catch {
-      // Non-critical — stats will reset on next heartbeat
-    }
-  }
-
-  return NextResponse.json({
-    event_id: event.id,
-    purged: purgeUrls.length,
-    warming: warmUrls.length,
-    connector: connectorResult,
-  });
+  return NextResponse.json({ event_id: event.id, purged, warming: warmUrls.length, warmup_job_id: jobId });
 }

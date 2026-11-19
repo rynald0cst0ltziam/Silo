@@ -1,277 +1,197 @@
 import type { SiloConfig, StoreSnapshot } from "@/lib/config-engine";
 
-export interface EventPayload {
+/**
+ * URLs the connector resolved for a product at the moment of the change.
+ * The connector purges every query/device/currency/language variant of each URL path
+ * (and its /page/N children), so Silo never has to enumerate variants.
+ */
+export type ProductUrls = {
+  product?: string;
+  categories?: string[];
+  tags?: string[];
+  brands?: string[];
+  attributes?: string[];
+  grouped_parents?: string[];
+  shop?: string;
+  home?: string;
+  previous?: string[];
+  terms?: string[];
+};
+
+export type ProductDescription = {
   product_id?: number;
-  product_type?: string;
   name?: string;
+  sku?: string;
+  product_type?: string;
+  status?: string;
+  stock_status?: string;
+  stock_quantity?: number | null;
+  variations?: Array<{ id: number; label?: string; sku?: string; stock_status?: string; stock_quantity?: number | null }>;
+  urls?: ProductUrls;
+  qty?: number;
+};
+
+export type EventPayload = ProductDescription & {
+  items?: ProductDescription[];
+  store_api?: { mode?: string; product_ids?: number[] };
+  order_id?: number;
+  order_number?: string;
+  term_id?: number;
+  taxonomy?: string;
+  // Legacy connector fields.
   url?: string;
   categories?: string[];
-  parent_id?: number;
-  variation_id?: number;
-  sku?: string;
-  stock_quantity?: number | null;
-  stock_status?: string;
-  managing_stock?: boolean;
-  updated_props?: string[];
-  order_id?: number;
-  from?: string;
-  to?: string;
-  products?: Array<{
-    product_id: number;
-    variation_id?: number | null;
-    quantity: number;
-    url: string;
-    categories: string[];
-  }>;
-  type?: string; // for sale_boundary
+  products?: Array<{ url?: string; categories?: string[] }>;
   product_urls?: string[];
-}
+};
 
 export interface InvalidationResult {
   purge: string[];
   warm: string[];
+  store_api: { mode: "products" | "collections" | "all"; product_ids: number[] };
+  scope: { products: number; archives: number; pages: number; full: boolean };
 }
 
+const MEMBERSHIP_EVENTS = new Set([
+  "stock.changed",
+  "price.updated",
+  "sale.boundary",
+  "product.created",
+  "product.deleted",
+  "product.visibility",
+  "order.stock_reduced",
+  "order.stock_restored",
+  "order.refunded",
+  "term.updated",
+  "term.deleted",
+]);
+
+const FULL_PURGE_EVENTS = new Set(["purge.all", "system.settings", "system.theme", "system.upgrade"]);
+
+/**
+ * Silo's graph walk: from one catalog fact to the exact set of responses to clear,
+ * then a priority-ordered warmup plan capped by the plan's per-event limit.
+ */
 export function resolveInvalidation(
   eventType: string,
   payload: EventPayload,
-  config: SiloConfig,
+  config: SiloConfig | null,
   storeUrl: string,
+  snapshot: Partial<StoreSnapshot> | null,
+  warmCap: number,
 ): InvalidationResult {
-  const rawUrls = resolveAffectedUrls(eventType, payload, config, storeUrl);
-  const expanded = expandVariants(rawUrls, config, storeUrl);
-  const purge = [...new Set(expanded)];
-  const warm = purge.slice(0, config.limits.warmup_urls_per_event);
+  const origin = safeOrigin(storeUrl);
+  const priority = new Set((config?.priority_urls ?? snapshot?.priority_urls ?? []).map(normalize));
 
-  return { purge, warm };
-}
-
-function resolveAffectedUrls(
-  eventType: string,
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  switch (eventType) {
-    case "product_updated":
-      return resolveProductUpdate(payload, config, storeUrl);
-    case "variation_created":
-      return resolveVariationChange(payload, config, storeUrl);
-    case "stock_changed":
-      return resolveStockChange(payload, config, storeUrl);
-    case "order_status_changed":
-      return resolveOrder(payload, config, storeUrl);
-    case "product_props_updated":
-      return resolveProductPropsUpdate(payload, config, storeUrl);
-    case "sale_boundary":
-      return resolveSaleBoundary(payload, config, storeUrl);
-    default:
-      return payload.url ? [payload.url] : [];
-  }
-}
-
-function resolveProductUpdate(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
-
-  if (payload.url) urls.push(payload.url);
-  if (payload.categories) urls.push(...payload.categories);
-
-  urls.push(...getShopVariants(storeUrl));
-
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
+  if (FULL_PURGE_EVENTS.has(eventType)) {
+    const warm = (config?.priority_urls ?? snapshot?.priority_urls ?? []).filter((u) => sameOrigin(u, origin)).slice(0, warmCap);
+    return {
+      purge: [],
+      warm,
+      store_api: { mode: "all", product_ids: [] },
+      scope: { products: snapshot?.product_count ?? 0, archives: snapshot?.archive_count ?? 0, pages: 0, full: true },
+    };
   }
 
-  if (
-    config.variants.attribute_filters &&
-    payload.product_type === "variable"
-  ) {
-    if (payload.url) {
-      urls.push(...getVariationUrls(payload.url));
+  const descriptions: ProductDescription[] = payload.items?.length ? payload.items : [payload];
+  const membership = MEMBERSHIP_EVENTS.has(eventType);
+  const deleted = eventType === "product.deleted";
+
+  const productPages: string[] = [];
+  const archivePages: string[] = [];
+  const warmProducts: string[] = [];
+  const warmArchives: string[] = [];
+
+  for (const d of descriptions) {
+    const urls = d.urls ?? legacyUrls(payload);
+    const product = urls.product ? [urls.product] : [];
+
+    productPages.push(...product, ...(urls.grouped_parents ?? []), ...(urls.previous ?? []));
+    if (!deleted) warmProducts.push(...product, ...(urls.grouped_parents ?? []));
+
+    if (membership || eventType === "product.updated" && (urls.previous?.length ?? 0) > 0) {
+      const archives = [
+        ...(urls.categories ?? []),
+        ...(urls.tags ?? []),
+        ...(urls.brands ?? []),
+        ...(urls.attributes ?? []),
+        ...(urls.terms ?? []),
+        ...(urls.shop ? [urls.shop] : []),
+        ...(urls.home ? [urls.home] : []),
+      ];
+      archivePages.push(...archives);
+      warmArchives.push(
+        ...(urls.shop ? [urls.shop] : []),
+        ...(urls.categories ?? []),
+        ...(urls.brands ?? []),
+        ...(urls.tags ?? []),
+        ...(urls.attributes ?? []),
+        ...(eventType === "term.deleted" ? [] : urls.terms ?? []),
+        ...(urls.home ? [urls.home] : []),
+      );
     }
   }
 
-  return urls;
+  const purge = unique([...productPages, ...archivePages]).filter((u) => sameOrigin(u, origin));
+
+  // Warm order: products (bestsellers first), then the shop and archives in catalog order.
+  const products = unique(warmProducts).filter((u) => sameOrigin(u, origin));
+  products.sort((a, b) => Number(priority.has(normalize(b))) - Number(priority.has(normalize(a))));
+  const warm = unique([...products, ...warmArchives])
+    .filter((u) => sameOrigin(u, origin) && purge.includes(u))
+    .slice(0, warmCap);
+
+  const ids = new Set<number>(payload.store_api?.product_ids ?? []);
+  for (const d of descriptions) {
+    if (d.product_id) ids.add(d.product_id);
+    for (const v of d.variations ?? []) ids.add(v.id);
+  }
+
+  return {
+    purge,
+    warm,
+    store_api: { mode: membership ? "collections" : "products", product_ids: [...ids] },
+    scope: {
+      products: descriptions.length,
+      archives: unique(archivePages).length,
+      pages: purge.length,
+      full: false,
+    },
+  };
 }
 
-function resolveVariationChange(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
-
-  if (payload.url) urls.push(payload.url);
-
-  if (payload.parent_id) {
-    urls.push(`${storeUrl}/?p=${payload.parent_id}`);
-  }
-
-  urls.push(...getShopVariants(storeUrl));
-
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
-  }
-
-  return urls;
-}
-
-function resolveStockChange(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
-
-  if (payload.url) urls.push(payload.url);
-  if (payload.categories) urls.push(...payload.categories);
-
-  urls.push(...getShopVariants(storeUrl));
-
-  if (payload.parent_id && payload.parent_id !== payload.product_id) {
-    urls.push(`${storeUrl}/?p=${payload.parent_id}`);
-  }
-
-  if (config.variants.attribute_filters && payload.product_type === "variation") {
-    if (payload.url) {
-      urls.push(...getVariationUrls(payload.url));
-    }
-  }
-
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
-  }
-
-  return urls;
-}
-
-function resolveOrder(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
-
+function legacyUrls(payload: EventPayload): ProductUrls {
+  const urls: ProductUrls = { categories: payload.categories ?? [] };
+  if (payload.url) urls.product = payload.url;
+  if (payload.product_urls) urls.previous = payload.product_urls;
   if (payload.products) {
-    for (const product of payload.products) {
-      if (product.url) urls.push(product.url);
-      if (product.categories) urls.push(...product.categories);
-    }
+    urls.previous = [...(urls.previous ?? []), ...payload.products.flatMap((p) => (p.url ? [p.url] : []))];
+    urls.categories = [...(urls.categories ?? []), ...payload.products.flatMap((p) => p.categories ?? [])];
   }
-
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
-  }
-
   return urls;
 }
 
-function resolveProductPropsUpdate(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
+function unique(list: string[]): string[] {
+  return [...new Set(list.filter((u) => typeof u === "string" && u.length > 0))];
+}
 
-  if (payload.url) urls.push(payload.url);
-  if (payload.categories) urls.push(...payload.categories);
+function normalize(url: string): string {
+  return url.replace(/\/+$/, "").toLowerCase();
+}
 
-  const priceProps = ["regular_price", "sale_price", "date_on_sale_from", "date_on_sale_to"];
-  const hasPriceChange = payload.updated_props?.some((p) => priceProps.includes(p));
-
-  if (hasPriceChange) {
-    urls.push(...getShopVariants(storeUrl));
+function safeOrigin(url: string): string {
+  try {
+    return new URL(url).host.toLowerCase();
+  } catch {
+    return "";
   }
+}
 
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
+function sameOrigin(url: string, host: string): boolean {
+  if (!host) return true;
+  try {
+    return new URL(url).host.toLowerCase() === host;
+  } catch {
+    return false;
   }
-
-  return urls;
-}
-
-function resolveSaleBoundary(
-  payload: EventPayload,
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const urls: string[] = [];
-
-  urls.push(...getShopVariants(storeUrl));
-
-  if (payload.product_urls) {
-    urls.push(...payload.product_urls);
-  }
-
-  if (config.store_api.enabled) {
-    urls.push(...getStoreApiUrls(storeUrl, config));
-  }
-
-  return urls;
-}
-
-function getShopVariants(storeUrl: string): string[] {
-  const shop = `${storeUrl}/shop/`;
-  return [
-    shop,
-    `${shop}?orderby=price`,
-    `${shop}?orderby=price-desc`,
-    `${shop}?orderby=date`,
-    `${shop}?orderby=popularity`,
-    `${shop}?orderby=rating`,
-  ];
-}
-
-function getVariationUrls(productUrl: string): string[] {
-  return [
-    `${productUrl}?attribute_filter=1`,
-  ];
-}
-
-function getStoreApiUrls(storeUrl: string, config: SiloConfig): string[] {
-  return config.store_api.endpoints.map(
-    (endpoint) => `${storeUrl}/wp-json${endpoint}`,
-  );
-}
-
-function expandVariants(
-  urls: string[],
-  config: SiloConfig,
-  storeUrl: string,
-): string[] {
-  const expanded: string[] = [];
-
-  for (const url of urls) {
-    expanded.push(url);
-
-    if (config.variants.device && isPageUrl(url, storeUrl)) {
-      expanded.push(addParam(url, "device", "mobile"));
-    }
-
-    if (config.variants.language.length > 1) {
-      for (const lang of config.variants.language) {
-        if (lang === config.variants.language[0]) continue;
-        expanded.push(addParam(url, "lang", lang));
-      }
-    }
-
-    if (config.variants.currency) {
-      expanded.push(addParam(url, "currency", "alt"));
-    }
-  }
-
-  return expanded;
-}
-
-function isPageUrl(url: string, storeUrl: string): boolean {
-  return url.startsWith(storeUrl) && !url.includes("/wp-json/");
-}
-
-function addParam(url: string, key: string, value: string): string {
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}${key}=${value}`;
 }

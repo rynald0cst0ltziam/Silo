@@ -19,14 +19,14 @@ export default async function ConnectPage() {
 
   return (
     <div>
-      <h1 className="text-[22px] font-semibold tracking-tight text-paper">
+      <h1 className="text-[26px] font-semibold tracking-tight text-paper">
         Connect a store
       </h1>
-      <p className="mt-1 text-[12px] text-paper/40">
+      <p className="mt-1 text-[14px] text-paper/40">
         Add a WooCommerce store to your Silo account.
       </p>
 
-      <div className="mt-1 font-mono text-[10px] text-paper/25">
+      <div className="mt-1 font-mono text-[12px] text-paper/25">
         {storeCheck.current}/{storeCheck.max} stores used · {tier.name} plan
       </div>
 
@@ -35,13 +35,13 @@ export default async function ConnectPage() {
           <CreateStoreForm />
         ) : (
           <div className="max-w-xl rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-5">
-            <p className="text-[13px] font-medium text-paper/70">Store limit reached</p>
-            <p className="mt-1 text-[11px] text-paper/40">
+            <p className="text-[15px] font-medium text-paper/70">Store limit reached</p>
+            <p className="mt-1 text-[13px] text-paper/40">
               Your {tier.name} plan supports up to {tier.maxStores} store{tier.maxStores > 1 ? "s" : ""}. Upgrade to add more.
             </p>
             <Link
               href="/dashboard/billing"
-              className="mt-4 inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-[11px] font-medium text-white transition hover:bg-accent/90"
+              className="mt-4 inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-accent/90"
             >
               Upgrade plan
             </Link>

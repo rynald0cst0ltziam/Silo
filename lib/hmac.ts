@@ -1,43 +1,87 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function verifyConnectorRequest(
-  request: Request,
-): Promise<{ storeId: string; userId: string } | null> {
-  const signature = request.headers.get("x-silo-signature");
-  const timestamp = request.headers.get("x-silo-timestamp");
-  const storeKey = request.headers.get("x-silo-store-key");
+export type ConnectorStore = {
+  id: string;
+  userId: string;
+  name: string;
+  url: string;
+  apiKey: string;
+  status: string;
+  configVersion: number;
+};
 
-  if (!signature || !timestamp || !storeKey) {
-    return null;
+const STORE_SELECT = {
+  id: true,
+  userId: true,
+  name: true,
+  url: true,
+  apiKey: true,
+  status: true,
+  configVersion: true,
+} as const;
+
+/**
+ * Authenticate a signed connector request.
+ *
+ * Connectors send X-Silo-Key-Id (sha256 of the store key), a unix timestamp and an
+ * HMAC-SHA256 of "{timestamp}.{body}". Older connectors sent the key itself in
+ * X-Silo-Store-Key; that is still accepted.
+ */
+export async function readConnectorRequest<T = Record<string, unknown>>(
+  req: Request,
+): Promise<{ ok: true; store: ConnectorStore; body: T } | { ok: false; response: NextResponse }> {
+  const signature = req.headers.get("x-silo-signature");
+  const timestamp = req.headers.get("x-silo-timestamp");
+  const keyId = req.headers.get("x-silo-key-id");
+  const legacyKey = req.headers.get("x-silo-store-key");
+
+  if (!signature || !timestamp || (!keyId && !legacyKey)) {
+    return deny("Missing Silo signature headers", 401);
   }
 
-  const age = Math.abs(Date.now() / 1000 - Number(timestamp));
-  if (age > 300) {
-    return null;
+  const skew = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(skew) || skew > 300) {
+    return deny("Request timestamp is outside the 5 minute window — check the store server clock", 401);
   }
 
-  const store = await prisma.store.findFirst({
-    where: { apiKey: storeKey },
-  });
+  const store = keyId
+    ? await prisma.store.findFirst({ where: { apiKeyHash: keyId }, select: STORE_SELECT })
+    : await prisma.store.findFirst({ where: { apiKey: legacyKey! }, select: STORE_SELECT });
 
   if (!store) {
-    return null;
+    return deny("Unknown store key — copy it again from your Silo dashboard", 401);
   }
 
-  const body = await request.text();
-  const payload = `${timestamp}.${body}`;
-  const expected = createHmac("sha256", storeKey).update(payload).digest("hex");
-
+  const raw = await req.text();
+  const expected = createHmac("sha256", store.apiKey).update(`${timestamp}.${raw}`).digest("hex");
   const expectedBuf = Buffer.from(expected, "hex");
   const signatureBuf = Buffer.from(signature, "hex");
   if (expectedBuf.length !== signatureBuf.length || !timingSafeEqual(expectedBuf, signatureBuf)) {
-    return null;
+    return deny("Invalid request signature", 401);
   }
 
-  return { storeId: store.id, userId: store.userId };
+  let body: T;
+  try {
+    body = (raw ? JSON.parse(raw) : {}) as T;
+  } catch {
+    return deny("Body is not valid JSON", 400);
+  }
+
+  return { ok: true, store, body };
 }
 
-export function parseVerifiedBody<T>(request: Request): Promise<T> {
-  return request.json();
+function deny(error: string, status: number) {
+  return { ok: false as const, response: NextResponse.json({ error }, { status }) };
+}
+
+/**
+ * Backwards-compatible wrapper used by routes that only need the store identity.
+ */
+export async function verifyConnectorRequest(
+  request: Request,
+): Promise<{ storeId: string; userId: string } | null> {
+  const result = await readConnectorRequest(request);
+  return result.ok ? { storeId: result.store.id, userId: result.store.userId } : null;
 }

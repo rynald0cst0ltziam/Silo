@@ -1,59 +1,106 @@
 <?php
 /**
- * Uninstall handler — removes ALL Silo data from the site.
+ * Uninstall: remove every trace of Silo from the site.
+ *
+ * Options, transients, tables, scheduled actions, the cache directory, the drop-in and
+ * the WP_CACHE line are all removed. Anything Silo did not create is left alone: a
+ * drop-in owned by another plugin is kept, and WP_CACHE is only removed if Silo added it.
  *
  * @package silo-connector
  */
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
-// 1. Remove all silo_* options.
-global $wpdb;
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'silo\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.WP.AlternativeFunctions, WordPress.PHP.NoSilencedErrors
 
-// 2. Delete transients.
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_silo\_%' OR option_name LIKE '_transient_timeout_silo\_%'" ); // phpcs:ignore
+/**
+ * Remove Silo from the current site.
+ */
+function silo_uninstall_site(): void {
+	global $wpdb;
 
-// 3. Remove cache directory.
-$cache_dir = WP_CONTENT_DIR . '/cache/silo/';
-if ( is_dir( $cache_dir ) ) {
-	$iter = new RecursiveIteratorIterator(
-		new RecursiveDirectoryIterator( $cache_dir, FilesystemIterator::SKIP_DOTS ),
-		RecursiveIteratorIterator::CHILD_FIRST
-	);
-	foreach ( $iter as $file ) {
-		if ( $file->isDir() ) {
-			rmdir( $file->getPathname() );
-		} else {
-			unlink( $file->getPathname() );
+	$added_wp_cache = (bool) get_option( 'silo_added_wp_cache' );
+
+	// Scheduled work.
+	wp_clear_scheduled_hook( 'silo_heartbeat' );
+	foreach ( array( 'silo_dispatch_events', 'silo_warmup_run', 'silo_scan_run', 'silo_sale_boundary' ) as $hook ) {
+		wp_clear_scheduled_hook( $hook );
+		if ( function_exists( 'as_unschedule_all_actions' ) ) {
+			as_unschedule_all_actions( $hook, array(), 'silo' );
 		}
 	}
-	rmdir( $cache_dir );
+
+	// Options and transients.
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'silo\\_%' OR option_name LIKE '\\_transient\\_silo\\_%' OR option_name LIKE '\\_transient\\_timeout\\_silo\\_%'" );
+
+	// Tables.
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}silo_events" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}silo_warmup" );
+
+	silo_uninstall_wp_cache_flag( $added_wp_cache );
 }
 
-// 4. Remove advanced-cache.php drop-in if ours.
-$dropin = WP_CONTENT_DIR . '/advanced-cache.php';
-if ( file_exists( $dropin ) ) {
-	$content = file_get_contents( $dropin ); // phpcs:ignore
-	if ( str_contains( $content, 'silo-connector' ) ) {
-		unlink( $dropin ); // phpcs:ignore
+/**
+ * Carry the WP_CACHE ownership flag out of the per-site loop.
+ *
+ * @param bool|null $set Flag to record, or null to read.
+ */
+function silo_uninstall_wp_cache_flag( $set = null ): bool {
+	static $flag = false;
+	if ( null !== $set ) {
+		$flag = $flag || $set;
 	}
+	return $flag;
 }
 
-// 5. Unset WP_CACHE constant.
-$config_file = ABSPATH . 'wp-config.php';
-if ( is_writable( $config_file ) ) {
-	$content = file_get_contents( $config_file ); // phpcs:ignore
-	$content = preg_replace(
-		"/define\s*\(\s*['\"]WP_CACHE['\"]\s*,\s*(true|false)\s*\)\s*;\s*\n?/",
-		'',
-		$content
+/**
+ * Recursively delete a directory inside wp-content/cache/silo.
+ */
+function silo_uninstall_rmdir( string $dir ): void {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+	$items = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+		RecursiveIteratorIterator::CHILD_FIRST
 	);
-	file_put_contents( $config_file, $content ); // phpcs:ignore
+	foreach ( $items as $item ) {
+		if ( $item->isDir() ) {
+			@rmdir( $item->getPathname() );
+		} else {
+			@unlink( $item->getPathname() );
+		}
+	}
+	@rmdir( $dir );
 }
 
-// 6. Clear scheduled cron events.
-$hooks = array( 'silo_heartbeat_cron', 'silo_initial_warmup' );
-foreach ( $hooks as $hook ) {
-	wp_unschedule_hook( $hook );
+if ( is_multisite() ) {
+	foreach ( get_sites( array( 'fields' => 'ids' ) ) as $silo_site_id ) {
+		switch_to_blog( $silo_site_id );
+		silo_uninstall_site();
+		restore_current_blog();
+	}
+} else {
+	silo_uninstall_site();
+}
+
+// Cache files for every host.
+silo_uninstall_rmdir( rtrim( WP_CONTENT_DIR, '/\\' ) . '/cache/silo' );
+
+// The drop-in, only if it is ours.
+$silo_dropin = WP_CONTENT_DIR . '/advanced-cache.php';
+if ( is_file( $silo_dropin ) && str_contains( (string) file_get_contents( $silo_dropin ), 'silo-connector-dropin' ) ) {
+	@unlink( $silo_dropin );
+}
+
+// WP_CACHE, only if Silo added it.
+if ( silo_uninstall_wp_cache_flag() ) {
+	$silo_config = is_file( ABSPATH . 'wp-config.php' ) ? ABSPATH . 'wp-config.php' : dirname( ABSPATH ) . '/wp-config.php';
+	if ( is_file( $silo_config ) && is_writable( $silo_config ) ) {
+		$silo_contents = (string) file_get_contents( $silo_config );
+		$silo_updated  = (string) preg_replace( '/^.*\/\/ Added by Silo for WooCommerce.*\R?/m', '', $silo_contents );
+		if ( $silo_updated !== $silo_contents ) {
+			file_put_contents( $silo_config, $silo_updated );
+		}
+	}
 }

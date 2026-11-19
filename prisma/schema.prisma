@@ -68,6 +68,10 @@ model Store {
   hitRate            Float       @default(0)
   monthlyEvents      Int         @default(0)
   monthlyEventsReset DateTime?
+  stats              Json?       // latest connector snapshot: cumulative counters per epoch, inventory, queue
+  scanState          Json?       // live catalog scan progress reported by the connector
+  connectorVersion   String?
+  connectorEnv       Json?       // drop-in, WP_CACHE, conflicts, versions
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   events             Event[]
   warmupJobs         WarmupJob[]
@@ -87,6 +91,12 @@ model Event {
   warmUrls  Json?
   processed Boolean  @default(false)
   error     String?
+  object     String?
+  detail     String?
+  durationMs Int?
+  localMs    Int?
+  counted    Boolean  @default(true)
+  meta       Json?
   createdAt DateTime @default(now())
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
@@ -100,7 +110,12 @@ model WarmupJob {
   urls        Json
   progress    Int       @default(0)
   total       Int
+  failed      Int       @default(0)
   error       String?
+  source      String    @default("event") // event | scan | manual | purge | daily | fallback
+  eventId     String?
+  results     Json?     // per-URL results: [{ url, status, code, ms, cache, error }]
+  startedAt   DateTime?
   createdAt   DateTime  @default(now())
   completedAt DateTime?
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -114,6 +129,7 @@ model Metric {
   date       DateTime @db.Date
   hits       Int      @default(0)
   misses     Int      @default(0)
+  bypasses   Int      @default(0)
   purges     Int      @default(0)
   warms      Int      @default(0)
   eventsUsed Int      @default(0)

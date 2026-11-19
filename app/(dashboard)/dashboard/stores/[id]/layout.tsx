@@ -44,13 +44,13 @@ export default async function StoreLayout({
   const basePath = `/dashboard/stores/${id}`;
   const isOnline =
     store.lastSeenAt &&
-    Date.now() - new Date(store.lastSeenAt).getTime() < 15 * 60 * 1000;
+    Date.now() - new Date(store.lastSeenAt).getTime() < 150 * 1000;
 
   return (
     <div>
       <Link
         href="/dashboard"
-        className="mb-4 inline-flex items-center gap-1 text-[13px] text-paper/30 transition hover:text-paper/60"
+        className="mb-4 inline-flex items-center gap-1 text-[15px] text-paper/30 transition hover:text-paper/60"
       >
         <ArrowLeft className="h-3 w-3" />
         All stores
@@ -62,17 +62,17 @@ export default async function StoreLayout({
           {/* Store header */}
           <div className="mb-5">
             <div className="flex items-center gap-2">
-              <h1 className="text-[15px] font-semibold tracking-tight text-paper">
+              <h1 className="text-[17px] font-semibold tracking-tight text-paper">
                 {store.name}
               </h1>
               {isOnline && (
-                <span className="inline-flex items-center gap-1 rounded border border-mint/20 bg-mint/8 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.06em] text-mint/80">
+                <span className="inline-flex items-center gap-1 rounded border border-mint/20 bg-mint/8 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.06em] text-mint/80">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-mint" />
                   Live
                 </span>
               )}
             </div>
-            <p className="mt-1 font-mono text-[11px] text-paper/30 truncate">
+            <p className="mt-1 font-mono text-[13px] text-paper/30 truncate">
               {store.url}
             </p>
           </div>
@@ -90,15 +90,15 @@ export default async function StoreLayout({
           <div className="mt-auto pt-6">
             <div className="rounded-lg border border-white/8 bg-white/[0.02] p-3">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-paper/25">
+                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/25">
                   Store key
                 </span>
                 <ShieldCheck className="h-3 w-3 text-mint/60" />
               </div>
-              <p className="mt-1.5 font-mono text-[10px] tracking-wide text-paper/40">
+              <p className="mt-1.5 font-mono text-[12px] tracking-wide text-paper/40">
                 sk_silo_...{store.apiKeyHash.slice(-6)}
               </p>
-              <p className="mt-1 font-mono text-[9px] text-paper/20">
+              <p className="mt-1 font-mono text-[11px] text-paper/20">
                 config v{store.configVersion}
               </p>
             </div>
@@ -125,7 +125,7 @@ function MobileTab({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="shrink-0 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-1.5 text-[12px] font-medium text-paper/50 transition hover:bg-white/[0.05] hover:text-paper/70"
+      className="shrink-0 rounded-lg border border-white/8 bg-white/[0.02] px-3 py-1.5 text-[14px] font-medium text-paper/50 transition hover:bg-white/[0.05] hover:text-paper/70"
     >
       {label}
     </Link>

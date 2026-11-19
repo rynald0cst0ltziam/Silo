@@ -13,10 +13,10 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-[22px] font-semibold tracking-tight text-paper">
+      <h1 className="text-[26px] font-semibold tracking-tight text-paper">
         Settings
       </h1>
-      <p className="mt-1 text-[12px] text-paper/40">
+      <p className="mt-1 text-[14px] text-paper/40">
         Account and notification preferences.
       </p>
 
@@ -24,16 +24,16 @@ export default async function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/6 pb-4">
             <div>
-              <p className="text-[12px] font-medium text-paper/70">Email</p>
-              <p className="mt-0.5 font-mono text-[10px] text-paper/35">
+              <p className="text-[14px] font-medium text-paper/70">Email</p>
+              <p className="mt-0.5 font-mono text-[12px] text-paper/35">
                 {user.email}
               </p>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[12px] font-medium text-paper/70">Account ID</p>
-              <p className="mt-0.5 font-mono text-[9px] text-paper/25">
+              <p className="text-[14px] font-medium text-paper/70">Account ID</p>
+              <p className="mt-0.5 font-mono text-[11px] text-paper/25">
                 {user.id}
               </p>
             </div>

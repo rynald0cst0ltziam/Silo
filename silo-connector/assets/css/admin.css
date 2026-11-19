@@ -1,540 +1,2192 @@
-/* Silo Admin — Dark theme matching getsilo.io */
+/*
+ * Silo for WooCommerce — admin app.
+ * Design tokens mirror getsilo.io (ink / paper / accent #3d6bff / mint / amber).
+ * Everything is scoped under .silo-root so wp-admin is never affected.
+ */
 
-:root {
-	--silo-bg: #0a0c10;
-	--silo-bg-card: #12141a;
-	--silo-bg-hover: #1a1d26;
-	--silo-border: rgba(255, 255, 255, 0.08);
-	--silo-border-hover: rgba(255, 255, 255, 0.14);
-	--silo-text: #f5f5f0;
-	--silo-text-muted: #8b8d94;
-	--silo-text-dim: #5a5c64;
-	--silo-accent: #4f46e5;
-	--silo-accent-hover: #6366f1;
-	--silo-green: #22c55e;
-	--silo-yellow: #eab308;
-	--silo-red: #ef4444;
-	--silo-radius: 12px;
-	--silo-radius-sm: 8px;
-	--silo-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--silo-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+@font-face {
+	font-family: "Silo Grotesk";
+	font-style: normal;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url("../fonts/space-grotesk-latin.woff2") format("woff2-variations"), url("../fonts/space-grotesk-latin.woff2") format("woff2");
 }
 
-/* Scope everything */
-.silo-wrap {
-	background: var(--silo-bg);
-	color: var(--silo-text);
-	font-family: var(--silo-font);
-	min-height: 100vh;
-	margin: -20px -20px 0 -2px;
-	padding: 32px 40px;
-	line-height: 1.5;
+body.silo-screen {
+	background: #08090b;
+}
+
+body.silo-screen #wpcontent {
+	padding-left: 0;
+}
+
+body.silo-screen #wpbody-content {
+	padding-bottom: 0;
+}
+
+body.silo-screen #wpfooter {
+	display: none;
+}
+
+body.silo-screen #wpbody-content > .notice,
+body.silo-screen #wpbody-content > .error,
+body.silo-screen #wpbody-content > .updated {
+	margin: 12px 20px 0;
+}
+
+.silo-root {
+	--ink: #08090b;
+	--ink-2: #0b0d11;
+	--ink-3: #0f1217;
+	--ink-4: #151920;
+	--line: rgba(255, 255, 255, 0.08);
+	--line-2: rgba(255, 255, 255, 0.13);
+	--paper: #f6f5f1;
+	--p80: rgba(246, 245, 241, 0.8);
+	--p60: rgba(246, 245, 241, 0.6);
+	--p45: rgba(246, 245, 241, 0.45);
+	--p30: rgba(246, 245, 241, 0.3);
+	--p20: rgba(246, 245, 241, 0.2);
+	--accent: #3d6bff;
+	--accent-hi: #6389ff;
+	--mint: #1ed6a1;
+	--amber: #f4a63a;
+	--rose: #ff5f5f;
+	--woo: #7f54b3;
+	--font: "Silo Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--code: ui-monospace, "SFMono-Regular", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+
+	min-height: calc(100vh - 32px);
+	background: var(--ink);
+	color: var(--paper);
+	font-family: var(--font);
 	font-size: 14px;
+	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
+	letter-spacing: -0.005em;
 }
-.silo-wrap *,
-.silo-wrap *::before,
-.silo-wrap *::after {
+
+.silo-root *,
+.silo-root *::before,
+.silo-root *::after {
 	box-sizing: border-box;
 }
-.silo-wrap h2,
-.silo-wrap h3,
-.silo-wrap h4 {
-	color: var(--silo-text);
-	margin: 0 0 16px;
-	font-weight: 600;
-}
-.silo-wrap h3 { font-size: 16px; }
-.silo-wrap h4 { font-size: 14px; color: var(--silo-text-muted); }
-.silo-wrap p { color: var(--silo-text-muted); margin: 0 0 16px; }
-.silo-wrap code {
-	background: rgba(255,255,255,0.06);
-	padding: 2px 8px;
-	border-radius: 4px;
-	font-family: var(--silo-mono);
-	font-size: 13px;
+
+.silo-root h1,
+.silo-root h2,
+.silo-root h3,
+.silo-root h4,
+.silo-root p {
+	margin: 0;
+	color: inherit;
+	font-family: var(--font);
 }
 
-/* Header */
-.silo-header {
+.silo-root a {
+	color: var(--accent-hi);
+	text-decoration: none;
+}
+
+.silo-root a:focus,
+.silo-root button:focus {
+	box-shadow: none;
+	outline: none;
+}
+
+.silo-root :focus-visible {
+	outline: 2px solid var(--accent-hi);
+	outline-offset: 2px;
+}
+
+.silo-root code,
+.silo-root .code {
+	font-family: var(--code);
+	background: none;
+	padding: 0;
+	font-size: 0.92em;
+}
+
+.silo-noscript {
+	padding: 40px;
+	color: #f6f5f1;
+}
+
+/* Boot ------------------------------------------------------------------ */
+
+.silo-boot {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	min-height: 60vh;
+	color: var(--p45);
+	font-size: 14px;
+}
+
+/* Logo mark (2×2 grid from the site) ------------------------------------- */
+
+.silo-mark {
+	display: inline-grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2.5px;
+	width: 26px;
+	height: 26px;
+	padding: 4px;
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.06);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+	flex-shrink: 0;
+}
+
+.silo-mark i {
+	display: block;
+	border-radius: 0;
+	background: rgba(246, 245, 241, 0.35);
+}
+
+.silo-mark i:nth-child(1) {
+	background: var(--paper);
+}
+
+.silo-mark i:nth-child(2) {
+	background: var(--accent);
+}
+
+.silo-mark.is-lg {
+	width: 52px;
+	height: 52px;
+	padding: 8px;
+	gap: 5px;
+	border-radius: 0;
+}
+
+.silo-mark.is-lg i {
+	border-radius: 0;
+}
+
+/* App frame -------------------------------------------------------------- */
+
+.silo-top {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 32px;
-}
-.silo-logo {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-.silo-title {
-	font-size: 22px;
-	font-weight: 700;
-	letter-spacing: -0.02em;
-}
-.silo-version {
-	font-size: 12px;
-	color: var(--silo-text-dim);
-	background: rgba(255,255,255,0.06);
-	padding: 2px 8px;
-	border-radius: 4px;
-}
-
-/* Status pill */
-.silo-status-pill {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 13px;
-	font-weight: 500;
-	padding: 6px 14px;
-	border-radius: 20px;
-}
-.silo-status-connected {
-	background: rgba(34, 197, 94, 0.1);
-	color: var(--silo-green);
-}
-.silo-status-disconnected {
-	background: rgba(239, 68, 68, 0.1);
-	color: var(--silo-red);
-}
-
-/* Pulsing dot */
-.silo-pulse {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background: var(--silo-green);
-	position: relative;
-}
-.silo-pulse::after {
-	content: '';
-	position: absolute;
-	inset: -3px;
-	border-radius: 50%;
-	background: var(--silo-green);
-	opacity: 0.4;
-	animation: silo-pulse-anim 2s ease-in-out infinite;
-}
-@keyframes silo-pulse-anim {
-	0%, 100% { transform: scale(1); opacity: 0.4; }
-	50% { transform: scale(1.8); opacity: 0; }
-}
-
-/* Tabs */
-.silo-tabs {
-	display: flex;
-	gap: 4px;
-	border-bottom: 1px solid var(--silo-border);
-	margin-bottom: 32px;
-}
-.silo-tab {
-	padding: 10px 20px;
-	color: var(--silo-text-muted);
-	text-decoration: none;
-	font-size: 14px;
-	font-weight: 500;
-	border-bottom: 2px solid transparent;
-	transition: all 0.2s;
-}
-.silo-tab:hover {
-	color: var(--silo-text);
-}
-.silo-tab.active {
-	color: var(--silo-text);
-	border-bottom-color: var(--silo-accent);
-}
-
-/* KPI Grid */
-.silo-kpi-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 	gap: 16px;
-	margin-bottom: 32px;
-}
-.silo-kpi-card {
-	background: var(--silo-bg-card);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius);
-	padding: 24px;
-	transition: border-color 0.2s;
-}
-.silo-kpi-card:hover {
-	border-color: var(--silo-border-hover);
-}
-.silo-kpi-label {
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--silo-text-muted);
-	margin-bottom: 8px;
-}
-.silo-kpi-value {
-	font-size: 32px;
-	font-weight: 700;
-	letter-spacing: -0.02em;
-	line-height: 1.1;
-	margin-bottom: 4px;
-}
-.silo-kpi-sub {
-	font-size: 12px;
-	color: var(--silo-text-dim);
+	padding: 14px 24px;
+	border-bottom: 1px solid var(--line);
+	background: rgba(8, 9, 11, 0.92);
+	position: sticky;
+	top: 32px;
+	z-index: 20;
+	backdrop-filter: blur(10px);
 }
 
-/* Section */
-.silo-section {
-	background: var(--silo-bg-card);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius);
-	padding: 24px;
-	margin-bottom: 24px;
-}
-
-/* Status grid */
-.silo-status-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.silo-brand {
+	display: flex;
+	align-items: center;
 	gap: 12px;
+	min-width: 0;
 }
-.silo-status-item {
+
+.silo-wordmark {
+	font-size: 21px;
+	font-weight: 600;
+	letter-spacing: -0.05em;
+	line-height: 1;
+}
+
+.silo-for {
+	border-left: 1px solid rgba(255, 255, 255, 0.15);
+	padding-left: 10px;
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--p45);
+}
+
+.silo-top-right {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	font-size: 13px;
-	color: var(--silo-text-muted);
+	flex-wrap: wrap;
+	justify-content: flex-end;
 }
-.silo-status-dot {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	flex-shrink: 0;
-}
-.silo-status-dot.green { background: var(--silo-green); }
-.silo-status-dot.yellow { background: var(--silo-yellow); }
-.silo-status-dot.red { background: var(--silo-red); }
 
-/* Table */
-.silo-table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 13px;
-}
-.silo-table th {
-	text-align: left;
-	font-size: 11px;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--silo-text-dim);
-	padding: 8px 12px;
-	border-bottom: 1px solid var(--silo-border);
-}
-.silo-table td {
-	padding: 10px 12px;
-	border-bottom: 1px solid var(--silo-border);
-	color: var(--silo-text-muted);
-}
-.silo-table tr:last-child td { border-bottom: none; }
-.silo-table tr:hover td { background: var(--silo-bg-hover); }
-.silo-mono { font-family: var(--silo-mono); font-size: 12px; }
-.silo-url-cell {
-	max-width: 400px;
+.silo-host {
+	font-size: 12.5px;
+	color: var(--p45);
+	max-width: 260px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-/* Badge */
-.silo-badge {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: 4px;
-	font-size: 11px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	background: rgba(79, 70, 229, 0.15);
-	color: var(--silo-accent-hover);
-}
-.silo-badge-ok {
-	background: rgba(34, 197, 94, 0.15);
-	color: var(--silo-green);
-}
-.silo-badge-fail {
-	background: rgba(239, 68, 68, 0.15);
-	color: var(--silo-red);
+.silo-body {
+	display: grid;
+	grid-template-columns: 208px minmax(0, 1fr);
+	min-height: calc(100vh - 32px - 55px);
 }
 
-/* Buttons */
-.silo-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	padding: 10px 20px;
-	border: none;
-	border-radius: var(--silo-radius-sm);
-	font-size: 14px;
-	font-weight: 600;
-	cursor: pointer;
-	transition: all 0.2s;
-	font-family: var(--silo-font);
-}
-.silo-btn-primary {
-	background: var(--silo-accent);
-	color: #fff;
-}
-.silo-btn-primary:hover {
-	background: var(--silo-accent-hover);
-}
-.silo-btn-sm {
-	padding: 6px 14px;
-	font-size: 13px;
-	background: rgba(255,255,255,0.06);
-	color: var(--silo-text-muted);
-	border: 1px solid var(--silo-border);
-}
-.silo-btn-sm:hover {
-	background: var(--silo-bg-hover);
-	color: var(--silo-text);
-}
-.silo-btn-danger {
-	background: rgba(239, 68, 68, 0.1);
-	color: var(--silo-red);
-	border: 1px solid rgba(239, 68, 68, 0.2);
-}
-.silo-btn-danger:hover {
-	background: rgba(239, 68, 68, 0.2);
+.silo-side {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 18px 14px;
+	border-right: 1px solid var(--line);
+	background: #090b0f;
 }
 
-/* Spinner */
-.silo-btn-spinner {
-	width: 16px;
-	height: 16px;
-	border: 2px solid rgba(255,255,255,0.3);
-	border-top-color: #fff;
-	border-radius: 50%;
-	animation: silo-spin 0.6s linear infinite;
-}
-@keyframes silo-spin {
-	to { transform: rotate(360deg); }
+.silo-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
-/* Connect screen */
-.silo-connect-screen {
+.silo-nav button {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	min-height: 60vh;
-}
-.silo-connect-card {
-	background: var(--silo-bg-card);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius);
-	padding: 48px;
-	text-align: center;
-	max-width: 440px;
+	gap: 10px;
 	width: 100%;
-}
-.silo-connect-card h2 {
-	font-size: 24px;
-	margin-bottom: 8px;
-}
-.silo-connect-icon {
-	margin-bottom: 24px;
-}
-.silo-connect-form {
-	margin-top: 24px;
-}
-
-/* Field */
-.silo-field {
-	text-align: left;
-	margin-bottom: 16px;
-}
-.silo-field label {
-	display: block;
-	font-size: 13px;
-	font-weight: 500;
-	color: var(--silo-text-muted);
-	margin-bottom: 6px;
-}
-.silo-field input {
-	width: 100%;
-	padding: 10px 14px;
-	background: var(--silo-bg);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius-sm);
-	color: var(--silo-text);
+	padding: 9px 10px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: var(--p45);
+	font-family: var(--font);
 	font-size: 14px;
-	font-family: var(--silo-mono);
-	outline: none;
-	transition: border-color 0.2s;
-}
-.silo-field input:focus {
-	border-color: var(--silo-accent);
-}
-.silo-field input::placeholder {
-	color: var(--silo-text-dim);
+	font-weight: 500;
+	text-align: left;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
 }
 
-/* Scan progress */
-.silo-scan-progress {
-	margin-top: 24px;
-}
-.silo-scan-bar {
-	height: 6px;
-	background: rgba(255,255,255,0.06);
-	border-radius: 3px;
-	overflow: hidden;
-	margin-bottom: 12px;
-}
-.silo-scan-fill {
-	height: 100%;
-	background: linear-gradient(90deg, var(--silo-accent), var(--silo-accent-hover));
-	border-radius: 3px;
-	width: 0%;
-	transition: width 0.4s ease;
-}
-.silo-scan-message {
-	font-size: 13px;
-	color: var(--silo-text-muted);
-	animation: silo-fade-in 0.3s ease;
-}
-@keyframes silo-fade-in {
-	from { opacity: 0; transform: translateY(4px); }
-	to { opacity: 1; transform: translateY(0); }
+.silo-nav button:hover {
+	color: var(--p80);
+	background: rgba(255, 255, 255, 0.03);
 }
 
-/* Settings */
-.silo-settings-row {
+.silo-nav button.is-active {
+	color: var(--accent-hi);
+	background: rgba(61, 107, 255, 0.1);
+}
+
+.silo-nav svg {
+	width: 15px;
+	height: 15px;
+	flex-shrink: 0;
+}
+
+.silo-nav .silo-count {
+	margin-left: auto;
+	padding: 1px 6px;
+	border-radius: 0;
+	background: rgba(244, 166, 58, 0.15);
+	color: var(--amber);
+	font-size: 11.5px;
+	font-weight: 600;
+}
+
+.silo-keycard {
+	padding: 12px;
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.silo-keycard .label {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 14px 0;
-	border-bottom: 1px solid var(--silo-border);
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--p30);
 }
-.silo-settings-row:last-child { border-bottom: none; }
-.silo-settings-row label {
-	font-size: 14px;
-	color: var(--silo-text);
-	font-weight: 500;
+
+.silo-keycard .key {
+	margin-top: 8px;
+	font-family: var(--code);
+	font-size: 12.5px;
+	color: var(--p60);
+	letter-spacing: 0.04em;
+	word-break: break-all;
 }
-.silo-settings-value {
+
+.silo-keycard .meta {
+	margin-top: 6px;
+	font-size: 11.5px;
+	color: var(--p30);
+}
+
+.silo-main {
+	min-width: 0;
+	padding: 26px 28px 48px;
+	animation: silo-fade 0.35s ease both;
+}
+
+.silo-page-head {
 	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-.silo-settings-desc {
-	font-size: 12px;
-	color: var(--silo-text-dim);
-	margin: 4px 0 0;
-}
-
-/* Toggle */
-.silo-toggle {
-	position: relative;
-	display: inline-block;
-	width: 44px;
-	height: 24px;
-	cursor: pointer;
-}
-.silo-toggle input { opacity: 0; width: 0; height: 0; }
-.silo-toggle-slider {
-	position: absolute;
-	inset: 0;
-	background: rgba(255,255,255,0.1);
-	border-radius: 12px;
-	transition: background 0.2s;
-}
-.silo-toggle-slider::before {
-	content: '';
-	position: absolute;
-	width: 18px;
-	height: 18px;
-	left: 3px;
-	top: 3px;
-	background: #fff;
-	border-radius: 50%;
-	transition: transform 0.2s;
-}
-.silo-toggle input:checked + .silo-toggle-slider {
-	background: var(--silo-accent);
-}
-.silo-toggle input:checked + .silo-toggle-slider::before {
-	transform: translateX(20px);
-}
-
-/* Select */
-.silo-select {
-	padding: 8px 12px;
-	background: var(--silo-bg);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius-sm);
-	color: var(--silo-text);
-	font-size: 13px;
-	font-family: var(--silo-font);
-	outline: none;
-}
-.silo-filter-bar {
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
 	margin-bottom: 16px;
 }
 
-/* Danger zone */
-.silo-danger-zone {
-	border-color: rgba(239, 68, 68, 0.2);
-}
-.silo-danger-zone h3 {
-	color: var(--silo-red);
-}
-
-/* Toast */
-.silo-toast {
-	position: fixed;
-	bottom: 32px;
-	right: 32px;
-	padding: 12px 20px;
-	background: var(--silo-bg-card);
-	border: 1px solid var(--silo-border);
-	border-radius: var(--silo-radius-sm);
-	font-size: 14px;
-	color: var(--silo-text);
-	z-index: 999999;
-	animation: silo-toast-in 0.3s ease;
-	box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-.silo-toast.silo-toast-success { border-color: rgba(34,197,94,0.3); }
-.silo-toast.silo-toast-error { border-color: rgba(239,68,68,0.3); }
-@keyframes silo-toast-in {
-	from { opacity: 0; transform: translateY(12px); }
-	to { opacity: 1; transform: translateY(0); }
+.silo-page-head h1 {
+	font-size: 24px;
+	font-weight: 500;
+	letter-spacing: -0.035em;
+	line-height: 1.1;
 }
 
-/* Empty state */
-.silo-empty {
-	text-align: center;
-	padding: 32px;
-	color: var(--silo-text-dim);
-	font-size: 14px;
+.silo-page-head .sub {
+	margin-top: 5px;
+	font-size: 12.5px;
+	color: var(--p30);
 }
 
-/* Warmup */
-.silo-warmup-status {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 20px;
-}
-.silo-warmup-info {
+.silo-actions {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 14px;
-	font-weight: 500;
+	flex-wrap: wrap;
 }
 
-/* Responsive */
+/* Pills and chips --------------------------------------------------------- */
+
+.silo-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	height: 26px;
+	padding: 0 10px;
+	border: 1px solid var(--line-2);
+	border-radius: 0;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--p60);
+	background: rgba(255, 255, 255, 0.02);
+	white-space: nowrap;
+}
+
+.silo-pill.is-mint {
+	border-color: rgba(30, 214, 161, 0.22);
+	background: rgba(30, 214, 161, 0.07);
+	color: rgba(30, 214, 161, 0.9);
+}
+
+.silo-pill.is-amber {
+	border-color: rgba(244, 166, 58, 0.25);
+	background: rgba(244, 166, 58, 0.07);
+	color: rgba(244, 166, 58, 0.92);
+}
+
+.silo-pill.is-rose {
+	border-color: rgba(255, 95, 95, 0.25);
+	background: rgba(255, 95, 95, 0.07);
+	color: rgba(255, 120, 120, 0.95);
+}
+
+.silo-pill.is-accent {
+	border-color: rgba(61, 107, 255, 0.28);
+	background: rgba(61, 107, 255, 0.1);
+	color: var(--accent-hi);
+}
+
+.silo-pulse {
+	position: relative;
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 0;
+	background: currentColor;
+	flex-shrink: 0;
+}
+
+.silo-pulse::after {
+	content: "";
+	position: absolute;
+	inset: -4px;
+	border-radius: 0;
+	border: 1px solid currentColor;
+	opacity: 0.55;
+	animation: silo-ring 2.4s ease-out infinite;
+}
+
+.silo-dot {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-radius: 0;
+	background: currentColor;
+	flex-shrink: 0;
+}
+
+.silo-health {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+.silo-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 7px;
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.025);
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--p45);
+	white-space: nowrap;
+}
+
+.silo-chip.is-mint {
+	border-color: rgba(30, 214, 161, 0.22);
+	background: rgba(30, 214, 161, 0.08);
+	color: rgba(30, 214, 161, 0.88);
+}
+
+.silo-chip.is-amber {
+	border-color: rgba(244, 166, 58, 0.24);
+	background: rgba(244, 166, 58, 0.08);
+	color: rgba(244, 166, 58, 0.9);
+}
+
+.silo-chip.is-rose {
+	border-color: rgba(255, 95, 95, 0.24);
+	background: rgba(255, 95, 95, 0.08);
+	color: rgba(255, 120, 120, 0.92);
+}
+
+.silo-chip.is-accent {
+	border-color: rgba(61, 107, 255, 0.28);
+	background: rgba(61, 107, 255, 0.1);
+	color: var(--accent-hi);
+}
+
+.silo-chip.is-pulse::before {
+	content: "";
+	width: 5px;
+	height: 5px;
+	border-radius: 0;
+	background: currentColor;
+	animation: silo-blink 1.1s ease-in-out infinite;
+}
+
+/* Buttons ----------------------------------------------------------------- */
+
+.silo-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	height: 34px;
+	padding: 0 14px;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.04);
+	color: var(--paper);
+	font-family: var(--font);
+	font-size: 13.5px;
+	font-weight: 550;
+	letter-spacing: -0.01em;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+}
+
+.silo-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.24);
+	color: var(--paper);
+}
+
+.silo-btn:active {
+	transform: translateY(1px);
+}
+
+.silo-btn[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.silo-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+.silo-btn.is-primary {
+	background: var(--accent);
+	border-color: rgba(255, 255, 255, 0.16);
+	color: #fff;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 8px 24px -10px rgba(61, 107, 255, 0.7);
+}
+
+.silo-btn.is-primary:hover {
+	background: var(--accent-hi);
+	color: #fff;
+}
+
+.silo-btn.is-amber {
+	border-color: rgba(244, 166, 58, 0.25);
+	background: rgba(244, 166, 58, 0.05);
+	color: rgba(244, 166, 58, 0.9);
+}
+
+.silo-btn.is-amber:hover {
+	background: rgba(244, 166, 58, 0.1);
+	color: var(--amber);
+}
+
+.silo-btn.is-rose {
+	border-color: rgba(255, 95, 95, 0.25);
+	background: rgba(255, 95, 95, 0.06);
+	color: rgba(255, 130, 130, 0.95);
+}
+
+.silo-btn.is-rose:hover {
+	background: rgba(255, 95, 95, 0.12);
+	color: #ff8a8a;
+}
+
+.silo-btn.is-lg {
+	height: 46px;
+	padding: 0 22px;
+	font-size: 14px;
+	border-radius: 0;
+}
+
+.silo-btn.is-block {
+	width: 100%;
+}
+
+.silo-spin {
+	width: 14px;
+	height: 14px;
+	border: 2px solid rgba(255, 255, 255, 0.25);
+	border-top-color: currentColor;
+	border-radius: 0;
+	animation: silo-rotate 0.7s linear infinite;
+	flex-shrink: 0;
+}
+
+.silo-confirm {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: rgba(244, 166, 58, 0.9);
+}
+
+.silo-link {
+	border: 0;
+	background: none;
+	padding: 0;
+	color: var(--p45);
+	font-family: var(--font);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.silo-link:hover {
+	color: var(--paper);
+}
+
+/* Cards ------------------------------------------------------------------- */
+
+.silo-card {
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 55%), var(--ink-2);
+	padding: 18px;
+	min-width: 0;
+}
+
+.silo-card + .silo-card {
+	margin-top: 12px;
+}
+
+.silo-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 14px;
+}
+
+.silo-card-head h3 {
+	font-size: 14.5px;
+	font-weight: 550;
+	color: var(--p80);
+	letter-spacing: -0.01em;
+}
+
+.silo-card-head .meta {
+	font-size: 12.5px;
+	color: var(--p30);
+	white-space: nowrap;
+}
+
+.silo-eyebrow {
+	font-size: 11.5px;
+	font-weight: 550;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--p30);
+}
+
+.silo-grid {
+	display: grid;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.silo-grid.cols-2 {
+	grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+}
+
+.silo-grid.cols-2e {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.silo-grid.cols-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.silo-grid.cols-4 {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.silo-grid.cols-5 {
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+/* KPIs -------------------------------------------------------------------- */
+
+.silo-kpi {
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: var(--ink-2);
+	padding: 14px 16px;
+	min-width: 0;
+	position: relative;
+	overflow: hidden;
+}
+
+.silo-kpi .label {
+	font-size: 11px;
+	font-weight: 550;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--p30);
+}
+
+.silo-kpi .value {
+	margin-top: 8px;
+	font-size: 28px;
+	font-weight: 500;
+	letter-spacing: -0.045em;
+	line-height: 1;
+	color: var(--paper);
+	font-variant-numeric: tabular-nums;
+}
+
+.silo-kpi .value small {
+	margin-left: 3px;
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0;
+	color: var(--p45);
+}
+
+.silo-kpi .delta {
+	margin-top: 8px;
+	font-size: 12.5px;
+	color: var(--p30);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.silo-kpi .delta.is-mint {
+	color: rgba(30, 214, 161, 0.75);
+}
+
+.silo-kpi .delta.is-amber {
+	color: rgba(244, 166, 58, 0.78);
+}
+
+.silo-kpi.is-flash::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, rgba(61, 107, 255, 0.12), transparent);
+	animation: silo-sweep 0.9s ease;
+}
+
+/* Traffic chart ----------------------------------------------------------- */
+
+.silo-traffic svg {
+	display: block;
+	width: 100%;
+	height: 150px;
+}
+
+.silo-legend {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 12px;
+	color: var(--p45);
+}
+
+.silo-legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.silo-legend i {
+	width: 7px;
+	height: 7px;
+	border-radius: 0;
+	display: inline-block;
+}
+
+.silo-traffic-foot {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--line);
+	font-size: 12.5px;
+	color: var(--p30);
+}
+
+.silo-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 120px;
+	padding: 18px;
+	color: var(--p30);
+	font-size: 13px;
+	text-align: center;
+}
+
+.silo-empty strong {
+	color: var(--p60);
+	font-weight: 550;
+}
+
+/* Warmup list ------------------------------------------------------------- */
+
+.silo-warm-row {
+	padding: 7px 0;
+}
+
+.silo-warm-row + .silo-warm-row {
+	border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.silo-warm-line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	font-size: 13px;
+}
+
+.silo-warm-line .path {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--p60);
+	font-family: var(--code);
+	font-size: 12.5px;
+}
+
+.silo-warm-line .ms {
+	color: var(--p30);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.silo-bar {
+	position: relative;
+	height: 4px;
+	margin-top: 6px;
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.06);
+	overflow: hidden;
+}
+
+.silo-bar > i {
+	position: absolute;
+	inset: 0 auto 0 0;
+	border-radius: 0;
+	background: var(--accent);
+	transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.silo-bar.is-mint > i {
+	background: var(--mint);
+}
+
+.silo-bar.is-amber > i {
+	background: var(--amber);
+}
+
+.silo-bar.is-indeterminate > i {
+	width: 38% !important;
+	animation: silo-indeterminate 1.15s ease-in-out infinite;
+}
+
+/* Tables ------------------------------------------------------------------ */
+
+.silo-table-wrap {
+	overflow-x: auto;
+	margin: 0 -18px -18px;
+}
+
+.silo-table {
+	width: 100%;
+	min-width: 640px;
+	border-collapse: collapse;
+	text-align: left;
+}
+
+.silo-table th {
+	padding: 8px 18px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+	font-size: 11px;
+	font-weight: 550;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--p20);
+	white-space: nowrap;
+}
+
+.silo-table td {
+	padding: 10px 18px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+	font-size: 13px;
+	color: var(--p60);
+	vertical-align: middle;
+}
+
+.silo-table tr:last-child td {
+	border-bottom: 0;
+}
+
+.silo-table tbody tr.is-row {
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.silo-table tbody tr.is-row:hover {
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.silo-table tbody tr.is-new {
+	animation: silo-new-row 2.4s ease;
+}
+
+.silo-table .trigger {
+	font-family: var(--code);
+	font-size: 12.5px;
+	color: rgba(99, 137, 255, 0.92);
+	white-space: nowrap;
+}
+
+.silo-table .caret {
+	display: inline-block;
+	width: 10px;
+	margin-right: 6px;
+	color: var(--p20);
+	transition: transform 0.2s;
+}
+
+.silo-table tr.is-open .caret {
+	transform: rotate(90deg);
+}
+
+.silo-table .object {
+	color: var(--p80);
+	font-size: 13px;
+	white-space: nowrap;
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.silo-table .detail {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--p30);
+	white-space: nowrap;
+	max-width: 280px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.silo-table .num {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	color: var(--p45);
+	font-size: 13px;
+}
+
+.silo-table .right {
+	text-align: right;
+}
+
+.silo-table .path {
+	font-family: var(--code);
+	font-size: 12.5px;
+	color: var(--p60);
+	max-width: 380px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.silo-expand td {
+	background: rgba(255, 255, 255, 0.015);
+	padding: 16px 18px 18px;
+}
+
+.silo-expand-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.silo-urlbox {
+	max-height: 168px;
+	overflow-y: auto;
+	margin-top: 6px;
+	padding: 8px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	border-radius: 0;
+	background: rgba(0, 0, 0, 0.25);
+}
+
+.silo-urlbox p {
+	font-family: var(--code);
+	font-size: 12.5px;
+	line-height: 1.75;
+	color: var(--p45);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.silo-urlbox p.is-mint {
+	color: rgba(30, 214, 161, 0.7);
+}
+
+.silo-urlbox pre {
+	margin: 0;
+	font-family: var(--code);
+	font-size: 12.5px;
+	line-height: 1.6;
+	color: var(--p45);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.silo-trace {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.silo-trace div {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-family: var(--code);
+	font-size: 12.5px;
+}
+
+.silo-trace .t {
+	width: 62px;
+	color: var(--p20);
+	flex-shrink: 0;
+}
+
+.silo-trace .e {
+	flex: 1;
+	min-width: 0;
+	color: var(--p60);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.silo-trace .s {
+	color: rgba(30, 214, 161, 0.75);
+}
+
+.silo-trace .s.is-amber {
+	color: rgba(244, 166, 58, 0.78);
+}
+
+.silo-filter {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.silo-filter button {
+	height: 28px;
+	padding: 0 11px;
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: transparent;
+	color: var(--p45);
+	font-family: var(--font);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.silo-filter button:hover {
+	color: var(--p80);
+}
+
+.silo-filter button.is-active {
+	border-color: rgba(61, 107, 255, 0.35);
+	background: rgba(61, 107, 255, 0.1);
+	color: var(--accent-hi);
+}
+
+/* Small stat tiles -------------------------------------------------------- */
+
+.silo-stat {
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.02);
+	padding: 12px 14px;
+}
+
+.silo-stat .label {
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--p30);
+}
+
+.silo-stat .value {
+	margin-top: 6px;
+	font-size: 20px;
+	font-weight: 500;
+	letter-spacing: -0.04em;
+	color: var(--paper);
+	font-variant-numeric: tabular-nums;
+}
+
+.silo-stat .hint {
+	margin-top: 3px;
+	font-size: 12px;
+	color: var(--p30);
+}
+
+.silo-rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.silo-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+	font-size: 13px;
+	color: var(--p60);
+}
+
+.silo-row:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.silo-row .k {
+	color: var(--p45);
+}
+
+.silo-row .v {
+	color: var(--p80);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.silo-typebar {
+	display: grid;
+	grid-template-columns: 130px minmax(0, 1fr) 60px;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0;
+	font-size: 13px;
+}
+
+.silo-typebar .name {
+	color: var(--p60);
+	text-transform: capitalize;
+}
+
+.silo-typebar .n {
+	text-align: right;
+	color: var(--p80);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Checks ------------------------------------------------------------------ */
+
+.silo-check {
+	display: grid;
+	grid-template-columns: 22px minmax(0, 220px) minmax(0, 1fr);
+	align-items: start;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.silo-check:first-child {
+	border-top: 0;
+}
+
+.silo-check .icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 0;
+	font-size: 12.5px;
+	font-weight: 700;
+}
+
+.silo-check .icon.ok {
+	background: rgba(30, 214, 161, 0.12);
+	color: var(--mint);
+}
+
+.silo-check .icon.warn {
+	background: rgba(244, 166, 58, 0.12);
+	color: var(--amber);
+}
+
+.silo-check .icon.fail {
+	background: rgba(255, 95, 95, 0.12);
+	color: var(--rose);
+}
+
+.silo-check .label {
+	font-size: 13.5px;
+	font-weight: 550;
+	color: var(--p80);
+}
+
+.silo-check .detail {
+	font-size: 13px;
+	color: var(--p45);
+	word-break: break-word;
+}
+
+/* Forms ------------------------------------------------------------------- */
+
+.silo-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	text-align: left;
+}
+
+.silo-field label {
+	font-size: 13px;
+	font-weight: 550;
+	color: var(--p60);
+}
+
+.silo-field input[type="text"],
+.silo-field input[type="password"],
+.silo-field input[type="url"] {
+	height: 44px;
+	width: 100%;
+	padding: 0 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.03);
+	color: var(--paper);
+	font-family: var(--code);
+	font-size: 14px;
+	box-shadow: none;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.silo-field input:focus {
+	border-color: rgba(61, 107, 255, 0.6);
+	background: rgba(255, 255, 255, 0.05);
+	box-shadow: none;
+	outline: none;
+}
+
+.silo-field .help {
+	font-size: 12.5px;
+	color: var(--p30);
+}
+
+.silo-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 14px 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.silo-toggle-row:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.silo-toggle-row .t {
+	font-size: 14px;
+	font-weight: 550;
+	color: var(--p80);
+}
+
+.silo-toggle-row .d {
+	margin-top: 3px;
+	max-width: 560px;
+	font-size: 13px;
+	color: var(--p45);
+}
+
+.silo-switch {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 22px;
+	flex-shrink: 0;
+}
+
+.silo-switch input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.silo-switch span {
+	position: absolute;
+	inset: 0;
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.1);
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.silo-switch span::before {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 16px;
+	height: 16px;
+	border-radius: 0;
+	background: #fff;
+	transition: transform 0.2s;
+}
+
+.silo-switch input:checked + span {
+	background: var(--accent);
+}
+
+.silo-switch input:checked + span::before {
+	transform: translateX(18px);
+}
+
+.silo-switch input:focus-visible + span {
+	outline: 2px solid var(--accent-hi);
+	outline-offset: 2px;
+}
+
+.silo-range {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--p80);
+	font-variant-numeric: tabular-nums;
+}
+
+.silo-range input[type="range"] {
+	width: 160px;
+	accent-color: var(--accent);
+}
+
+.silo-danger {
+	border-color: rgba(255, 95, 95, 0.16);
+	background: rgba(255, 95, 95, 0.025);
+}
+
+.silo-danger h3 {
+	color: rgba(255, 130, 130, 0.85) !important;
+}
+
+.silo-error {
+	margin-top: 12px;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 95, 95, 0.25);
+	border-radius: 0;
+	background: rgba(255, 95, 95, 0.07);
+	color: #ff8f8f;
+	font-size: 13px;
+	text-align: left;
+}
+
+.silo-note {
+	margin-top: 12px;
+	padding: 10px 12px;
+	border: 1px solid rgba(244, 166, 58, 0.22);
+	border-radius: 0;
+	background: rgba(244, 166, 58, 0.06);
+	color: rgba(244, 166, 58, 0.9);
+	font-size: 13px;
+	text-align: left;
+}
+
+/* Connect ----------------------------------------------------------------- */
+
+.silo-connect {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: calc(100vh - 32px - 56px);
+	padding: 40px 20px;
+	overflow: hidden;
+}
+
+.silo-connect::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image: linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+	background-size: 64px 64px;
+	mask-image: radial-gradient(ellipse at 50% 30%, #000, transparent 70%);
+	-webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000, transparent 70%);
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.silo-connect::after {
+	content: "";
+	position: absolute;
+	top: -140px;
+	left: 50%;
+	width: 620px;
+	height: 420px;
+	transform: translateX(-50%);
+	border-radius: 0;
+	background: radial-gradient(ellipse, rgba(61, 107, 255, 0.22), transparent 65%);
+	filter: blur(30px);
+	pointer-events: none;
+}
+
+.silo-connect-card {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	max-width: 480px;
+	padding: 34px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 0;
+	background: rgba(13, 16, 20, 0.94);
+	box-shadow: 0 36px 90px -30px rgba(0, 0, 0, 0.95);
+	text-align: center;
+	animation: silo-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.silo-connect-card h1 {
+	margin-top: 22px;
+	font-size: 26px;
+	font-weight: 500;
+	letter-spacing: -0.04em;
+	line-height: 1.1;
+}
+
+.silo-connect-card .lede {
+	margin: 10px auto 0;
+	max-width: 360px;
+	font-size: 14.5px;
+	line-height: 1.6;
+	color: var(--p45);
+}
+
+.silo-steps {
+	display: flex;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 22px;
+}
+
+.silo-steps span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 0;
+	font-size: 12px;
+	font-weight: 550;
+	color: var(--p30);
+}
+
+.silo-steps span.is-active {
+	background: rgba(61, 107, 255, 0.14);
+	color: var(--accent-hi);
+}
+
+.silo-steps span.is-done {
+	background: rgba(30, 214, 161, 0.1);
+	color: rgba(30, 214, 161, 0.85);
+}
+
+.silo-form {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	margin-top: 26px;
+}
+
+.silo-disclose {
+	align-self: flex-start;
+}
+
+.silo-foot {
+	margin-top: 22px;
+	padding-top: 16px;
+	border-top: 1px solid var(--line);
+	display: flex;
+	justify-content: center;
+	gap: 14px;
+	flex-wrap: wrap;
+	font-size: 12.5px;
+	color: var(--p30);
+}
+
+/* Scan -------------------------------------------------------------------- */
+
+.silo-scan {
+	max-width: 1080px;
+	margin: 0 auto;
+	padding: 28px 24px 48px;
+	animation: silo-fade 0.4s ease both;
+}
+
+.silo-scan-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.silo-scan-head h1 {
+	font-size: 28px;
+	font-weight: 500;
+	letter-spacing: -0.045em;
+	line-height: 1.05;
+}
+
+.silo-scan-head .sub {
+	margin-top: 8px;
+	font-size: 14px;
+	color: var(--p45);
+}
+
+.silo-scan-pct {
+	font-size: 52px;
+	font-weight: 500;
+	letter-spacing: -0.06em;
+	line-height: 0.9;
+	font-variant-numeric: tabular-nums;
+}
+
+.silo-scan-pct small {
+	font-size: 20px;
+	color: var(--p30);
+	margin-left: 2px;
+}
+
+.silo-scan-bar {
+	position: relative;
+	height: 6px;
+	margin: 20px 0 22px;
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.06);
+	overflow: hidden;
+}
+
+.silo-scan-bar i {
+	position: absolute;
+	inset: 0 auto 0 0;
+	border-radius: 0;
+	background: linear-gradient(90deg, var(--accent), var(--accent-hi));
+	box-shadow: 0 0 18px rgba(61, 107, 255, 0.55);
+	transition: width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.silo-scan-bar i::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+	animation: silo-sweep 1.6s linear infinite;
+}
+
+.silo-scan-bar.is-done i {
+	background: var(--mint);
+	box-shadow: 0 0 18px rgba(30, 214, 161, 0.45);
+}
+
+.silo-scan-bar.is-done i::after,
+.silo-scan-bar.is-failed i::after {
+	display: none;
+}
+
+.silo-scan-bar.is-failed i {
+	background: var(--rose);
+}
+
+.silo-scan-grid {
+	display: grid;
+	grid-template-columns: 250px minmax(0, 1fr) 240px;
+	gap: 12px;
+}
+
+.silo-stages {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.silo-stage {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 9px 10px;
+	border-radius: 0;
+	font-size: 13.5px;
+	color: var(--p30);
+	transition: background 0.3s, color 0.3s;
+}
+
+.silo-stage .st {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 0;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	font-size: 11.5px;
+	flex-shrink: 0;
+}
+
+.silo-stage.is-active {
+	background: rgba(61, 107, 255, 0.09);
+	color: var(--paper);
+}
+
+.silo-stage.is-active .st {
+	border-color: transparent;
+}
+
+.silo-stage.is-done {
+	color: var(--p60);
+}
+
+.silo-stage.is-done .st {
+	border-color: transparent;
+	background: rgba(30, 214, 161, 0.15);
+	color: var(--mint);
+}
+
+.silo-stage.is-failed .st {
+	border-color: transparent;
+	background: rgba(255, 95, 95, 0.15);
+	color: var(--rose);
+}
+
+.silo-graph {
+	display: flex;
+	flex-direction: column;
+}
+
+.silo-nodes {
+	display: grid;
+	grid-template-columns: repeat(24, minmax(0, 1fr));
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.silo-nodes i {
+	aspect-ratio: 1;
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.06);
+	transition: background 0.5s ease, transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+.silo-nodes i.on {
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.silo-nodes i.on.a {
+	background: rgba(61, 107, 255, 0.85);
+	box-shadow: 0 0 10px rgba(61, 107, 255, 0.45);
+}
+
+.silo-nodes i.on.m {
+	background: rgba(30, 214, 161, 0.6);
+}
+
+.silo-nodes i.pop {
+	animation: silo-pop 0.5s ease;
+}
+
+.silo-graph-legend {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 12px;
+	font-size: 12px;
+	color: var(--p45);
+}
+
+.silo-graph-legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.silo-graph-legend i {
+	width: 8px;
+	height: 8px;
+	border-radius: 0;
+}
+
+.silo-counters {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.silo-counter {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.silo-counter .label {
+	font-size: 12.5px;
+	color: var(--p45);
+}
+
+.silo-counter .value {
+	font-size: 19px;
+	font-weight: 500;
+	letter-spacing: -0.04em;
+	color: var(--paper);
+	font-variant-numeric: tabular-nums;
+}
+
+.silo-terminal {
+	margin-top: 12px;
+	padding: 14px 16px;
+	border: 1px solid var(--line);
+	border-radius: 0;
+	background: #07080a;
+	font-family: var(--code);
+	font-size: 13px;
+	line-height: 1.85;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.silo-terminal div {
+	display: flex;
+	gap: 12px;
+	animation: silo-fade 0.4s ease both;
+}
+
+.silo-terminal .t {
+	color: var(--p20);
+	flex-shrink: 0;
+}
+
+.silo-terminal .m {
+	color: var(--p60);
+}
+
+.silo-terminal div:last-child .m {
+	color: var(--paper);
+}
+
+.silo-types {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 12px;
+}
+
+.silo-done-banner {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-top: 14px;
+	padding: 16px 18px;
+	border: 1px solid rgba(30, 214, 161, 0.22);
+	border-radius: 0;
+	background: rgba(30, 214, 161, 0.05);
+	animation: silo-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.silo-done-banner .icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 0;
+	background: rgba(30, 214, 161, 0.15);
+	color: var(--mint);
+	flex-shrink: 0;
+}
+
+.silo-done-banner .t {
+	font-size: 14px;
+	font-weight: 550;
+	color: var(--paper);
+}
+
+.silo-done-banner .d {
+	margin-top: 2px;
+	font-size: 13px;
+	color: var(--p45);
+}
+
+.silo-done-banner .silo-btn {
+	margin-left: auto;
+}
+
+/* Toast ------------------------------------------------------------------- */
+
+.silo-toast {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	max-width: 420px;
+	padding: 12px 16px;
+	border: 1px solid var(--line-2);
+	border-radius: 0;
+	background: #10131a;
+	box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.8);
+	color: var(--paper);
+	font-size: 13.5px;
+	animation: silo-rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.silo-toast.is-ok {
+	border-color: rgba(30, 214, 161, 0.3);
+}
+
+.silo-toast.is-error {
+	border-color: rgba(255, 95, 95, 0.35);
+}
+
+.silo-toast .silo-dot {
+	color: var(--mint);
+}
+
+.silo-toast.is-error .silo-dot {
+	color: var(--rose);
+}
+
+/* Utilities --------------------------------------------------------------- */
+
+.silo-dim {
+	color: var(--p30);
+}
+
+.silo-muted {
+	color: var(--p45);
+}
+
+.silo-mint {
+	color: var(--mint);
+}
+
+.silo-amber {
+	color: var(--amber);
+}
+
+.silo-rose {
+	color: var(--rose);
+}
+
+.silo-mt {
+	margin-top: 12px;
+}
+
+.silo-mt-lg {
+	margin-top: 22px;
+}
+
+.silo-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+}
+
+/* Motion ------------------------------------------------------------------ */
+
+@keyframes silo-ring {
+	0% {
+		transform: scale(0.6);
+		opacity: 0.9;
+	}
+	80%,
+	100% {
+		transform: scale(1.9);
+		opacity: 0;
+	}
+}
+
+@keyframes silo-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.25;
+	}
+}
+
+@keyframes silo-rotate {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes silo-fade {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes silo-rise {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes silo-sweep {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes silo-indeterminate {
+	0% {
+		left: -40%;
+	}
+	100% {
+		left: 100%;
+	}
+}
+
+@keyframes silo-pop {
+	0% {
+		transform: scale(0.4);
+	}
+	60% {
+		transform: scale(1.25);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes silo-new-row {
+	0% {
+		background: rgba(61, 107, 255, 0.16);
+	}
+	100% {
+		background: transparent;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.silo-root *,
+	.silo-root *::before,
+	.silo-root *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* Responsive -------------------------------------------------------------- */
+
+@media (max-width: 1280px) {
+	.silo-scan-grid {
+		grid-template-columns: 220px minmax(0, 1fr);
+	}
+	.silo-counters {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+	}
+	.silo-grid.cols-5 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 1100px) {
+	.silo-grid.cols-2,
+	.silo-grid.cols-3 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.silo-grid.cols-4 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 960px) {
+	.silo-body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.silo-side {
+		flex-direction: row;
+		align-items: center;
+		padding: 8px 12px;
+		border-right: 0;
+		border-bottom: 1px solid var(--line);
+		overflow-x: auto;
+	}
+	.silo-nav {
+		flex-direction: row;
+	}
+	.silo-nav button {
+		width: auto;
+		white-space: nowrap;
+	}
+	.silo-keycard {
+		display: none;
+	}
+	.silo-main {
+		padding: 20px 16px 40px;
+	}
+	.silo-scan-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.silo-counters {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.silo-expand-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.silo-check {
+		grid-template-columns: 22px minmax(0, 1fr);
+	}
+	.silo-check .detail {
+		grid-column: 2;
+	}
+}
+
 @media (max-width: 782px) {
-	.silo-wrap { padding: 16px; margin: -10px -10px 0; }
-	.silo-kpi-grid { grid-template-columns: 1fr 1fr; }
-	.silo-connect-card { padding: 24px; }
-	.silo-settings-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+	.silo-top {
+		top: 46px;
+		padding: 12px 16px;
+	}
+	.silo-for,
+	.silo-host {
+		display: none;
+	}
+	.silo-grid.cols-4,
+	.silo-grid.cols-5,
+	.silo-grid.cols-2e {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.silo-connect-card {
+		padding: 26px 20px;
+	}
+}
+
+/* Square everywhere; only status dots and spinners stay round. */
+.silo-root .silo-dot,
+.silo-root .silo-pulse,
+.silo-root .silo-pulse::after,
+.silo-root .silo-spin,
+.silo-root .silo-chip.is-pulse::before {
+	border-radius: 50%;
+}
+
+/* Plain-language hints under card titles. */
+.silo-hint {
+	margin: -6px 0 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--p45);
+}
+
+/* Latest invalidation (mirrors the event card in the getsilo.io hero). */
+.silo-latest {
+	background: #0c0f13;
+	border-color: rgba(255, 255, 255, 0.09);
+}
+
+.silo-latest-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.silo-zap {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	flex-shrink: 0;
+	background: rgba(61, 107, 255, 0.12);
+	box-shadow: inset 0 0 0 1px rgba(61, 107, 255, 0.22);
+	color: var(--accent-hi);
+}
+
+.silo-zap svg {
+	width: 12px;
+	height: 12px;
+}
+
+.silo-latest-head .trigger {
+	font-family: var(--code);
+	font-size: 14.5px;
+	color: var(--p80);
+	white-space: nowrap;
+}
+
+.silo-latest-head .sku {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: var(--code);
+	font-size: 13px;
+	color: var(--p30);
+}
+
+.silo-latest-head .when {
+	margin-left: auto;
+	font-size: 13px;
+	color: var(--p30);
+	white-space: nowrap;
+}
+
+.silo-latest-head .ms {
+	font-family: var(--code);
+	font-size: 14.5px;
+	color: var(--mint);
+	white-space: nowrap;
+}
+
+.silo-latest-object {
+	margin-top: 8px;
+	font-size: 14px;
+	color: var(--p80);
+}
+
+.silo-chain {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+.silo-chain .node {
+	padding: 3px 8px;
+	border: 1px solid rgba(255, 255, 255, 0.09);
+	background: rgba(255, 255, 255, 0.02);
+	font-size: 13px;
+	color: var(--p60);
+}
+
+.silo-chain .arr {
+	display: inline-flex;
+	color: var(--p20);
+}
+
+.silo-chain .arr svg {
+	width: 12px;
+	height: 12px;
+}
+
+.silo-chain .end {
+	margin-left: auto;
+}
+
+.silo-latest-foot {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 12px;
+	padding-top: 10px;
+	border-top: 1px solid var(--line);
+	font-size: 13px;
+	color: var(--p45);
 }
