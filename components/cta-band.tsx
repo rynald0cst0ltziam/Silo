@@ -27,8 +27,9 @@ export function CtaBand() {
               <span className="text-paper/40">The stock stays true.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-[490px] text-[15px] leading-relaxed text-paper/50">
-              Connect a store, run the first scan, and watch one stock change resolve in
-              milliseconds — without touching a page that didn&apos;t need it.
+              Install the connector, change one variation&apos;s stock and watch Silo clear
+              exactly the pages it touched, rewarm them, and log why. No other page is touched,
+              and your existing cache stays.
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

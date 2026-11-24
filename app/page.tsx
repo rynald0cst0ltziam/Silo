@@ -94,10 +94,11 @@ export default function HomePage() {
                 className="animate-rise mt-5 max-w-[520px] text-[15.5px] leading-[1.65] tracking-[-0.01em] text-paper/60 sm:text-[16.5px]"
                 style={{ animationDelay: "190ms" }}
               >
-                Surgical invalidation. Always-accurate stock. Sub-millisecond catalog hits. Silo
-                knows which categories contain a product, which variation changed, and which
-                Store API responses depend on it — then invalidates exactly those, and re-warms
-                what matters. Already on WP Rocket or LiteSpeed? Silo works alongside it.
+                Full-page cache speed without selling what you no longer have. Every order,
+                refund, sale and stock edit clears exactly the pages it affects (the product,
+                the variation, its categories and Store API results) and rewarms them in the
+                background. Already on WP Rocket or LiteSpeed? Keep it. Silo makes it
+                WooCommerce-accurate.
               </p>
 
               <div

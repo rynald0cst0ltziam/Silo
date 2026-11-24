@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s — Silo",
   },
   description:
-    "Silo invalidates the exact product, variation, category and Store API response that changed, then re-warms the pages that matter. Cache built only for WooCommerce.",
+    "Cache built only for WooCommerce. Every order, refund, sale and stock change clears exactly the pages it affects and rewarms them. Works alongside WP Rocket, LiteSpeed and Cloudflare.",
   applicationName: "Silo",
   keywords: [
     "WooCommerce cache",
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     siteName: "Silo",
     title: "Silo — The only cache that understands WooCommerce inventory",
     description:
-      "Surgical invalidation. Always-accurate stock. Sub-millisecond catalog pages. Built for products, variants, stock and orders — not blogs.",
+      "Full-page cache speed for WooCommerce without stale stock or prices. Surgical invalidation, priority warmup, and it works alongside the cache you already run.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Silo — The only cache that understands WooCommerce inventory",
     description:
-      "Surgical invalidation. Always-accurate stock. Sub-millisecond catalog pages. Built for WooCommerce.",
+      "Full-page cache speed for WooCommerce without stale stock or prices. Works alongside WP Rocket, LiteSpeed and Cloudflare.",
   },
   robots: {
     index: true,
@@ -66,6 +66,12 @@ export default function RootLayout({
   return (
     <SessionProvider>
       <html lang="en">
+        {process.env.VERCEL_ENV === "production" ? (
+          <head>
+            {/* Ship or Die hackathon verification (production only). */}
+            <script defer src="https://www.ship-or-die.com/hackathon/verify.js" data-site="b8fd70bc844897aa49d5c98f9b0ba3a53dae2733" />
+          </head>
+        ) : null}
         <body className="min-h-screen antialiased">
           <a
             href="#main"
