@@ -1,14 +1,53 @@
-import { Check } from "lucide-react";
 import { COMPATIBILITY, COMPATIBILITY_GROUPS } from "@/lib/content";
 
+/** One dot colour per group, so a scanning eye can tell a cache plugin from a builder. */
+const GROUP_DOT: Record<string, string> = {
+  Platform: "bg-woo",
+  "Cache plugins": "bg-accent",
+  "Hosts and CDN": "bg-mint-deep",
+  "Page builders and themes": "bg-amber",
+  "Languages and currencies": "bg-ink/45",
+};
+
+type Chip = { name: string; group: string };
+
+function chips(groups: string[]): Chip[] {
+  return COMPATIBILITY_GROUPS.filter((g) => groups.includes(g.title)).flatMap((g) => g.items.map((name) => ({ name, group: g.title })));
+}
+
+const ROW_ONE = chips(["Cache plugins", "Hosts and CDN"]);
+const ROW_TWO = chips(["Page builders and themes", "Languages and currencies", "Platform"]);
+
+function Row({ items, reverse = false }: { items: Chip[]; reverse?: boolean }) {
+  return (
+    <div className="marquee-mask relative overflow-hidden py-1.5">
+      <div className={`${reverse ? "marquee-track-reverse" : "marquee-track"} flex w-max`} aria-hidden="true">
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex shrink-0 items-center gap-2.5 pr-2.5">
+            {items.map((item) => (
+              <span
+                key={`${copy}-${item.name}`}
+                className="flex shrink-0 items-center gap-2 rounded-full border border-ink/[0.09] bg-white px-4 py-2 shadow-[0_1px_0_rgba(8,9,11,0.04)]"
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${GROUP_DOT[item.group]}`} />
+                <span className="whitespace-nowrap text-[13.5px] font-medium tracking-[-0.01em] text-ink/75">{item.name}</span>
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
- * Compatibility: what the connector detects and works with, grouped so a store owner can
- * find their own cache plugin, host, builder and currency tools at a glance.
+ * Compatibility: two slow rows drifting in opposite directions, colour-coded by group.
+ * Pauses on hover; static for visitors who prefer reduced motion.
  */
 export function LogoStrip() {
   return (
     <section aria-labelledby="compatibility-heading" className="surface-paper border-y border-ink/10 bg-paper-2">
-      <div className="container-page py-12 sm:py-14">
+      <div className="container-page pt-12 sm:pt-14">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="eyebrow text-ink/40">
@@ -20,39 +59,29 @@ export function LogoStrip() {
             </h2>
           </div>
           <p className="max-w-[440px] text-[14px] leading-relaxed text-ink/55 lg:pb-1 lg:text-right">
-            Keep your cache plugin, host, CDN and page builder. Silo detects them, works alongside
-            them and keeps every layer accurate when stock, prices or sales change. No DNS change,
-            no theme rewrite.
+            Keep your cache plugin, host, CDN and page builder. Silo works alongside them and keeps
+            every layer accurate when stock, prices or sales change.
           </p>
         </div>
+      </div>
 
-        <p className="sr-only">Compatible with {COMPATIBILITY.join(", ")}.</p>
+      <p className="sr-only">Compatible with {COMPATIBILITY.join(", ")}.</p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {COMPATIBILITY_GROUPS.map((group) => (
-            <div key={group.title} className="border border-ink/10 bg-white/60 p-4">
-              <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-ink">{group.title}</h3>
-              <p className="mt-1 text-[12.5px] leading-snug text-ink/50">{group.note}</p>
-              <ul className="mt-3 space-y-1.5">
-                {group.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-[13px] text-ink/75">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-mint-deep" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+      <div className="mt-8 space-y-1">
+        <Row items={ROW_ONE} />
+        <Row items={ROW_TWO} reverse />
+      </div>
+
+      <div className="container-page pb-12 pt-6 sm:pb-14">
+        <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-ink/50">
+          {COMPATIBILITY_GROUPS.map((g) => (
+            <li key={g.title} className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${GROUP_DOT[g.title]}`} />
+              {g.title}
+            </li>
           ))}
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-ink/45">
-          <span className="flex items-center gap-2">
-            <span className="pulse-dot" />
-            Another page cache active? Silo switches to work-alongside mode automatically.
-          </span>
-          <span className="hidden h-3 w-px bg-ink/10 sm:block" />
-          <span>Product and archive pages only: cart, checkout and account are never cached.</span>
-        </div>
+          <li className="text-ink/40 sm:ml-auto">Another page cache active? Silo switches to work-alongside mode automatically.</li>
+        </ul>
       </div>
     </section>
   );

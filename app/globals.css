@@ -490,9 +490,25 @@
     will-change: transform;
   }
 
+  .marquee-track-reverse {
+    animation: marquee-reverse 54s linear infinite;
+    will-change: transform;
+  }
+
   .marquee-mask:hover .marquee-track,
-  .marquee-mask:focus-within .marquee-track {
+  .marquee-mask:hover .marquee-track-reverse,
+  .marquee-mask:focus-within .marquee-track,
+  .marquee-mask:focus-within .marquee-track-reverse {
     animation-play-state: paused;
+  }
+}
+
+@keyframes marquee-reverse {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -545,7 +561,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
+  .marquee-track,
+  .marquee-track-reverse {
     animation: none;
     transform: none;
   }
