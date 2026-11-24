@@ -90,7 +90,7 @@ export function SiteFooter() {
           <div className="flex items-center gap-5 text-[11.5px] text-paper/35">
             <Link href="/status" className="flex items-center gap-2 transition hover:text-paper/70">
               <span className="pulse-dot" />
-              All systems operational
+              Live system status
             </Link>
             <a
               href="mailto:support@heysilo.co"

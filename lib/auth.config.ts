@@ -17,8 +17,13 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const isDashboard = request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/admin");
       if (isDashboard && !isLoggedIn) {
-        // Build the sign-in URL from the request itself so visitors stay on the domain they used.
-        const signIn = new URL("/sign-in", request.nextUrl.origin);
+        // Build the sign-in URL from the Host the visitor used. Auth.js rewrites request.url to
+        // its configured base URL, so the origin has to come from the forwarded headers.
+        const raw = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim().toLowerCase();
+        const trusted = /^(heysilo\.co|[a-z0-9-]+\.vercel\.app|localhost(:\d+)?)$/.test(raw);
+        const host = trusted ? raw : "heysilo.co";
+        const proto = host.startsWith("localhost") ? "http" : "https";
+        const signIn = new URL("/sign-in", `${proto}://${host}`);
         signIn.searchParams.set("callbackUrl", request.nextUrl.pathname + request.nextUrl.search);
         return Response.redirect(signIn);
       }
