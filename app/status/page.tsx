@@ -146,8 +146,8 @@ export default async function StatusPage() {
                 Include the store URL and, if you can, the diagnostics file from WooCommerce → Silo → Status.
               </p>
             </div>
-            <a href="mailto:support@heysilo.co?subject=Status" className="btn btn-secondary btn-sm mt-5 w-full">
-              support@heysilo.co
+            <a href="mailto:rynaldostoltz85@gmail.com?subject=Status" className="btn btn-secondary btn-sm mt-5 w-full">
+              rynaldostoltz85@gmail.com
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>

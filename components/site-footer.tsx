@@ -40,7 +40,7 @@ export function SiteFooter() {
             </p>
             <div className="mt-6 flex items-center gap-2">
               <a
-                href="mailto:hello@heysilo.co"
+                href="mailto:rynaldostoltz85@gmail.com"
                 aria-label="Email Silo"
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-paper/45 transition hover:border-white/25 hover:text-paper"
               >
@@ -93,10 +93,10 @@ export function SiteFooter() {
               Live system status
             </Link>
             <a
-              href="mailto:support@heysilo.co"
+              href="mailto:rynaldostoltz85@gmail.com"
               className="hidden items-center gap-1 transition hover:text-paper/70 sm:flex"
             >
-              support@heysilo.co
+              rynaldostoltz85@gmail.com
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>

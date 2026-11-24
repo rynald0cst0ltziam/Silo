@@ -79,7 +79,7 @@ const TROUBLE = [
   },
   {
     q: "A customer sees another customer's cart",
-    a: "This must never happen with Silo. Capture the request ID from the response header, the store URL and the approximate time, then email support@heysilo.co immediately. Silo disables itself for that store while the session boundary is investigated.",
+    a: "This must never happen with Silo. Capture the request ID from the response header, the store URL and the approximate time, then email rynaldostoltz85@gmail.com immediately. Silo disables itself for that store while the session boundary is investigated.",
   },
   {
     q: "Do I keep my existing cache plugin?",
@@ -167,10 +167,10 @@ export default function DocsPage() {
                     Send the store URL and last request ID. A human replies.
                   </p>
                   <a
-                    href="mailto:support@heysilo.co"
+                    href="mailto:rynaldostoltz85@gmail.com"
                     className="mt-3 inline-flex items-center gap-1 text-[10.5px] text-accent-hi"
                   >
-                    support@heysilo.co
+                    rynaldostoltz85@gmail.com
                     <ArrowUpRight className="h-3 w-3" />
                   </a>
                 </div>

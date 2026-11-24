@@ -72,10 +72,10 @@ export function LegalPage({
                     Legal and privacy enquiries are answered by a human.
                   </p>
                   <a
-                    href="mailto:legal@heysilo.co"
+                    href="mailto:rynaldostoltz85@gmail.com"
                     className="mt-2 inline-flex items-center gap-1 text-[10.5px] text-accent-deep"
                   >
-                    legal@heysilo.co
+                    rynaldostoltz85@gmail.com
                     <ArrowUpRight className="h-3 w-3" />
                   </a>
                 </div>

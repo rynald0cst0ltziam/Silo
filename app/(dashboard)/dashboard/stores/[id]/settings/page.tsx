@@ -7,6 +7,8 @@ import {
   DeleteStoreButton,
 } from "@/components/store-actions";
 import { PurgeAllButton } from "@/components/store-action-buttons";
+import { Download } from "lucide-react";
+import { isOutdated, latestConnectorVersion } from "@/lib/connector-release";
 
 export const metadata: Metadata = {
   title: "Store Settings",
@@ -27,6 +29,10 @@ export default async function StoreSettingsPage({
   });
 
   if (!store) notFound();
+
+  const latest = await latestConnectorVersion();
+  const installed = store.connectorVersion;
+  const outdated = isOutdated(installed, latest);
 
   return (
     <div>
@@ -83,14 +89,49 @@ export default async function StoreSettingsPage({
         </div>
       </div>
 
+      {/* Connector plugin */}
+      <div className="mt-4 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 className="text-[15px] font-medium text-paper/70">Connector plugin</h3>
+            <p className="mt-1.5 text-[14px] text-paper/45">
+              Latest version {latest ? <span className="font-mono text-paper/75">v{latest}</span> : "available below"}
+              {" · "}
+              {installed ? (
+                <>
+                  installed on this store{" "}
+                  <span className={`font-mono ${outdated ? "text-amber" : "text-mint"}`}>v{installed}</span>
+                  {outdated ? " (update available)" : " (up to date)"}
+                </>
+              ) : (
+                "not installed yet"
+              )}
+            </p>
+          </div>
+          <a
+            href="/api/connector/download"
+            download
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-[14px] font-medium text-white transition hover:bg-accent/90"
+          >
+            <Download className="h-4 w-4" />
+            Download silo-connector.zip
+          </a>
+        </div>
+        <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-[14px] leading-relaxed text-paper/50">
+          <li>In WordPress, go to Plugins → Add New → Upload Plugin and choose the ZIP.</li>
+          <li>When WordPress says the plugin already exists, choose <span className="text-paper/75">Replace current with uploaded</span>.</li>
+          <li>Your store key, settings and logs are kept. No need to reconnect or rescan.</li>
+        </ol>
+      </div>
+
       {/* API key */}
       <div className="mt-4 rounded-xl border border-white/8 bg-[#0b0d11] p-5">
         <h3 className="text-[15px] font-medium text-paper/70">API key</h3>
         <div className="mt-3">
           <p className="font-mono text-[13px] text-paper/30">
-            Key prefix:{" "}
+            Key fingerprint:{" "}
             <code className="text-paper/50">
-              sk_silo_...{store.apiKeyHash.slice(-6)}
+              …{store.apiKeyHash.slice(-6)}
             </code>
           </p>
           <div className="mt-3">

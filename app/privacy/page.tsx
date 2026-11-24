@@ -135,7 +135,7 @@ export default function PrivacyPage() {
       <p>
         Depending on where you live, you may have the right to access, correct, export or delete
         personal data, object to processing, restrict it, or withdraw consent. Email{" "}
-        <a href="mailto:privacy@heysilo.co">privacy@heysilo.co</a>. We respond within 30 days.
+        <a href="mailto:rynaldostoltz85@gmail.com">rynaldostoltz85@gmail.com</a>. We respond within 30 days.
         You can also complain to your local data protection authority.
       </p>
 
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
       <h2>12. Changes and contact</h2>
       <p>
         We will post material changes to this policy and, where appropriate, email account
-        owners. Questions: <a href="mailto:privacy@heysilo.co">privacy@heysilo.co</a> or Silo
+        owners. Questions: <a href="mailto:rynaldostoltz85@gmail.com">rynaldostoltz85@gmail.com</a> or Silo
         Systems, Inc., 2261 Market Street, San Francisco, CA 94114, USA.
       </p>
     </LegalPage>

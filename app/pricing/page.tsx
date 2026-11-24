@@ -143,7 +143,7 @@ export default function PricingPage() {
                   fits.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <a href="mailto:hello@heysilo.co" className="btn btn-outline-dark btn-sm">
+                  <a href="mailto:rynaldostoltz85@gmail.com" className="btn btn-outline-dark btn-sm">
                     Email the team
                   </a>
                   <Link href="/docs" className="btn btn-outline-dark btn-sm">

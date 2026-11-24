@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   if (rateLimited(ip)) {
     return NextResponse.json(
-      { error: "Too many requests. Try again later or email hello@heysilo.co." },
+      { error: "Too many requests. Try again later or email rynaldostoltz85@gmail.com." },
       { status: 429 },
     );
   }
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "We couldn't save your request. Email hello@heysilo.co and we'll set your store up manually.",
+          "We couldn't save your request. Email rynaldostoltz85@gmail.com and we'll set your store up manually.",
       },
       { status: 503 },
     );

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   if (!emailConfigured()) {
     return NextResponse.json(
-      { error: "Password reset by email is not switched on yet. Email support@heysilo.co from your account address and we will reset it for you." },
+      { error: "Password reset by email is not switched on yet. Email rynaldostoltz85@gmail.com from your account address and we will reset it for you." },
       { status: 503 },
     );
   }
