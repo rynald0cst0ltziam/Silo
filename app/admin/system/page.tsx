@@ -11,7 +11,7 @@ function configChecks() {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const pub = process.env.SILO_PUBLIC_URL ?? "";
   return [
-    { label: "Site URL (NEXT_PUBLIC_SITE_URL)", ok: !!site, detail: site || "Not set — links fall back to https://heysilo.co" },
+    { label: "Site URL (NEXT_PUBLIC_SITE_URL)", ok: !!site && !/vercel\.app/i.test(site), detail: !site ? "Not set — links fall back to https://heysilo.co" : /vercel\.app/i.test(site) ? `${site} — a vercel.app address; canonical links use https://heysilo.co instead. Set it to https://heysilo.co` : site },
     { label: "Connector API URL (SILO_PUBLIC_URL)", ok: true, detail: pub || "Not set — each download uses the address it was downloaded from" },
     { label: "Auth secret (AUTH_SECRET)", ok: has("AUTH_SECRET"), detail: has("AUTH_SECRET") ? "Set" : "Missing — sessions will fail" },
     { label: "Database (DATABASE_URL)", ok: has("DATABASE_URL"), detail: has("DATABASE_URL") ? "Set" : "Missing" },

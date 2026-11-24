@@ -26,11 +26,15 @@ const INCLUDED = [
   "Variation-level stock invalidation",
   "HPOS order and refund events",
   "Store API filter mapping",
-  "Priority warmup queue",
+  "Priority warmup queue, desktop and mobile",
+  "Currency, language and geo-aware cache keys",
+  "Works alongside your cache plugin, host and Cloudflare",
+  "Elementor and page builder support",
   "Cart, checkout and account bypass",
+  "Fails closed: never serves a stale page",
   "Per-store keys and cache namespaces",
   "Connector updates for the life of the plan",
-  "Invalidation audit log",
+  "Invalidation log, CSV exports and account activity log",
   "Human support from the team that built it",
 ];
 

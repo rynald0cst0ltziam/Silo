@@ -24,6 +24,8 @@ export const PLANS: Plan[] = [
       "Unlimited products and variations",
       "Full surgical invalidation engine",
       "Priority warmup — 50 URLs per event",
+      "Currency, language and geo-aware cache keys",
+      "Works alongside your cache plugin, host and Cloudflare",
       "30-day invalidation log",
       "Email support",
     ],
@@ -41,7 +43,7 @@ export const PLANS: Plan[] = [
       "Per-store isolation and keys",
       "Priority warmup — 250 URLs per event",
       "90-day invalidation log",
-      "Warmup scheduling and concurrency controls",
+      "One account and one invoice for 3 stores",
       "Priority email support",
     ],
     popular: true,
@@ -58,7 +60,6 @@ export const PLANS: Plan[] = [
       "Everything in Studio, for 5 stores",
       "Priority warmup — 500 URLs per event",
       "180-day invalidation log",
-      "Geo, currency and language cache keys",
       "Guided connector onboarding",
       "Dedicated support channel",
     ],
@@ -90,11 +91,11 @@ export const PRICING_FAQS: Faq[] = [
   },
   {
     q: "What happens if the connector goes offline?",
-    a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, or Silo rejects the store key, cached pages stop being served immediately and every request goes straight to WooCommerce. Stale stock is worse than a slower page, so we choose the origin every time.",
+    a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, Silo rejects the store key, or the plan lapses, cached pages stop being served immediately and every request goes straight to WooCommerce. Stale stock is worse than a slower page, so we choose the origin every time.",
   },
   {
     q: "Can I cancel or get a refund?",
-    a: "Yes. Start with a 14-day trial, no card required. Monthly plans can be cancelled at any time and annual plans are refundable within 30 days. See the refund policy for the details.",
+    a: "Yes. Start with a 14-day trial, no card required. Cancel any time from Billing in the dashboard; monthly plans stay active to the end of the paid period and annual plans are refundable within 30 days. See the refund policy for the details.",
   },
 ];
 
@@ -129,7 +130,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "What happens if the connector goes offline?",
-        a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, or Silo rejects the store key, cached pages stop being served immediately and every request goes straight to WooCommerce. The dashboard shows when the connector last checked in.",
+        a: "Silo fails closed. Correctness never depends on reaching Silo: the connector purges the affected pages on your server the moment WooCommerce reports a change, then sends the event as soon as the connection allows. If the connector is deactivated or disconnected, Silo rejects the store key, or the plan lapses, cached pages stop being served immediately and every request goes straight to WooCommerce. The dashboard shows when the connector last checked in.",
       },
       {
         q: "What data leaves my store?",
@@ -160,7 +161,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Does it support currencies, languages and geo pricing?",
-        a: "On the Portfolio plan, cache keys can include currency, locale, tax display and geo. A product with six currency renderings is six cache keys, and a price change invalidates only the keys that actually exist. Solo and Studio cover a single storefront presentation.",
+        a: "Yes, on every plan. The scan detects WPML, Polylang, TranslatePress and Weglot, and WooCommerce Multilingual, WOOCS, CURCY, Aelia and YayCurrency, and adds language or currency to the cache key when a store uses them. Stores that price by visitor country are keyed by the country your CDN or host reports; if none is reported, those pages are not cached rather than risk the wrong price. A product change purges every variant of its page in one step.",
       },
     ],
   },
@@ -172,6 +173,10 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         q: "What does Silo require?",
         a: "WordPress 6.4+, WooCommerce 8.2+, PHP 8.1+ and outbound HTTPS from the store. You install one connector plugin and paste a store key. No DNS change, proxy, theme rewrite or server access is required.",
+      },
+      {
+        q: "Does it work with Cloudflare and my host's cache?",
+        a: "Yes. Host caches on Kinsta, WP Engine, Pantheon and SpinupWP, and Nginx Helper setups, are detected and purged in step with Silo. For Cloudflare caching (APO or cache rules), add your zone ID and an API token with Cache Purge permission under WooCommerce → Silo → Settings → Other caches and CDN; Silo then purges the same pages at Cloudflare.",
       },
       {
         q: "Can I keep WP Rocket or FlyingPress?",
@@ -190,8 +195,8 @@ export const FAQ_GROUPS: FaqGroup[] = [
         a: "Each subsite gets its own Silo store key, cache namespace and invalidation graph. Sites cannot read or purge each other's entries. On Portfolio, up to five subsites or separate stores can be connected under one account.",
       },
       {
-        q: "Will it work with my theme or page builder?",
-        a: "If the storefront is rendered through standard WooCommerce templates and hooks, Silo can cache it. Themes and builders that read the catalog through custom AJAX endpoints need a short review first. The connector scan reports any catalog routes it cannot map, so nothing is assumed silently.",
+        q: "Will it work with my theme?",
+        a: "If the storefront is rendered through standard WooCommerce templates and hooks, Silo can cache it, including block themes and Astra, Kadence, GeneratePress, Blocksy and Flatsome layouts. Themes that read the catalog through custom AJAX endpoints need a short review first. The connector scan reports any catalog routes it cannot map, so nothing is assumed silently.",
       },
       {
         q: "How long does setup take?",
@@ -210,11 +215,11 @@ export const FAQ_GROUPS: FaqGroup[] = [
     items: [
       {
         q: "How do I check that Silo is working?",
-        a: "Open a product page in a private window and look at the x-silo-cache response header: MISS on the first visit, HIT after that. In WordPress, WooCommerce → Silo → Status → Run live checks requests the shop page twice and shows the same MISS to HIT round trip, along with the drop-in, connection and conflict checks.",
+        a: "Open a product page in a private window and look at the x-silo-cache response header: MISS on the first visit, HIT after that. In WordPress, WooCommerce → Silo → Status → Run live checks requests the shop page twice and shows the same round trip, along with the drop-in, connection and other-cache checks. If Silo is working alongside another cache plugin, that plugin serves the pages, so check its own header or HTML comment instead; the Status tab tells you which mode the store is in.",
       },
       {
         q: "What does the hit rate measure?",
-        a: "The share of anonymous requests to WooCommerce pages (product pages, the shop and product archives) that were served from cache. Visitors with a cart or a login are never cached, so they are counted separately as bypassed instead of lowering the hit rate. The first visit to every page and variant renders fresh, so a quiet store climbs slowly; Purge all resets the counters on both sides.",
+        a: "The share of anonymous requests to WooCommerce pages (product pages, the shop and product archives) that were served from cache. Visitors with a cart or a login are never cached, so they are counted separately as bypassed instead of lowering the hit rate. The first visit to every page and variant renders fresh, so a quiet store climbs slowly; Purge all resets the counters on both sides. When Silo works alongside another page cache, that plugin serves the pages, so the dashboard shows which cache is serving and the Store API hit rate instead.",
       },
       {
         q: "Why does a page sometimes show MISS or STALE?",
@@ -257,11 +262,15 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a trial?",
-        a: "Yes. Every store starts with a 14-day trial and no card is required. The full invalidation engine, priority warmup and dashboard are available during the trial, not a reduced preview.",
+        a: "Yes. Every account starts with a 14-day trial and no card is required. The trial covers one store with the full invalidation engine, priority warmup and dashboard, not a reduced preview. Choose a plan any time from Billing: the remaining trial days carry over and the first charge happens when the trial ends. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
       },
       {
         q: "Can I change plans later?",
-        a: "Yes. You can upgrade or downgrade from the dashboard. Upgrades take effect immediately with prorated billing; downgrades apply at the next billing date so you keep the larger allowance you already paid for.",
+        a: "Yes. Billing → Change plan opens the secure Stripe portal, where you can switch plans or billing interval; Stripe prorates the difference. If you move to a plan with fewer stores, your oldest stores stay active up to the new limit and the rest pause until you remove a store or upgrade.",
+      },
+      {
+        q: "Where do I find invoices, usage and account activity?",
+        a: "Billing shows your plan, renewal date, usage this month and every invoice with a PDF. Activity lists sign-ins, password and billing changes and store actions with time and IP address. Account lets you change your name, email and password, sign out of every browser or delete the account, which cancels the subscription immediately.",
       },
       {
         q: "How do refunds work?",
@@ -337,6 +346,13 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
     rocket: { value: "Configured exclusions", tone: "mixed" },
     flying: { value: "Configured exclusions", tone: "mixed" },
     silo: { value: "Enforced by default", tone: "good" },
+  },
+  {
+    label: "Works with other caches",
+    detail: "Runs next to an existing page cache or CDN",
+    rocket: { value: "Replaces others", tone: "mixed" },
+    flying: { value: "Replaces others", tone: "mixed" },
+    silo: { value: "Runs alongside, purges them", tone: "good" },
   },
   {
     label: "Setup",
@@ -633,11 +649,35 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
 ];
 
-export const COMPATIBILITY = [
-  "WooCommerce 8.2+",
-  "WordPress 6.4+",
-  "HPOS",
-  "Product Blocks",
-  "Store API",
-  "PHP 8.1+",
+export type CompatibilityGroup = { title: string; note: string; items: string[] };
+
+/** Everything the connector detects and handles. Keep in sync with Silo_Compat and the scanner. */
+export const COMPATIBILITY_GROUPS: CompatibilityGroup[] = [
+  {
+    title: "Platform",
+    note: "Minimums the connector checks on install.",
+    items: ["WooCommerce 8.2+", "WordPress 6.4+", "PHP 8.1+", "HPOS and legacy orders", "Block cart and checkout", "Product Blocks", "Store API", "Multisite"],
+  },
+  {
+    title: "Cache plugins",
+    note: "Silo works alongside them and purges their cache in step.",
+    items: ["WP Rocket", "LiteSpeed Cache", "W3 Total Cache", "WP Super Cache", "WP Fastest Cache", "FlyingPress", "SiteGround Optimizer", "Hummingbird", "Cache Enabler", "WP-Optimize"],
+  },
+  {
+    title: "Hosts and CDN",
+    note: "Edge copies of changed pages are cleared too.",
+    items: ["Cloudflare", "Kinsta", "WP Engine", "Pantheon", "SpinupWP", "Nginx Helper"],
+  },
+  {
+    title: "Page builders and themes",
+    note: "Layout and template changes refresh the right pages.",
+    items: ["Elementor", "Beaver Builder", "Divi", "Bricks", "Oxygen", "Breakdance", "Block themes", "Astra", "Kadence", "GeneratePress", "Blocksy", "Flatsome"],
+  },
+  {
+    title: "Languages and currencies",
+    note: "Detected by the scan and added to the cache key.",
+    items: ["WPML", "Polylang", "TranslatePress", "Weglot", "WooCommerce Multilingual", "WOOCS", "CURCY", "Aelia", "YayCurrency"],
+  },
 ];
+
+export const COMPATIBILITY = COMPATIBILITY_GROUPS.flatMap((g) => g.items);

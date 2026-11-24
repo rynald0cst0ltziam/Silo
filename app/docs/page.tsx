@@ -237,6 +237,11 @@ x-silo-scope: product:1042`}</Code>
                       Every cached response says what it is (a product, an archive or the shop) and how old it is.
                       When that product changes, Silo invalidates it and its archives, not the whole storefront.
                     </p>
+                    <p>
+                      Working alongside another cache plugin? That plugin serves the page, so look for its
+                      header or HTML comment instead. WooCommerce → Silo → Status shows which mode the store
+                      is in and which caches Silo is keeping in step.
+                    </p>
                   </Step>
                 </div>
               </section>

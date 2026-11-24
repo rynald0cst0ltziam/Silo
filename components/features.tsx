@@ -5,6 +5,8 @@ import {
   Globe2,
   Layers,
   LockKeyhole,
+  Plug,
+  ShieldAlert,
   Radio,
   Sparkles,
   Zap,
@@ -40,14 +42,26 @@ const FEATURES = [
   {
     icon: Globe2,
     title: "Currency, language, geo",
-    body: "One catalog, many responses. Silo keys product renderings by currency, locale and tax display, and invalidates only the keys that exist.",
-    chips: ["6 currencies", "locale-aware"],
+    body: "One catalog, many responses. Silo keys pages by currency, language and visitor country when your store needs it, on every plan, and purges every variant of a page at once.",
+    chips: ["WCML · WOOCS · Aelia", "WPML · Polylang"],
   },
   {
     icon: Radio,
     title: "Store API & Blocks",
     body: "Maps product collection routes and their filters. A stock change invalidates the cached filter combinations that can contain that product.",
     chips: ["/products", "filters", "Blocks"],
+  },
+  {
+    icon: Plug,
+    title: "Works with your stack",
+    body: "Running WP Rocket, LiteSpeed or a host cache? Silo works alongside it, purging the exact pages in that cache and in Cloudflare on every change. Elementor and other builders are tracked too.",
+    chips: ["WP Rocket", "LiteSpeed", "Cloudflare"],
+  },
+  {
+    icon: ShieldAlert,
+    title: "Fails closed",
+    body: "If Silo cannot be reached, the store key is rejected or a plan lapses, the connector stops serving cached pages and every request goes to WooCommerce. A slower page beats a wrong price.",
+    chips: ["never stale", "local purge first"],
   },
 ];
 

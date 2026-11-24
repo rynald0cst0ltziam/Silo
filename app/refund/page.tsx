@@ -16,14 +16,17 @@ export default function RefundPage() {
     >
       <h2>1. The trial comes first</h2>
       <p>
-        Every plan starts with a 14-day trial and no card is required. The trial begins when a
-        store is connected and the first catalog scan completes. You can connect a real store,
-        run a stock change and inspect the invalidation log before deciding.
+        Every account starts with a 14-day trial and no card is required. The trial begins when
+        the account is created and covers one store. You can connect a real store, run a stock
+        change and inspect the invalidation log before deciding. If you choose a plan during the
+        trial, the remaining trial days carry over and the first charge happens when the trial
+        ends. If the trial ends without a plan, caching pauses on your store until a plan
+        starts; your store keeps working with live pages.
       </p>
 
       <h2>2. Monthly plans</h2>
       <p>
-        Monthly subscriptions can be cancelled at any time from the dashboard. Cancellation
+        Monthly subscriptions can be cancelled at any time from Billing in the dashboard. Cancellation
         stops the next renewal; the current month is not prorated and is generally not refunded
         once the billing period has started. If a duplicate charge or a billing error occurs, we
         will correct it.
@@ -39,9 +42,10 @@ export default function RefundPage() {
 
       <h2>4. Plan changes</h2>
       <p>
-        Upgrades take effect immediately and are prorated. Downgrades take effect at the next
-        renewal. Removing a store from a multi-store plan does not automatically reduce the plan
-        price mid-term; you can change plans at renewal.
+        Plan and billing-interval changes are made in the Stripe billing portal (Billing → Change
+        plan) and take effect immediately; Stripe prorates the difference as a credit or charge on
+        your next invoice. If the new plan covers fewer stores, your oldest stores stay active up
+        to the new limit and the others pause until you remove a store or upgrade.
       </p>
 
       <h2>5. Exceptions</h2>
@@ -65,8 +69,10 @@ export default function RefundPage() {
 
       <h2>7. Cancellation</h2>
       <p>
-        Cancel from <strong>Dashboard → Billing → Cancel plan</strong>, or email billing and we
-        will do it for you. Access continues to the end of the paid period. Invalidation logs
+        Cancel from <strong>Dashboard → Billing → Change plan, card or cancel</strong>, or email
+        billing and we will do it for you. Access continues to the end of the paid period, then
+        caching pauses on connected stores. Deleting your account under Dashboard → Account
+        cancels the subscription immediately. Invalidation logs
         remain available for export for 30 days after cancellation, within your plan&apos;s
         retention window.
       </p>

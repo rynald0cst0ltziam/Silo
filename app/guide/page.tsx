@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Lock,
   Package,
+  Plug,
   RefreshCw,
   ScanLine,
   ShieldCheck,
@@ -234,6 +235,9 @@ export default function GuidePage() {
               { icon: Zap, title: "Sale prices on time", body: "Sales that start or end at a set time update at that exact moment, not at midnight." },
               { icon: RefreshCw, title: "Orders and refunds", body: "Stock that changes through an order, a cancellation or a refund is handled the same way as a manual edit." },
               { icon: ShieldCheck, title: "Theme and menu changes", body: "Changing your theme, menus, widgets or WooCommerce settings refreshes every saved page." },
+              { icon: Plug, title: "Your other cache plugins", body: "Keep WP Rocket, LiteSpeed or your host's cache. Silo works alongside them and tells them exactly which pages to refresh." },
+              { icon: Package, title: "Page builders", body: "Saving an Elementor, Divi or Beaver Builder product layout refreshes that product. Changing a header or footer refreshes every page." },
+              { icon: Lock, title: "If something goes wrong", body: "If Silo can't be reached or your plan ends, your store simply shows live pages. It never shows an old price." },
             ].map((item) => (
               <div key={item.title} className="card-light p-5">
                 <item.icon className="h-5 w-5 text-accent-deep" />
@@ -298,7 +302,8 @@ export default function GuidePage() {
             <p className="mt-2 max-w-[640px] text-[15px] leading-[1.65] text-paper/55">
               Every page Silo handles carries an <code className="font-code text-paper/80">x-silo-cache</code> label in
               its response headers (visible in your browser&apos;s developer tools, under Network). WooCommerce → Silo →
-              Status → Run live checks does the test for you.
+              Status → Run live checks does the test for you. If you also run WP Rocket or LiteSpeed, that plugin serves
+              the pages and Silo keeps its copies fresh, so you will see its label instead.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {HEADERS.map((h) => (

@@ -73,7 +73,8 @@ export function ComparisonTable() {
         Based on the default page-caching behavior of each product as of November 2026. WP Rocket
         and FlyingPress are capable, broader WordPress performance suites; both can be extended
         with manual purge rules. Silo is deliberately narrower: it does one thing, for
-        WooCommerce catalogs, and does not replace asset optimization or a CDN.
+        WooCommerce catalogs, and does not replace asset optimization or a CDN. You can run
+        Silo next to either: they keep serving pages and Silo keeps their cache accurate.
       </p>
     </div>
   );

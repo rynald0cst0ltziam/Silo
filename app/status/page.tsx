@@ -1,144 +1,161 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Check, Mail } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Check, Mail, X } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Status",
-  description: "Live status for the Silo edge, connector API, invalidation workers and dashboard.",
+  description: "Live status of the Silo connector API, invalidation pipeline, warmup queue, scheduled jobs and billing.",
   alternates: { canonical: "/status" },
 };
 
-const SERVICES = [
-  "Storefront edge",
-  "Connector API",
-  "Invalidation workers",
-  "Store API mapping",
-  "Warmup queue",
-  "Dashboard",
-  "Billing",
-];
+// Re-checked at most once a minute; every number below is measured, none is typed in.
+export const revalidate = 60;
 
-export default function StatusPage() {
+type State = "ok" | "degraded" | "down";
+type ServiceCheck = { name: string; state: State; detail: string };
+
+const ONLINE_MS = 150_000;
+
+async function measure(): Promise<{ checks: ServiceCheck[]; checkedAt: Date }> {
+  const checks: ServiceCheck[] = [];
+  const now = Date.now();
+
+  let dbOk = false;
+  const started = Date.now();
+  try {
+    await prisma.$queryRawUnsafe("SELECT 1");
+    dbOk = true;
+    checks.push({ name: "Database", state: "ok", detail: `Responding in ${Date.now() - started} ms` });
+  } catch {
+    checks.push({ name: "Database", state: "down", detail: "Not responding" });
+  }
+
+  if (!dbOk) {
+    for (const name of ["Connector API", "Invalidation", "Warmup queue", "Scheduled jobs"]) {
+      checks.push({ name, state: "down", detail: "Unavailable while the database is down" });
+    }
+  } else {
+    const [installed, online, events, stuck, lastWarmCron] = await Promise.all([
+      prisma.store.count({ where: { lastSeenAt: { not: null } } }),
+      prisma.store.count({ where: { lastSeenAt: { gte: new Date(now - ONLINE_MS) } } }),
+      prisma.event.aggregate({ where: { createdAt: { gte: new Date(now - 3_600_000) } }, _count: true, _avg: { durationMs: true } }),
+      prisma.warmupJob.count({ where: { status: { in: ["pending", "running"] }, createdAt: { lt: new Date(now - 30 * 60_000) } } }),
+      prisma.cronRun.findFirst({ where: { name: "warmup" }, orderBy: { createdAt: "desc" } }),
+    ]);
+
+    checks.push({
+      name: "Connector API",
+      state: "ok",
+      detail: installed ? `${online} of ${installed} connected stores checked in within the last 2.5 minutes` : "Accepting connector requests",
+    });
+
+    const avg = Math.round(events._avg.durationMs ?? 0);
+    checks.push({
+      name: "Invalidation",
+      state: avg > 2000 ? "degraded" : "ok",
+      detail: events._count ? `${events._count.toLocaleString()} events in the last hour · ${avg} ms average planning time` : "No catalog events in the last hour",
+    });
+
+    checks.push({
+      name: "Warmup queue",
+      state: stuck > 5 ? "degraded" : "ok",
+      detail: stuck ? `${stuck} job${stuck === 1 ? "" : "s"} waiting longer than 30 minutes` : "No jobs waiting longer than 30 minutes",
+    });
+
+    const age = lastWarmCron ? now - lastWarmCron.createdAt.getTime() : null;
+    checks.push({
+      name: "Scheduled jobs",
+      state: !lastWarmCron ? "degraded" : !lastWarmCron.ok || (age ?? 0) > 20 * 60_000 ? "degraded" : "ok",
+      detail: !lastWarmCron
+        ? "No scheduled run recorded yet"
+        : `Last warmup run ${Math.round((age ?? 0) / 60_000)} min ago${lastWarmCron.ok ? "" : " (failed)"}`,
+    });
+  }
+
+  const billing = !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_WEBHOOK_SECRET;
+  checks.push({ name: "Billing", state: billing ? "ok" : "degraded", detail: billing ? "Checkout and subscription sync configured" : "Billing is being configured" });
+  checks.push({ name: "Dashboard", state: "ok", detail: "Serving pages" });
+
+  return { checks, checkedAt: new Date() };
+}
+
+const STYLE: Record<State, { label: string; text: string; icon: typeof Check }> = {
+  ok: { label: "Operational", text: "text-mint", icon: Check },
+  degraded: { label: "Degraded", text: "text-amber", icon: AlertTriangle },
+  down: { label: "Down", text: "text-red-300", icon: X },
+};
+
+export default async function StatusPage() {
+  const { checks, checkedAt } = await measure();
+  const worst: State = checks.some((c) => c.state === "down") ? "down" : checks.some((c) => c.state === "degraded") ? "degraded" : "ok";
+  const headline = worst === "ok" ? "All systems operational." : worst === "degraded" ? "Some systems are degraded." : "Part of Silo is down.";
+
   return (
     <div className="bg-[#07080a]">
       <section className="relative overflow-hidden border-b border-white/8">
         <div className="grid-bg pointer-events-none absolute inset-0 opacity-20 [mask-image:radial-gradient(ellipse_at_50%_0%,black,transparent_70%)]" />
         <div className="container-page relative py-12 text-center sm:py-16">
-          <p className="eyebrow justify-center text-paper/35">
+          <p className="eyebrow justify-center text-paper/40">
             <span className="pulse-dot" />
             Silo status
           </p>
-          <h1 className="display mt-5 text-[clamp(32px,4.2vw,46px)] text-paper">
-            All systems operational.
-          </h1>
-          <p className="mt-4 text-[13px] text-paper/40">
-            Status as of November 16, 2026 · reviewed daily.
+          <h1 className="display mt-5 text-[clamp(30px,3.8vw,42px)] text-paper">{headline}</h1>
+          <p className="mt-4 text-[14px] text-paper/50">
+            Checked live at {checkedAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })} UTC · refreshes every minute
           </p>
         </div>
       </section>
 
       <div className="container-page py-10 sm:py-12">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { value: "99.99%", label: "Uptime · last 90 days" },
-            { value: "42ms", label: "Median edge invalidation" },
-            { value: "0", label: "Open incidents" },
-          ].map((metric) => (
-            <div key={metric.label} className="rounded-xl border border-white/9 bg-white/[0.02] p-5">
-              <p className="font-display text-[30px] leading-none tracking-[-0.04em] text-paper">
-                {metric.value}
-              </p>
-              <p className="mt-2 font-mono text-[8px] uppercase tracking-[0.08em] text-paper/30">
-                {metric.label}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 overflow-hidden rounded-xl border border-white/9 bg-[#0b0d11]">
-          <div className="flex items-center justify-between border-b border-white/8 px-5 py-3.5">
-            <p className="text-[12px] font-medium text-paper/70">Platform services</p>
-            <div className="flex items-center gap-4 font-mono text-[7.5px] uppercase tracking-[0.06em] text-paper/25">
-              <span>90 days ago</span>
-              <span>today</span>
-            </div>
+        <div className="overflow-hidden border border-white/9 bg-[#0b0d11]">
+          <div className="border-b border-white/8 px-5 py-3.5">
+            <p className="text-[14px] font-medium text-paper/80">Platform services</p>
           </div>
-
-          {SERVICES.map((service) => (
-            <div
-              key={service}
-              className="grid items-center gap-3 border-b border-white/5 px-5 py-3 last:border-0 sm:grid-cols-[170px_1fr_86px]"
-            >
-              <span className="text-[11.5px] text-paper/60">{service}</span>
-              <div className="flex h-5 gap-[2px]" aria-hidden="true">
-                {Array.from({ length: 60 }).map((_, index) => (
-                  <span
-                    key={index}
-                    className={`h-full flex-1 rounded-[1px] ${
-                      index === 37 ? "bg-mint/25" : "bg-mint/55"
-                    }`}
-                  />
-                ))}
+          {checks.map((check) => {
+            const style = STYLE[check.state];
+            return (
+              <div key={check.name} className="grid items-center gap-2 border-b border-white/5 px-5 py-3.5 last:border-0 sm:grid-cols-[180px_1fr_130px]">
+                <span className="text-[14px] text-paper/80">{check.name}</span>
+                <span className="text-[13px] text-paper/50">{check.detail}</span>
+                <span className={`flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-[0.06em] sm:justify-end ${style.text}`}>
+                  <style.icon className="h-3.5 w-3.5" />
+                  {style.label}
+                </span>
               </div>
-              <span className="flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[0.06em] text-mint/65 sm:justify-end">
-                <Check className="h-2.5 w-2.5" />
-                Operational
-              </span>
-            </div>
-          ))}
-
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/8 px-5 py-3 font-mono text-[7px] uppercase tracking-[0.06em] text-paper/20">
-            <span>60 checks per day · 5 regions</span>
-            <span>99.99% · 90-day rolling</span>
-          </div>
+            );
+          })}
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-          <div className="rounded-xl border border-white/9 bg-[#0b0d11] p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-[12px] font-medium text-paper/70">Incident history</p>
-              <span className="font-mono text-[7.5px] uppercase tracking-[0.06em] text-paper/25">
-                Last 90 days
-              </span>
-            </div>
-            <div className="mt-4 flex items-center gap-3 rounded-lg border border-mint/15 bg-mint/[0.04] p-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-mint/25 bg-mint/10">
-                <Check className="h-4 w-4 text-mint" />
-              </span>
-              <div>
-                <p className="text-[12.5px] font-medium text-paper/75">No incidents reported.</p>
-                <p className="mt-0.5 text-[10.5px] text-paper/35">
-                  Every scheduled invalidation event has completed within its target window.
-                </p>
-              </div>
-            </div>
-            <p className="mt-4 font-mono text-[8px] leading-relaxed text-paper/20">
-              One brief edge deploy window on Sep 2, 2026 (04:00–04:06 UTC). No missed
-              invalidations; connector heartbeats buffered and replayed.
+          <div className="border border-white/9 bg-[#0b0d11] p-5">
+            <p className="text-[14px] font-medium text-paper/80">Your store keeps working if Silo does not</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-paper/55">
+              The connector purges changed pages on your own server first, so stock and prices stay
+              correct even while Silo is unreachable. Events are queued and sent when the connection
+              returns. If the connector cannot verify its key, it stops serving cached pages and
+              your store shows live pages instead.
             </p>
           </div>
 
-          <div className="flex flex-col justify-between rounded-xl border border-white/9 bg-[#0b0d11] p-5">
+          <div className="flex flex-col justify-between border border-white/9 bg-[#0b0d11] p-5">
             <div>
               <Mail className="h-4 w-4 text-accent-hi" />
-              <p className="mt-3 text-[12px] font-medium text-paper/70">Get incident updates</p>
-              <p className="mt-1 text-[10.5px] leading-relaxed text-paper/35">
-                Email support and we&apos;ll add your address to the incident list. No marketing.
+              <p className="mt-3 text-[14px] font-medium text-paper/80">Report a problem</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-paper/50">
+                Include the store URL and, if you can, the diagnostics file from WooCommerce → Silo → Status.
               </p>
             </div>
-            <a
-              href="mailto:support@heysilo.co?subject=Status%20updates"
-              className="btn btn-secondary btn-sm mt-5 w-full"
-            >
+            <a href="mailto:support@heysilo.co?subject=Status" className="btn btn-secondary btn-sm mt-5 w-full">
               support@heysilo.co
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-5 text-[10.5px] text-paper/30">
-          <p>Silo status covers the edge, connector API, invalidation and warmup pipeline.</p>
-          <Link href="/docs" className="transition hover:text-paper/60">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-5 text-[13px] text-paper/40">
+          <p>Status covers the connector API, invalidation, warmup, scheduled jobs and billing.</p>
+          <Link href="/docs" className="transition hover:text-paper/70">
             Connector troubleshooting →
           </Link>
         </div>

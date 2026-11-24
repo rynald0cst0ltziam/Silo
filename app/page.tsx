@@ -17,10 +17,10 @@ import { PLANS } from "@/lib/content";
 import { siteUrl } from "@/lib/utils";
 
 const STATS = [
-  { value: 0.4, decimals: 1, suffix: "ms", label: "median cache lookup" },
-  { value: 99.4, decimals: 1, suffix: "%", label: "cache hit rate at steady state" },
-  { value: 5, decimals: 0, suffix: "", label: "URLs touched per stock change" },
-  { value: 0, decimals: 0, suffix: "", label: "cart requests ever cached" },
+  { value: 16, decimals: 0, suffix: "", label: "cache plugins, hosts and CDNs kept in step" },
+  { value: 2, decimals: 0, suffix: "", label: "devices warmed per page, desktop and mobile" },
+  { value: 4, decimals: 0, suffix: " min", label: "typical install, key to first cached page" },
+  { value: 0, decimals: 0, suffix: "", label: "cart, checkout or account pages ever cached" },
 ];
 
 const structuredData = {
@@ -49,6 +49,8 @@ const structuredData = {
         "Priority warmup",
         "Cart and checkout never cached",
         "HPOS compatible",
+        "Works alongside WP Rocket, LiteSpeed Cache and other page caches",
+        "Cloudflare and host cache purging",
       ],
       publisher: {
         "@type": "Organization",
@@ -81,24 +83,8 @@ export default function HomePage() {
         <div className="container-page relative pb-12 pt-10 sm:pt-14 lg:pb-16 lg:pt-16">
           <div className="grid items-center gap-12 lg:grid-cols-[1.03fr_0.97fr] lg:gap-10 xl:gap-14">
             <div>
-              <div
-                className="animate-rise inline-flex flex-wrap items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] py-1 pl-2 pr-2.5"
-                style={{ animationDelay: "40ms" }}
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-woo/15">
-                  <span className="h-1.5 w-1.5 rounded-full bg-woo" />
-                </span>
-                <span className="text-[10.5px] font-medium text-paper/65">
-                  Built only for WooCommerce
-                </span>
-                <span className="h-3 w-px bg-white/10" />
-                <span className="font-mono text-[9px] uppercase tracking-[0.06em] text-paper/30">
-                  not a general WP cache
-                </span>
-              </div>
-
               <h1
-                className="display animate-rise mt-5 text-[clamp(36px,4.6vw,58px)] text-paper"
+                className="display animate-rise text-[clamp(32px,3.9vw,48px)] text-paper"
                 style={{ animationDelay: "110ms" }}
               >
                 The only cache that understands{" "}
@@ -112,7 +98,7 @@ export default function HomePage() {
                 Surgical invalidation. Always-accurate stock. Sub-millisecond catalog hits. Silo
                 knows which categories contain a product, which variation changed, and which
                 Store API responses depend on it — then invalidates exactly those, and re-warms
-                what matters.
+                what matters. Already on WP Rocket or LiteSpeed? Silo works alongside it.
               </p>
 
               <div
@@ -201,7 +187,8 @@ export default function HomePage() {
               <p className="lede-dark max-w-[430px]">
                 WP Rocket and FlyingPress are good at broad WordPress performance. Neither was
                 built around variable products, stock events or Store API filters. That is the
-                gap Silo fills — deliberately and only that.
+                gap Silo fills. Keep them if you like: Silo runs alongside and keeps their cache
+                accurate for WooCommerce.
               </p>
               <Link href="/pricing" className="link-arrow mt-5">
                 See plans and pricing

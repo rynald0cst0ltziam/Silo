@@ -38,8 +38,9 @@ export default function TermsPage() {
 
       <h2>3. Trials and fees</h2>
       <p>
-        Trials last 14 days and do not require a card unless stated otherwise at checkout. Paid
-        plans are billed per connected store, monthly in advance or annually in advance. Fees
+        Trials last 14 days from account creation and do not require a card. When a trial or
+        paid plan ends, the service pauses caching on connected stores until a plan is active. Paid
+        plans are billed per plan (Solo, Studio or Portfolio), monthly or annually in advance. Fees
         exclude taxes, which are added where required. Subscriptions renew automatically until
         cancelled. We may change prices with at least 30 days&apos; notice before your next
         renewal.
@@ -68,9 +69,11 @@ export default function TermsPage() {
       <p>
         Silo invalidates cached responses based on events emitted by WooCommerce and the
         connector. Changes made directly in the database, or in ways that bypass WooCommerce
-        hooks, may not emit an event and therefore cannot trigger invalidation. You are
-        responsible for disabling other page caches on connected stores and for notifying us of
-        custom code that changes catalog state outside normal WooCommerce flows. Performance
+        hooks, may not emit an event and therefore cannot trigger invalidation. Silo purges the
+        supported third-party caches, hosts and CDNs listed in our documentation; for any other
+        cache layer in front of your store, you are responsible for making sure it honors the
+        private and no-store responses Silo relies on. Tell us about custom code that changes
+        catalog state outside normal WooCommerce flows. Performance
         figures on this site illustrate the cache model and are not a guarantee.
       </p>
 

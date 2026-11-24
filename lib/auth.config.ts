@@ -16,7 +16,12 @@ export const authConfig: NextAuthConfig = {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const isDashboard = request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/admin");
-      if (isDashboard && !isLoggedIn) return false;
+      if (isDashboard && !isLoggedIn) {
+        // Build the sign-in URL from the request itself so visitors stay on the domain they used.
+        const signIn = new URL("/sign-in", request.nextUrl.origin);
+        signIn.searchParams.set("callbackUrl", request.nextUrl.pathname + request.nextUrl.search);
+        return Response.redirect(signIn);
+      }
       return true;
     },
     jwt({ token, user }) {

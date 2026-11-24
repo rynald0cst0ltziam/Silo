@@ -97,7 +97,7 @@ export function PasswordForm() {
     const result = await send("/api/account/password", "POST", { current, next });
     if (result.ok) {
       setNote({ kind: "ok", text: "Password changed. Signing you out of every browser…" });
-      setTimeout(() => signOut({ callbackUrl: "/sign-in" }), 1200);
+      setTimeout(() => signOut({ redirect: false }).then(() => window.location.assign("/sign-in")), 1200);
       return;
     }
     setBusy(false);
@@ -137,7 +137,7 @@ export function SignOutEverywhere() {
       onClick={async () => {
         setBusy(true);
         await send("/api/account/signout-all", "POST");
-        signOut({ callbackUrl: "/sign-in" });
+        signOut({ redirect: false }).then(() => window.location.assign("/sign-in"));
       }}
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -170,7 +170,7 @@ export function DeleteAccount({ storeCount, hasSubscription }: { storeCount: num
         setNote(null);
         const result = await send("/api/account", "DELETE", { password, confirm });
         if (result.ok) {
-          signOut({ callbackUrl: "/" });
+          signOut({ redirect: false }).then(() => window.location.assign("/"));
           return;
         }
         setBusy(false);

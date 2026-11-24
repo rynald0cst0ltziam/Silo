@@ -35,7 +35,7 @@ export function UserMenu({ email, name }: { email: string; name?: string | null 
           </div>
 
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ redirect: false }).then(() => window.location.assign("/"))}
             className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-paper/50 transition hover:bg-white/5 hover:text-paper/80"
           >
             <LogOut className="h-3.5 w-3.5" />
