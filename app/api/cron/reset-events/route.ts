@@ -1,40 +1,15 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { runCron } from "@/lib/cron";
 
+/** Monthly event allowance resets on the 1st (UTC). */
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const result = await prisma.store.updateMany({
-    where: {
-      monthlyEventsReset: { lt: new Date() },
-    },
-    data: {
-      monthlyEvents: 0,
-      monthlyEventsReset: getNextMonth(),
-    },
+  return runCron(req, "reset-events", async () => {
+    const now = new Date();
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const result = await prisma.store.updateMany({
+      where: { OR: [{ monthlyEventsReset: { lte: now } }, { monthlyEventsReset: null }] },
+      data: { monthlyEvents: 0, monthlyEventsReset: next },
+    });
+    return { reset: result.count };
   });
-
-  // Also reset stores that have never been reset
-  const neverReset = await prisma.store.updateMany({
-    where: {
-      monthlyEventsReset: null,
-    },
-    data: {
-      monthlyEvents: 0,
-      monthlyEventsReset: getNextMonth(),
-    },
-  });
-
-  return NextResponse.json({
-    ok: true,
-    reset: result.count + neverReset.count,
-  });
-}
-
-function getNextMonth(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
 }

@@ -24,6 +24,7 @@ class Silo_Settings {
 			'warmup'             => true,
 			'cache_front_page'   => false,
 			'warmup_concurrency' => 4,
+			'cache_mode'         => 'auto', // auto | silo | coexist — see Silo_Compat.
 		);
 	}
 
@@ -58,11 +59,15 @@ class Silo_Settings {
 				$current[ $flag ] = (bool) filter_var( $changes[ $flag ], FILTER_VALIDATE_BOOLEAN );
 			}
 		}
+		if ( array_key_exists( 'cache_mode', $changes ) && in_array( $changes['cache_mode'], array( 'auto', 'silo', 'coexist' ), true ) ) {
+			$current['cache_mode'] = $changes['cache_mode'];
+		}
 		if ( array_key_exists( 'warmup_concurrency', $changes ) ) {
 			$current['warmup_concurrency'] = max( 1, min( 8, absint( $changes['warmup_concurrency'] ) ) );
 		}
 		update_option( self::OPTION, $current, false );
 		self::write_edge_config();
+		Silo_Compat::refresh_mode();
 		return $current;
 	}
 
@@ -212,7 +217,8 @@ class Silo_Settings {
 
 		$config = array(
 			// Fail closed: no cached pages while Silo rejects this store's key.
-			'enabled'       => self::is_connected() && ! empty( $settings['page_cache'] ) && '' === (string) get_option( 'silo_auth_error', '' ),
+			// Coexist: another page cache serves pages; Silo keeps Store API caching and invalidation.
+			'enabled'       => self::is_connected() && ! empty( $settings['page_cache'] ) && '' === (string) get_option( 'silo_auth_error', '' ) && 'silo' === Silo_Compat::mode(),
 			// Only a hash is written: the cache folder may be publicly readable on Nginx hosts.
 			'warm_hash'     => hash( 'sha256', self::warm_token() ),
 			'variants'      => array(
@@ -227,7 +233,7 @@ class Silo_Settings {
 				'shop'      => max( 60, (int) ( $ttl['shop'] ?? 1800 ) ),
 				'store_api' => max( 30, (int) ( $ttl['store_api'] ?? 300 ) ),
 			),
-			'store_api'     => self::is_connected() && ! empty( $settings['store_api_cache'] ),
+			'store_api'     => self::is_connected() && ! empty( $settings['store_api_cache'] ) && '' === (string) get_option( 'silo_auth_error', '' ),
 			'front_page'    => ! empty( $settings['cache_front_page'] ),
 			'version'       => (int) ( $remote['version'] ?? 0 ),
 			'written'       => time(),

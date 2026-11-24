@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     prisma.user.findUnique({ where: { id: store.userId }, include: { subscription: true } }),
     prisma.store.findUnique({ where: { id: store.id }, select: { config: true } }),
   ]);
-  const tier = getUserTier(user?.subscription ?? null);
+  const tier = getUserTier(user!);
   const config = record?.config as unknown as SiloConfig | null;
   const urls = (config?.priority_urls ?? []).slice(0, tier.warmupUrlsPerEvent);
 

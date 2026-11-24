@@ -3,7 +3,7 @@ export function cn(...classes: Array<string | false | null | undefined>) {
 }
 
 export function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://getsilo.com";
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://heysilo.co";
 }
 
 export function formatDate(date: string) {

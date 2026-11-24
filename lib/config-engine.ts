@@ -189,28 +189,23 @@ function buildInvalidationRules(isHighVariation: boolean, hasStockMgmt: boolean)
   };
 }
 
-const CONFLICT_INSTRUCTIONS: Record<string, string> = {
-  "wp-rocket": "Disable page caching in WP Rocket (Settings → Cache). Keep its file optimisation and CDN features.",
-  "w3-total-cache": "Disable Page Cache in W3 Total Cache (Performance → General Settings). Browser and object caching can stay.",
-  "litespeed-cache": "Turn off Enable Cache in LiteSpeed Cache (Cache → Cache). Keep image optimisation.",
-  "wp-super-cache": "Turn caching off in WP Super Cache (Settings → WP Super Cache → Easy).",
-  "wp-fastest-cache": "Disable the cache system in WP Fastest Cache.",
-  flyingpress: "Disable page caching in FlyingPress. Keep its asset optimisation.",
-  breeze: "Disable Breeze page cache (Settings → Breeze → Basic options).",
-  "siteground-optimizer": "Disable Dynamic Caching in SiteGround Optimizer.",
-  "wp-optimize": "Disable page caching in WP-Optimize (Cache tab).",
-  "mamba-cache": "Deactivate Mamba Cache page caching — Silo replaces it.",
-};
-
+/**
+ * Another full-page cache is not a conflict: the connector switches to "work alongside"
+ * mode, leaves page serving to that plugin and purges/warms the exact URLs in it.
+ * Only Mamba overlaps completely (same job, same hooks), so it is the one worth flagging.
+ */
 export function detectCacheConflicts(existingCache: string | null): {
   hasConflict: boolean;
   plugin: string | null;
   instructions: string | null;
 } {
   if (!existingCache) return { hasConflict: false, plugin: null, instructions: null };
-  return {
-    hasConflict: true,
-    plugin: existingCache,
-    instructions: CONFLICT_INSTRUCTIONS[existingCache] ?? `Disable page caching in ${existingCache} to avoid two caches serving the same URLs.`,
-  };
+  if (existingCache === "mamba-cache") {
+    return {
+      hasConflict: true,
+      plugin: existingCache,
+      instructions: "Mamba Cache does the same WooCommerce invalidation job as Silo. Deactivate one of them so changes are not handled twice.",
+    };
+  }
+  return { hasConflict: false, plugin: existingCache, instructions: null };
 }

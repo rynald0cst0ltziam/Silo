@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateApiKey } from "@/lib/api-keys";
-import { getUserTier, canCreateStore } from "@/lib/tier-enforcement";
+import { canCreateStore } from "@/lib/tier-enforcement";
+import { getAccess } from "@/lib/entitlements";
+import { audit } from "@/lib/audit";
 import { checkPublicUrl } from "@/lib/url-guard";
 import { PUBLIC_STORE_SELECT } from "@/lib/store-public";
 
 export async function GET() {
-  const session = await auth();
+  const session = await authSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -24,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await authSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -37,7 +39,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const tier = getUserTier(user.subscription);
+  const access = getAccess(user);
+  if (!access.active) {
+    return NextResponse.json({ error: access.message, code: "PLAN_INACTIVE" }, { status: 403 });
+  }
+  const tier = access.tier;
   const storeCheck = await canCreateStore(user.id, tier);
   if (!storeCheck.allowed) {
     return NextResponse.json(
@@ -91,6 +97,8 @@ export async function POST(req: Request) {
       apiKeyHash: hash,
     },
   });
+
+  await audit("store.created", { userId: user.id, target: store.url, detail: { storeId: store.id, name: store.name }, req });
 
   return NextResponse.json({ store: { id: store.id, name: store.name, url: store.url, status: store.status }, apiKey: plain }, { status: 201 });
 }

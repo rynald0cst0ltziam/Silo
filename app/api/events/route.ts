@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Store not found" }, { status: 404 });
   }
 
-  const tier = getUserTier(user.subscription);
+  const tier = getUserTier(user);
   const config = record.config as unknown as SiloConfig | null;
   const snapshot = record.profile as unknown as Partial<StoreSnapshot> | null;
   const warmCap = config?.limits?.warmup_urls_per_event ?? tier.warmupUrlsPerEvent;

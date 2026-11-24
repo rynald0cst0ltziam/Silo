@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getStoreAccess, type StoreAccess } from "@/lib/entitlements";
 
 export type ConnectorStore = {
   id: string;
@@ -31,7 +32,8 @@ const STORE_SELECT = {
  */
 export async function readConnectorRequest<T = Record<string, unknown>>(
   req: Request,
-): Promise<{ ok: true; store: ConnectorStore; body: T } | { ok: false; response: NextResponse }> {
+  options: { allowInactive?: boolean } = {},
+): Promise<{ ok: true; store: ConnectorStore; body: T; access: StoreAccess } | { ok: false; response: NextResponse }> {
   const signature = req.headers.get("x-silo-signature");
   const timestamp = req.headers.get("x-silo-timestamp");
   const keyId = req.headers.get("x-silo-key-id");
@@ -69,11 +71,19 @@ export async function readConnectorRequest<T = Record<string, unknown>>(
     return deny("Body is not valid JSON", 400);
   }
 
-  return { ok: true, store, body };
+  // Plan gate. 403 makes the connector fail closed: it stops serving cached pages
+  // (nothing could invalidate them) and switches back on at the first 200.
+  const access = await getStoreAccess(store.id, store.userId);
+  if (!access) return deny("Account not found", 401);
+  if (!access.storeActive && !options.allowInactive) {
+    return deny(access.storeMessage, 403, "PLAN_INACTIVE");
+  }
+
+  return { ok: true, store, body, access };
 }
 
-function deny(error: string, status: number) {
-  return { ok: false as const, response: NextResponse.json({ error }, { status }) };
+function deny(error: string, status: number, code?: string) {
+  return { ok: false as const, response: NextResponse.json(code ? { error, code } : { error }, { status }) };
 }
 
 /**

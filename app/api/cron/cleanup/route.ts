@@ -1,64 +1,48 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserTier } from "@/lib/tier-enforcement";
+import { ACCESS_SELECT } from "@/lib/entitlements";
+import { runCron } from "@/lib/cron";
 
+const DAY = 86_400_000;
+
+/** Nightly: trims store logs to each plan's retention, and housekeeping tables. */
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  return runCron(req, "cleanup", async () => {
+    const stores = await prisma.store.findMany({ select: { id: true, user: { select: ACCESS_SELECT } } });
 
-  const stores = await prisma.store.findMany({
-    select: {
-      id: true,
-      user: {
-        select: {
-          subscription: true,
-        },
-      },
-    },
-  });
+    let eventsDeleted = 0;
+    let metricsDeleted = 0;
+    let warmupJobsDeleted = 0;
 
-  let totalEventsDeleted = 0;
-  let totalMetricsDeleted = 0;
-  let totalWarmupDeleted = 0;
+    for (const store of stores) {
+      const cutoff = new Date(Date.now() - getUserTier(store.user).logRetentionDays * DAY);
+      const [events, metrics, warmup] = await Promise.all([
+        prisma.event.deleteMany({ where: { storeId: store.id, createdAt: { lt: cutoff } } }),
+        prisma.metric.deleteMany({ where: { storeId: store.id, date: { lt: cutoff } } }),
+        prisma.warmupJob.deleteMany({
+          where: { storeId: store.id, createdAt: { lt: cutoff }, status: { in: ["completed", "failed", "partial"] } },
+        }),
+      ]);
+      eventsDeleted += events.count;
+      metricsDeleted += metrics.count;
+      warmupJobsDeleted += warmup.count;
+    }
 
-  for (const store of stores) {
-    const tier = getUserTier(store.user.subscription);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - tier.logRetentionDays);
+    const now = Date.now();
+    const [tokens, cronRuns, audits] = await Promise.all([
+      prisma.passwordResetToken.deleteMany({ where: { expiresAt: { lt: new Date(now - DAY) } } }),
+      prisma.cronRun.deleteMany({ where: { createdAt: { lt: new Date(now - 30 * DAY) } } }),
+      prisma.auditLog.deleteMany({ where: { createdAt: { lt: new Date(now - 400 * DAY) } } }),
+    ]);
 
-    const events = await prisma.event.deleteMany({
-      where: {
-        storeId: store.id,
-        createdAt: { lt: cutoff },
-      },
-    });
-    totalEventsDeleted += events.count;
-
-    const metrics = await prisma.metric.deleteMany({
-      where: {
-        storeId: store.id,
-        date: { lt: cutoff },
-      },
-    });
-    totalMetricsDeleted += metrics.count;
-
-    const warmup = await prisma.warmupJob.deleteMany({
-      where: {
-        storeId: store.id,
-        createdAt: { lt: cutoff },
-        status: { in: ["completed", "failed", "partial"] },
-      },
-    });
-    totalWarmupDeleted += warmup.count;
-  }
-
-  return NextResponse.json({
-    ok: true,
-    stores: stores.length,
-    eventsDeleted: totalEventsDeleted,
-    metricsDeleted: totalMetricsDeleted,
-    warmupJobsDeleted: totalWarmupDeleted,
+    return {
+      stores: stores.length,
+      eventsDeleted,
+      metricsDeleted,
+      warmupJobsDeleted,
+      resetTokensDeleted: tokens.count,
+      cronRunsDeleted: cronRuns.count,
+      auditEntriesDeleted: audits.count,
+    };
   });
 }

@@ -8,16 +8,83 @@ datasource db {
 }
 
 model User {
-  id               String        @id @default(cuid())
-  email            String        @unique
+  id               String               @id @default(cuid())
+  email            String               @unique
   passwordHash     String
   name             String?
   stripeCustomerId String?
+  role             String               @default("user") // user | admin
+  trialEndsAt      DateTime? // null = createdAt + 14 days; admins can extend
+  planOverride     String? // complimentary plan set by an admin: solo | studio | portfolio
+  suspendedAt      DateTime?
+  suspendedReason  String?
+  lastLoginAt      DateTime?
+  sessionVersion   Int                  @default(0) // bumped on password change, suspension, deletion: signs out every session
   subscription     Subscription?
   stores           Store[]
   accounts         Account[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  invoices         Invoice[]
+  resetTokens      PasswordResetToken[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  userId          String
+  stripeInvoiceId String    @unique
+  number          String?
+  status          String // draft | open | paid | uncollectible | void
+  amountDue       Int // minor units
+  amountPaid      Int
+  currency        String
+  hostedUrl       String?
+  pdfUrl          String?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  createdAt       DateTime  @default(now())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Account and admin actions. userId is the account affected; actorId who did it (an admin, or the user).
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  actorId   String?
+  action    String
+  target    String?
+  detail    Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model CronRun {
+  id        String   @id @default(cuid())
+  name      String
+  ok        Boolean
+  ms        Int
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
 }
 
 model Account {
@@ -39,16 +106,20 @@ model Account {
 }
 
 model Subscription {
-  id               String    @id @default(cuid())
-  userId           String    @unique
-  stripeSubId      String    @unique
-  stripePriceId    String
-  status           String    // active | trialing | past_due | canceled
-  tier             String    // solo | studio | portfolio
-  billingInterval  String    // month | year
-  currentPeriodEnd DateTime
-  trialEnd         DateTime?
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  stripeSubId       String    @unique
+  stripePriceId     String
+  status            String // active | trialing | past_due | canceled
+  tier              String // solo | studio | portfolio
+  billingInterval   String // month | year
+  currentPeriodEnd  DateTime
+  trialEnd          DateTime?
+  cancelAtPeriodEnd Boolean   @default(false)
+  amount            Int? // per interval, minor units
+  currency          String?
+  updatedAt         DateTime  @default(now()) @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Store {
@@ -68,10 +139,10 @@ model Store {
   hitRate            Float       @default(0)
   monthlyEvents      Int         @default(0)
   monthlyEventsReset DateTime?
-  stats              Json?       // latest connector snapshot: cumulative counters per epoch, inventory, queue
-  scanState          Json?       // live catalog scan progress reported by the connector
+  stats              Json? // latest connector snapshot: cumulative counters per epoch, inventory, queue
+  scanState          Json? // live catalog scan progress reported by the connector
   connectorVersion   String?
-  connectorEnv       Json?       // drop-in, WP_CACHE, conflicts, versions
+  connectorEnv       Json? // drop-in, WP_CACHE, conflicts, versions
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   events             Event[]
   warmupJobs         WarmupJob[]
@@ -83,22 +154,22 @@ model Store {
 }
 
 model Event {
-  id        String   @id @default(cuid())
-  storeId   String
-  type      String
-  payload   Json
-  purgeUrls Json?
-  warmUrls  Json?
-  processed Boolean  @default(false)
-  error     String?
+  id         String   @id @default(cuid())
+  storeId    String
+  type       String
+  payload    Json
+  purgeUrls  Json?
+  warmUrls   Json?
+  processed  Boolean  @default(false)
+  error      String?
   object     String?
   detail     String?
   durationMs Int?
   localMs    Int?
   counted    Boolean  @default(true)
   meta       Json?
-  createdAt DateTime @default(now())
-  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@index([storeId, createdAt])
 }
@@ -114,7 +185,7 @@ model WarmupJob {
   error       String?
   source      String    @default("event") // event | scan | manual | purge | daily | fallback
   eventId     String?
-  results     Json?     // per-URL results: [{ url, status, code, ms, cache, error }]
+  results     Json? // per-URL results: [{ url, status, code, ms, cache, error }]
   startedAt   DateTime?
   createdAt   DateTime  @default(now())
   completedAt DateTime?

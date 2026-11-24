@@ -20,8 +20,8 @@ defined( 'ABSPATH' ) || exit;
 class Silo_Warmup {
 
 	const HOOK       = 'silo_warmup_run';
-	const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SiloWarmup/2 (+https://getsilo.io)';
-	const UA_MOBILE  = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile SiloWarmup/2 (+https://getsilo.io)';
+	const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SiloWarmup/2 (+https://heysilo.co)';
+	const UA_MOBILE  = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile SiloWarmup/2 (+https://heysilo.co)';
 
 	/**
 	 * Register hooks.
@@ -335,6 +335,10 @@ class Silo_Warmup {
 
 		if ( 200 === $desktop['code'] && in_array( $desktop['cache'], array( 'WARM', 'MISS', 'HIT' ), true ) ) {
 			$result['status'] = 'warm';
+		} elseif ( 200 === $desktop['code'] && '' === $desktop['cache'] && 'coexist' === Silo_Compat::mode() ) {
+			// Another plugin serves pages: this request primed its cache.
+			$result['status'] = 'warm';
+			$result['cache']  = 'PRIMED';
 		} elseif ( 200 === $desktop['code'] ) {
 			$result['status'] = 'skipped';
 			$result['error']  = 'BYPASS' === $desktop['cache'] ? 'Bypassed (session boundary)' : 'Not a cacheable WooCommerce page';

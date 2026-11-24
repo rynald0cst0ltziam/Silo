@@ -30,6 +30,11 @@ export default function PrivacyPage() {
           Billing details are collected and processed by Stripe. We receive a customer ID,
           subscription status and the last four digits of a card — never the full payment method.
         </li>
+        <li>
+          An account activity log: sign-ins and failed sign-in attempts, password and profile
+          changes, billing changes and store actions, each with a timestamp and IP address. You can
+          see it under Dashboard → Activity. It exists to protect your account.
+        </li>
       </ul>
 
       <h3>Store and connector metadata</h3>
@@ -88,15 +93,23 @@ export default function PrivacyPage() {
       <h2>6. Processors and sharing</h2>
       <p>
         We share data with service providers that help us run Silo, under contracts that limit
-        their use of it: Vercel (hosting), Neon (Postgres database), Stripe (billing), an email
-        provider for transactional messages, and Plausible if analytics is enabled. We may also
+        their use of it: Vercel (hosting), Neon (Postgres database), Stripe (billing), Resend
+        (transactional email such as password resets), and Plausible if analytics is enabled. We may also
         disclose data if required by law or to protect the rights and safety of Silo, our
         customers or others. We do not sell personal data.
       </p>
 
       <h2>7. Retention</h2>
       <ul>
-        <li>Account data is kept while your account is active and for 30 days after closure.</li>
+        <li>
+          Account data is kept while your account is active. Deleting your account (Dashboard →
+          Account) removes it immediately, together with its stores, invalidation logs and metrics,
+          and cancels any subscription.
+        </li>
+        <li>
+          The account activity log is kept for 400 days, including after deletion, as a security
+          record. Password reset links expire after one hour.
+        </li>
         <li>Invalidation logs are retained according to your plan (30, 90 or 180 days).</li>
         <li>Billing records are kept for seven years where tax law requires it.</li>
         <li>Trial and waitlist requests are kept for 24 months unless you ask us to delete them.</li>
@@ -122,7 +135,7 @@ export default function PrivacyPage() {
       <p>
         Depending on where you live, you may have the right to access, correct, export or delete
         personal data, object to processing, restrict it, or withdraw consent. Email{" "}
-        <a href="mailto:privacy@getsilo.com">privacy@getsilo.com</a>. We respond within 30 days.
+        <a href="mailto:privacy@heysilo.co">privacy@heysilo.co</a>. We respond within 30 days.
         You can also complain to your local data protection authority.
       </p>
 
@@ -135,7 +148,7 @@ export default function PrivacyPage() {
       <h2>12. Changes and contact</h2>
       <p>
         We will post material changes to this policy and, where appropriate, email account
-        owners. Questions: <a href="mailto:privacy@getsilo.com">privacy@getsilo.com</a> or Silo
+        owners. Questions: <a href="mailto:privacy@heysilo.co">privacy@heysilo.co</a> or Silo
         Systems, Inc., 2261 Market Street, San Francisco, CA 94114, USA.
       </p>
     </LegalPage>

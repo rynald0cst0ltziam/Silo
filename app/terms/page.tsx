@@ -129,7 +129,7 @@ export default function TermsPage() {
       <h2>13. Contact</h2>
       <p>
         Silo Systems, Inc., 2261 Market Street, San Francisco, CA 94114, USA.{" "}
-        <a href="mailto:legal@getsilo.com">legal@getsilo.com</a>.
+        <a href="mailto:legal@heysilo.co">legal@heysilo.co</a>.
       </p>
     </LegalPage>
   );

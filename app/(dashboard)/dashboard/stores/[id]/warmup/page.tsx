@@ -15,7 +15,7 @@ export default async function StoreWarmupPage({ params }: { params: Promise<{ id
   if (!user) redirect("/sign-in");
   const store = await prisma.store.findFirst({ where: { id, userId: user.id }, select: { id: true } });
   if (!store) notFound();
-  const live = await getStoreLive(store.id, getUserTier(user.subscription));
+  const live = await getStoreLive(store.id, getUserTier(user));
   if (!live) notFound();
   return <WarmupPageLive storeId={store.id} initial={live} />;
 }

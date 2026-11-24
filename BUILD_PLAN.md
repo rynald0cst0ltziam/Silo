@@ -434,10 +434,32 @@ On event receipt:
 
 ## Current Project State
 
-- Marketing site: **Complete** (Next.js 15, Tailwind, all pages live)
-- Dashboard: **Mock only** (static demo data)
-- Backend: **Waitlist-style** store request collection (raw Neon SQL)
-- Connector: **Does not exist**
-- Auth: **None**
-- Billing: **None**
-- No git repository initialized
+_Scorecard updated 2026-11-24. Domain: heysilo.co (Vercel). Connector v2.2.0._
+
+### Done
+
+| Area | State |
+|---|---|
+| Marketing site | Complete: home, features, pricing, how it works, guide, docs, FAQ, legal, sitemap, OG |
+| Accounts | Sign up, sign in (brute-force brake), session revocation (password change, suspend, sign out everywhere), profile and email change (password required), password change, account deletion (cancels Stripe first), password reset by email (needs Resend env vars) |
+| Access model | `lib/entitlements.ts`: 14-day no-card trial, paid, past_due grace, complimentary (admin), expired, canceled, suspended. Store limit enforced oldest-first after downgrades. Admin accounts are complimentary Portfolio |
+| Billing | Stripe Checkout (trial days carry over, one subscription per account), billing portal, webhook mirrors subscriptions (interval, period end, cancel-at-period-end, amount) and invoices; billing page with status, usage meters, plans, invoice history |
+| Logs | Customer Activity page (account audit log + links to each store's invalidation log); store invalidation, warmup and catalog logs |
+| Admin console (`/admin`) | Overview (MRR, ARR, 30-day revenue, pipeline, trials, stores online, events, cron health, connector versions), users (search, filters, detail, extend/end trial, comp plan, suspend, role, sign out, delete), stores (all, filters, detail, purge, rescan), revenue (12-month chart, plans, invoices), events, audit log, system (env presence checks, cron runs, table sizes) |
+| Connector | Page cache (drop-in + late serve), Store API cache, fragments, surgical invalidation, sale boundaries, warmup, scan, real-time sync, exports, WPCS clean, PHP 8.1–8.4 |
+| Works alongside | Auto/coexist/silo modes. Purges WP Rocket, LiteSpeed, W3TC, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround, Hummingbird, Cache Enabler, WP-Optimize; host caches (Nginx Helper, WP Engine, Kinsta, Pantheon, SpinupWP); Cloudflare by API. Builders: Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, theme layout CPTs |
+| Plan enforcement | Every connector route gated; inactive plans return 403 PLAN_INACTIVE so the connector fails closed (no cached pages that nothing can invalidate) |
+| Scheduled jobs | warmup, daily warmup, monthly event reset (UTC), nightly retention cleanup; every run recorded for the admin console |
+
+### Outstanding
+
+| Item | Needs |
+|---|---|
+| Schema push for this release | Owner approval, then `npx prisma db push` (additive: User role/trial/suspension/session fields, Subscription cancel/amount/currency, Invoice, PasswordResetToken, AuditLog, CronRun) |
+| Vercel env | `NEXT_PUBLIC_SITE_URL=https://heysilo.co`, `SILO_PUBLIC_URL=https://heysilo.co`, `ADMIN_EMAILS`, `RESEND_API_KEY` + `EMAIL_FROM` (optional, enables password reset) |
+| Stripe | Webhook endpoint `https://heysilo.co/api/webhooks/stripe` with events: checkout.session.completed, customer.subscription.*, invoice.* ; customer portal enabled with plan switching |
+| Mailboxes | hello@, support@, billing@, privacy@, legal@ heysilo.co must exist (site copy points there) |
+| Email verification on sign-up / email change | Needs the email provider above |
+| Status page | Still static copy; wire to real uptime data or remove |
+| Pricing copy | Says currency/geo cache keys are Portfolio-only; the connector applies them on every plan (required for correctness). Decide: update copy |
+| End-to-end test on a real WooCommerce site | Install v2.2.0 next to WP Rocket and verify coexist purges; verify an expired trial pauses caching and a new plan resumes it |

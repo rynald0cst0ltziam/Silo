@@ -15,16 +15,20 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
+      const isDashboard = request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/admin");
       if (isDashboard && !isLoggedIn) return false;
       return true;
     },
     jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.sv = (user as { sv?: number }).sv ?? 0;
+      }
       return token;
     },
     session({ session, token }) {
       if (session.user && token.id) session.user.id = token.id as string;
+      (session as { sv?: number }).sv = typeof token.sv === "number" ? token.sv : 0;
       return session;
     },
   },

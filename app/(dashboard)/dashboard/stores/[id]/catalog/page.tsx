@@ -15,7 +15,7 @@ export default async function StoreCatalogPage({ params }: { params: Promise<{ i
   if (!user) redirect("/sign-in");
   const store = await prisma.store.findFirst({ where: { id, userId: user.id }, select: { id: true, profile: true, config: true } });
   if (!store) notFound();
-  const live = await getStoreLive(store.id, getUserTier(user.subscription));
+  const live = await getStoreLive(store.id, getUserTier(user));
   if (!live) notFound();
 
   return (

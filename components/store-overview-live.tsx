@@ -38,6 +38,9 @@ function Overview() {
   const pending = (warm.queued ?? 0) + (warm.warming ?? 0) + data.warmup.active.reduce((s, j) => s + Math.max(0, j.total - j.progress - j.failed), 0);
   const faster = stats?.avg_hit_ms && stats?.avg_miss_ms ? Math.max(0, Math.round((1 - stats.avg_hit_ms / stats.avg_miss_ms) * 100)) : 0;
 
+  const liveEnv = (data.env ?? {}) as { cache_mode?: string; owner?: string };
+  const coexistOwner = liveEnv.cache_mode === "coexist" ? liveEnv.owner || "Another cache" : "";
+
   return (
     <div>
       {node}
@@ -74,12 +77,21 @@ function Overview() {
       )}
 
       <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Kpi
-          label="Hit rate"
-          value={<><Tween value={stats ? Number(stats.hit_rate ?? store.hitRate * 100) : store.hitRate * 100} decimals={1} /><small>%</small></>}
-          delta={stats ? `${(stats.hits ?? 0).toLocaleString()} hits · ${(stats.misses ?? 0).toLocaleString()} misses` : "waiting for first heartbeat"}
-          tone={stats?.hits ? "mint" : undefined}
-        />
+        {coexistOwner ? (
+          <Kpi
+            label="Page serving"
+            value={coexistOwner}
+            delta={`Silo keeps its cache accurate · Store API hit rate ${Number(stats?.api_hit_rate ?? 0).toFixed(1)}%`}
+            tone="mint"
+          />
+        ) : (
+          <Kpi
+            label="Hit rate"
+            value={<><Tween value={stats ? Number(stats.hit_rate ?? store.hitRate * 100) : store.hitRate * 100} decimals={1} /><small>%</small></>}
+            delta={stats ? `${(stats.hits ?? 0).toLocaleString()} hits · ${(stats.misses ?? 0).toLocaleString()} misses` : "waiting for first heartbeat"}
+            tone={stats?.hits ? "mint" : undefined}
+          />
+        )}
         <Kpi
           label="Avg response"
           value={stats?.avg_hit_ms ? <><Tween value={stats.avg_hit_ms} /><small>ms</small></> : "—"}
@@ -179,7 +191,17 @@ function Overview() {
 
 function HealthStrip() {
   const { data } = useStoreLive();
-  const env = (data.env ?? {}) as { mode?: string; conflicts?: string[]; auth_error?: string; page_cache?: boolean; store_api?: boolean; dropin?: string };
+  const env = (data.env ?? {}) as {
+    mode?: string;
+    cache_mode?: string;
+    owner?: string;
+    edge?: string[];
+    conflicts?: string[];
+    auth_error?: string;
+    page_cache?: boolean;
+    store_api?: boolean;
+    dropin?: string;
+  };
   const pills: Array<{ label: string; tone: "mint" | "amber" | "rose" | "dim"; pulse?: boolean }> = [];
 
   if (!data.store.lastSeenAt) pills.push({ label: "Connector not installed yet", tone: "rose" });
@@ -187,11 +209,16 @@ function HealthStrip() {
   else pills.push({ label: `Connector last seen ${ago(data.store.lastSeenAt)}`, tone: "amber" });
 
   if (env.auth_error) pills.push({ label: env.auth_error, tone: "rose" });
+  const coexist = env.cache_mode === "coexist";
   if (env.page_cache === false) pills.push({ label: "Page cache disabled in WordPress", tone: "rose" });
+  else if (coexist) pills.push({ label: `Working alongside ${env.owner || "another page cache"}`, tone: "mint" });
   else if (env.mode === "dropin") pills.push({ label: "Serving before WordPress loads", tone: "mint" });
-  else if (env.mode === "late") pills.push({ label: "Late serve mode (drop-in owned elsewhere)", tone: "amber" });
+  else if (env.mode === "late") pills.push({ label: "Late serve mode", tone: "amber" });
   if (env.store_api) pills.push({ label: "Store API cache on", tone: "dim" });
-  (env.conflicts ?? []).forEach((c) => pills.push({ label: `${c} page cache active`, tone: "amber" }));
+  if (env.cache_mode === "silo") {
+    (env.conflicts ?? []).forEach((c) => pills.push({ label: `${c} also caches pages: switch Silo to Work alongside`, tone: "amber" }));
+  }
+  if (env.edge?.length) pills.push({ label: `Purging in step: ${env.edge.join(", ")}`, tone: "dim" });
   if (data.stats?.events_queued) pills.push({ label: `${data.stats.events_queued} events sending`, tone: "dim", pulse: true });
   if (data.store.connectorVersion) pills.push({ label: `connector v${data.store.connectorVersion}`, tone: "dim" });
 

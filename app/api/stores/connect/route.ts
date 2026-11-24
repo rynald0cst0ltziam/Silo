@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
-  const tier = getUserTier(user.subscription);
+  const tier = getUserTier(user);
   const config = generateConfig(tier, snapshot, store.configVersion ?? 0);
   const conflict = detectCacheConflicts(snapshot.existing_cache);
   const warmUrls = config.priority_urls.slice(0, tier.warmupUrlsPerEvent);

@@ -83,7 +83,7 @@ export async function callConnector<T = Record<string, unknown>>(
         "X-Silo-Signature": signature,
         "X-Silo-Signature-V2": signatureV2,
         "X-Silo-Timestamp": timestamp,
-        "User-Agent": "Silo/1.0 (+https://getsilo.io)",
+        "User-Agent": "Silo/1.0 (+https://heysilo.co)",
       },
       body: method === "GET" ? undefined : payload,
       signal: AbortSignal.timeout(timeoutMs),

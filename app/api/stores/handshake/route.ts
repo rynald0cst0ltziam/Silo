@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readConnectorRequest } from "@/lib/hmac";
 import { rateLimit } from "@/lib/rate-limit";
-import { getUserTier } from "@/lib/tier-enforcement";
 import { checkPublicUrl } from "@/lib/url-guard";
 
 type Handshake = {
@@ -26,8 +25,7 @@ export async function POST(req: Request) {
   const rl = rateLimit(req, store.id);
   if (!rl.allowed) return rl.response!;
 
-  const user = await prisma.user.findUnique({ where: { id: store.userId }, include: { subscription: true } });
-  const tier = getUserTier(user?.subscription ?? null);
+  const tier = auth.access.tier;
 
   let origin = store.url;
   try {

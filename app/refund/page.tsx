@@ -57,7 +57,7 @@ export default function RefundPage() {
 
       <h2>6. How to request a refund</h2>
       <p>
-        Email <a href="mailto:billing@getsilo.com">billing@getsilo.com</a> from the account email
+        Email <a href="mailto:billing@heysilo.co">billing@heysilo.co</a> from the account email
         with the store URL and the invoice number. We aim to respond within two business days
         and to process approved refunds to the original payment method within 5–10 business
         days, depending on your bank.
@@ -73,8 +73,8 @@ export default function RefundPage() {
 
       <h2>8. Contact</h2>
       <p>
-        Billing questions: <a href="mailto:billing@getsilo.com">billing@getsilo.com</a>.
-        Product or connector questions: <a href="mailto:support@getsilo.com">support@getsilo.com</a>.
+        Billing questions: <a href="mailto:billing@heysilo.co">billing@heysilo.co</a>.
+        Product or connector questions: <a href="mailto:support@heysilo.co">support@heysilo.co</a>.
       </p>
     </LegalPage>
   );

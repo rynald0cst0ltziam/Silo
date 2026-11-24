@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { activeStoreIds, getAccess } from "@/lib/entitlements";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -17,6 +18,7 @@ function StatusBadge({ status }: { status: string }) {
     pending: "bg-white/5 text-paper/40 border-white/10",
     error: "bg-red-500/10 text-red-400/70 border-red-500/20",
     offline: "bg-red-500/10 text-red-400/70 border-red-500/20",
+    paused: "bg-red-500/10 text-red-300 border-red-500/25",
   };
 
   return (
@@ -36,6 +38,8 @@ export default async function DashboardPage() {
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
   });
+  const access = getAccess(user);
+  const allowed = access.active ? await activeStoreIds(user.id, access.tier) : new Set<string>();
 
   return (
     <div>
@@ -90,7 +94,7 @@ export default async function DashboardPage() {
                     {store.url}
                   </p>
                 </div>
-                <StatusBadge status={store.status} />
+                <StatusBadge status={allowed.has(store.id) ? store.status : "paused"} />
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/6 pt-3">
                 <div>

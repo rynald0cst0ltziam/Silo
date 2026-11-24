@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   if (rateLimited(ip)) {
     return NextResponse.json(
-      { error: "Too many requests. Try again later or email hello@getsilo.com." },
+      { error: "Too many requests. Try again later or email hello@heysilo.co." },
       { status: 429 },
     );
   }
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "We couldn't save your request. Email hello@getsilo.com and we'll set your store up manually.",
+          "We couldn't save your request. Email hello@heysilo.co and we'll set your store up manually.",
       },
       { status: 503 },
     );

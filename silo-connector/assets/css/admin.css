@@ -2190,3 +2190,81 @@ body.silo-screen #wpbody-content > .updated {
 	font-size: 13px;
 	color: var(--p45);
 }
+
+/* Other caches and CDN ---------------------------------------------------- */
+
+.silo-modes {
+	display: grid;
+	gap: 8px;
+	margin: 16px 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.silo-mode {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 14px 16px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.02);
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.silo-mode:hover {
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.silo-mode.is-on {
+	border-color: rgba(61, 107, 255, 0.6);
+	background: rgba(61, 107, 255, 0.07);
+}
+
+.silo-mode input {
+	margin: 3px 0 0;
+	accent-color: #3d6bff;
+}
+
+.silo-mode .t,
+.silo-cf .t {
+	display: block;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--paper);
+}
+
+.silo-mode .d,
+.silo-cf .d {
+	display: block;
+	margin-top: 4px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--p60);
+}
+
+.silo-cf {
+	margin-top: 20px;
+	padding-top: 18px;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.silo-cf-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.silo-cf-actions {
+	display: flex;
+	gap: 14px;
+	align-items: center;
+	margin-top: 14px;
+}
+
+@media (max-width: 782px) {
+	.silo-cf-grid {
+		grid-template-columns: 1fr;
+	}
+}

@@ -305,7 +305,7 @@ class Silo_Scanner {
 			self::log( $state, sprintf( '%s · currencies: %s', $currencies['plugin'], implode( ', ', $currencies['codes'] ) ) );
 		}
 		if ( $conflicts ) {
-			self::log( $state, 'Page cache conflict: ' . implode( ', ', $conflicts ) . ' — disable its page caching' );
+			self::log( $state, implode( ', ', $conflicts ) . ' detected — Silo works alongside it and purges its cache in step' );
 		}
 		if ( '' === $permalinks ) {
 			self::log( $state, 'Plain permalinks detected — enable pretty permalinks for page caching' );

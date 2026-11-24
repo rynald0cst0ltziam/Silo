@@ -127,10 +127,10 @@ export default function StatusPage() {
               </p>
             </div>
             <a
-              href="mailto:support@getsilo.com?subject=Status%20updates"
+              href="mailto:support@heysilo.co?subject=Status%20updates"
               className="btn btn-secondary btn-sm mt-5 w-full"
             >
-              support@getsilo.com
+              support@heysilo.co
               <ArrowUpRight className="h-3 w-3" />
             </a>
           </div>

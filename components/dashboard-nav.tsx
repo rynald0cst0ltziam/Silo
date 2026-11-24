@@ -2,28 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, LayoutGrid, Plus, Settings } from "lucide-react";
+import { Activity, CreditCard, LayoutGrid, Plus, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/dashboard", label: "Stores", icon: LayoutGrid, exact: false },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard, exact: true },
+  { href: "/dashboard/activity", label: "Activity", icon: Activity, exact: true },
   { href: "/dashboard/settings", label: "Account", icon: Settings, exact: true },
 ];
+
+const ADMIN_ITEM = { href: "/admin", label: "Admin", icon: ShieldCheck, exact: false };
 
 /**
  * Secondary navigation for signed-in users, below the main site header.
  */
-export function DashboardNav() {
+export function DashboardNav({ admin = false }: { admin?: boolean }) {
   const pathname = usePathname();
+  const items = admin ? [...ITEMS, ADMIN_ITEM] : ITEMS;
   return (
     <div className="border-b border-white/8 bg-[#090b0e]">
       <div className="container-page flex h-12 items-center justify-between gap-4">
         <nav aria-label="Dashboard" className="flex items-center gap-1 overflow-x-auto">
-          {ITEMS.map((item) => {
+          {items.map((item) => {
             const active = item.exact
               ? pathname === item.href
-              : pathname === "/dashboard" || pathname.startsWith("/dashboard/stores") || pathname.startsWith("/dashboard/connect");
+              : item.href === "/admin"
+                ? pathname.startsWith("/admin")
+                : pathname === "/dashboard" || pathname.startsWith("/dashboard/stores") || pathname.startsWith("/dashboard/connect");
             return (
               <Link
                 key={item.href}

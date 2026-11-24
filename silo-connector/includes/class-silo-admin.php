@@ -15,7 +15,7 @@ class Silo_Admin {
 
 	const SLUG = 'silo';
 
-	const ACTIONS = array( 'live', 'connect', 'scan_step', 'scan_start', 'purge_all', 'warm_priority', 'save_settings', 'disconnect', 'checks', 'entries', 'events', 'event', 'export' );
+	const ACTIONS = array( 'live', 'connect', 'scan_step', 'scan_start', 'purge_all', 'warm_priority', 'save_settings', 'disconnect', 'checks', 'entries', 'events', 'event', 'export', 'save_cloudflare' );
 
 	/**
 	 * Register hooks.
@@ -188,6 +188,12 @@ class Silo_Admin {
 			),
 			'env'          => Silo_Status::compact(),
 			'settings'     => Silo_Settings::all(),
+			'compat'       => Silo_Compat::summary() + array( 'owner' => Silo_Compat::owner() ),
+			'cloudflare'   => array(
+				'zone'      => Silo_Compat::cloudflare()['zone'],
+				'has_token' => '' !== Silo_Compat::cloudflare()['token'],
+				'name'      => (string) ( get_option( Silo_Compat::OPTION_CLOUDFLARE, array() )['name'] ?? '' ),
+			),
 			'config'       => array(
 				'version'  => (int) ( $config['version'] ?? 0 ),
 				'tier'     => (string) ( $config['tier'] ?? ( $store['tier'] ?? '' ) ),
@@ -359,6 +365,22 @@ class Silo_Admin {
 		}
 		if ( ! $before['warmup'] && $settings['warmup'] ) {
 			Silo_Warmup::schedule();
+		}
+		wp_send_json_success( self::live_state() );
+	}
+
+	/**
+	 * AJAX handler: save (or remove) Cloudflare credentials. The token is checked against
+	 * Cloudflare before it is stored and is never sent back to the browser.
+	 */
+	public static function ajax_save_cloudflare(): void {
+		check_ajax_referer( 'silo_admin', 'nonce' );
+		self::require_capability();
+		$zone   = isset( $_POST['zone'] ) ? sanitize_text_field( wp_unslash( $_POST['zone'] ) ) : '';
+		$token  = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
+		$result = Silo_Compat::save_cloudflare( $zone, $token );
+		if ( is_wp_error( $result ) ) {
+			self::fail( $result->get_error_message() );
 		}
 		wp_send_json_success( self::live_state() );
 	}

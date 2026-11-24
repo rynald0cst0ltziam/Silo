@@ -687,6 +687,8 @@
 
 		if ( ! set.page_cache ) {
 			pills.push( '<span class="silo-pill is-rose"><span class="silo-dot"></span>Page cache off</span>' );
+		} else if ( 'coexist' === env.cache_mode ) {
+			pills.push( '<span class="silo-pill is-mint"><span class="silo-dot"></span>Working alongside ' + esc( env.owner || 'another page cache' ) + '</span>' );
 		} else if ( 'dropin' === env.mode ) {
 			pills.push( '<span class="silo-pill is-mint"><span class="silo-dot"></span>Serving before WordPress loads</span>' );
 		} else {
@@ -695,7 +697,9 @@
 
 		pills.push( set.store_api_cache ? '<span class="silo-pill"><span class="silo-dot silo-mint"></span>Store API cache</span>' : '<span class="silo-pill">Store API cache off</span>' );
 
-		( env.conflicts || [] ).forEach( ( c ) => pills.push( '<span class="silo-pill is-amber"><span class="silo-dot"></span>' + esc( c ) + ' page cache active</span>' ) );
+		if ( 'silo' === env.cache_mode ) {
+			( env.conflicts || [] ).forEach( ( c ) => pills.push( '<span class="silo-pill is-amber"><span class="silo-dot"></span>' + esc( c ) + ' also caches pages</span>' ) );
+		}
 
 		if ( st.queued ) {
 			pills.push( '<span class="silo-pill is-accent"><span class="silo-pulse"></span>' + num( st.queued ) + ' event' + ( 1 === st.queued ? '' : 's' ) + ' sending</span>' );
@@ -888,7 +892,7 @@
 		if ( ( env.currencies || [] ).length > 1 ) {
 			caps.push( '<span class="silo-chip is-accent">Currencies: ' + esc( env.currencies.join( ', ' ) ) + '</span>' );
 		}
-		( env.conflicts || [] ).forEach( ( x ) => caps.push( '<span class="silo-chip is-amber">' + esc( x ) + '</span>' ) );
+		( env.conflicts || [] ).forEach( ( x ) => caps.push( '<span class="silo-chip">' + esc( x ) + ' · working alongside</span>' ) );
 		if ( false === env.pretty ) {
 			caps.push( '<span class="silo-chip is-rose">Plain permalinks</span>' );
 		}
@@ -1068,7 +1072,7 @@
 			row( 'Plan', esc( ( st.config && st.config.tier ) || store.tier || '—' ) ) +
 			row( 'Store key', '<span class="code">' + esc( st.key_hint ) + '</span>' ) +
 			row( 'Silo service', esc( hostOf( st.saas_url ) ) ) +
-			row( 'Connector', 'v' + esc( st.version ) + ' · ' + esc( ( st.env && st.env.mode ) === 'dropin' ? 'drop-in' : 'late serve' ) ) +
+			row( 'Connector', 'v' + esc( st.version ) + ' · ' + esc( ( st.env && st.env.cache_mode ) === 'coexist' ? 'working alongside ' + ( st.env.owner || 'another cache' ) : ( ( st.env && st.env.mode ) === 'dropin' ? 'drop-in' : 'late serve' ) ) ) +
 			'</div></div>' +
 			'<div class="silo-card"><div class="silo-card-head"><h3>Cache behaviour</h3></div>' +
 			toggles
@@ -1081,6 +1085,7 @@
 			'<div class="silo-toggle-row"><div><div class="t">Warmup concurrency</div><div class="d">URLs fetched in parallel (each for desktop and mobile). Lower it if your host rate-limits its own origin.</div></div>' +
 			'<div class="silo-range"><input type="range" min="1" max="8" step="1" value="' + esc( set.warmup_concurrency || 4 ) + '" data-setting="warmup_concurrency"><span>' + esc( set.warmup_concurrency || 4 ) + '</span></div></div>' +
 			'</div></div>' +
+			compatCard() +
 			'<div class="silo-card silo-danger silo-mt"><div class="silo-card-head"><h3>Danger zone</h3></div>' +
 			'<div class="silo-toggle-row"><div><div class="t">Purge all</div><div class="d">Remove every cached page and Store API entry and reset statistics on both sides. Priority pages are re-warmed.</div></div>' + purgeButton() + '</div>' +
 			'<div class="silo-toggle-row"><div><div class="t">Disconnect</div><div class="d">Forget the store key, stop caching and purge cached pages. The store stays in your Silo account.</div></div>' +
@@ -1089,6 +1094,60 @@
 				: '<button type="button" class="silo-btn is-rose" data-act="disconnect">Disconnect</button>' ) +
 			'</div></div>'
 		);
+	}
+
+	function compatCard() {
+		const c = S.state.compat || {};
+		const cf = S.state.cloudflare || {};
+		const setting = ( S.state.settings || {} ).cache_mode || 'auto';
+		const owner = c.owner || '';
+		const modes = [
+			[ 'auto', 'Automatic', owner ? 'Recommended. ' + esc( owner ) + ' is active, so Silo works alongside it.' : 'Recommended. No other page cache found, so Silo serves cached pages itself.' ],
+			[ 'coexist', 'Work alongside another cache', 'Your page cache plugin keeps serving pages. Silo purges exactly the right pages in it on every stock, price, sale and order change, then rewarms them. Store API caching stays on.' ],
+			[ 'silo', 'Silo serves pages', 'Silo serves cached product, shop and category pages. Turn off any other plugin’s page cache (keep its CSS, JS and image features) so pages are not cached twice.' ],
+		];
+		const active = 'coexist' === c.mode
+			? '<strong>' + esc( owner || 'Another plugin' ) + '</strong> serves cached pages · Silo handles WooCommerce invalidation, warmup and Store API caching'
+			: '<strong>Silo</strong> serves cached pages' + ( owner ? ' · ' + esc( owner ) + ' is also active' : '' );
+		const edge = ( c.edge || [] ).length ? esc( c.edge.join( ', ' ) ) : 'none detected';
+
+		return (
+			'<div class="silo-card silo-mt"><div class="silo-card-head"><h3>Other caches and CDN</h3></div>' +
+			'<p class="silo-note">Silo is built to run alongside WP Rocket, LiteSpeed, W3 Total Cache, host caches, Cloudflare and page builders such as Elementor. Keep them installed.</p>' +
+			'<div class="silo-rows">' +
+			row( 'Right now', active ) +
+			row( 'Purged in step', edge ) +
+			'</div>' +
+			'<fieldset class="silo-modes"><legend class="silo-sr">How pages are served</legend>' +
+			modes
+				.map(
+					( m ) =>
+						'<label class="silo-mode' + ( setting === m[ 0 ] ? ' is-on' : '' ) + '"><input type="radio" name="cache_mode" value="' + m[ 0 ] + '"' + ( setting === m[ 0 ] ? ' checked' : '' ) + '>' +
+						'<span><span class="t">' + m[ 1 ] + '</span><span class="d">' + m[ 2 ] + '</span></span></label>'
+				)
+				.join( '' ) +
+			'</fieldset>' +
+			'<form class="silo-cf" data-form="cloudflare" autocomplete="off">' +
+			'<div class="t">Cloudflare</div>' +
+			'<div class="d">' + ( cf.zone ? 'Connected' + ( cf.name ? ' to <strong>' + esc( cf.name ) + '</strong>' : '' ) + '. Cloudflare copies of changed pages are purged with Silo’s.' : 'Using Cloudflare caching (APO or cache rules)? Add a zone ID and an API token with the Zone → Cache Purge permission so its copies are purged in step.' ) + '</div>' +
+			'<div class="silo-cf-grid">' +
+			'<div class="silo-field"><label for="silo-cf-zone">Zone ID</label><input id="silo-cf-zone" type="text" name="zone" spellcheck="false" value="' + esc( cf.zone || '' ) + '" placeholder="32-character zone ID"></div>' +
+			'<div class="silo-field"><label for="silo-cf-token">API token</label><input id="silo-cf-token" type="password" name="token" spellcheck="false" value="" placeholder="' + ( cf.has_token ? 'Saved — leave blank to keep' : 'Token with Cache Purge permission' ) + '"></div>' +
+			'</div>' +
+			'<div class="silo-cf-actions"><button type="submit" class="silo-btn">' + ( cf.zone ? 'Update' : 'Connect Cloudflare' ) + '</button>' +
+			( cf.zone ? '<button type="button" class="silo-link" data-act="cf-remove">Remove</button>' : '' ) + '</div>' +
+			'</form></div>'
+		);
+	}
+
+	async function saveCloudflare( zone, token ) {
+		try {
+			ingest( await api( 'save_cloudflare', { zone, token } ) );
+			toast( zone ? 'Cloudflare connected' : 'Cloudflare removed' );
+		} catch ( e ) {
+			toast( e.message, 'error' );
+		}
+		render();
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1144,6 +1203,9 @@
 
 	async function act( name, el ) {
 		switch ( name ) {
+			case 'cf-remove':
+				saveCloudflare( '', '' );
+				break;
 			case 'nav':
 				S.view = el.getAttribute( 'data-view' );
 				S.confirm = '';
@@ -1369,6 +1431,13 @@
 		saveSetting( key, 'checkbox' === el.type ? el.checked : Number( el.value ) );
 	} );
 
+	root.addEventListener( 'change', ( ev ) => {
+		const el = ev.target;
+		if ( 'radio' === el.type && 'cache_mode' === el.name ) {
+			saveSetting( 'cache_mode', el.value );
+		}
+	} );
+
 	root.addEventListener( 'input', ( ev ) => {
 		const el = ev.target;
 		if ( 'range' === el.type && el.nextElementSibling ) {
@@ -1387,6 +1456,10 @@
 		if ( 'connect' === form.getAttribute( 'data-form' ) ) {
 			ev.preventDefault();
 			doConnect( form );
+		}
+		if ( 'cloudflare' === form.getAttribute( 'data-form' ) ) {
+			ev.preventDefault();
+			saveCloudflare( form.zone.value.trim(), form.token.value.trim() );
 		}
 	} );
 

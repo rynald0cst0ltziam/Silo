@@ -7,7 +7,7 @@ Requires PHP: 8.1
 Requires Plugins: woocommerce
 WC requires at least: 8.2
 WC tested up to: 9.9
-Stable tag: 2.1.1
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,7 +28,13 @@ This connector:
 * Never caches cart, checkout, account pages or any request carrying a WooCommerce session, cart cookie, login or Authorization header.
 * Supports HPOS, Product Blocks, multilingual (WPML, Polylang, TranslatePress) and multi-currency setups.
 
-Silo does not minify assets, optimise images, clean the database or touch anything outside WooCommerce catalog caching. Keep your existing tools for those jobs, and disable their page caching.
+Silo does not minify assets, optimise images, clean the database or touch anything outside WooCommerce catalog caching. Keep your existing tools for those jobs.
+
+= Works alongside your other caches =
+
+* WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler, WP-Optimize: Silo detects them and switches to work-alongside mode. Your plugin keeps serving pages; Silo purges exactly the affected pages in its cache on every stock, price, sale and order change, then rewarms them.
+* Host caches (Nginx Helper, WP Engine, Kinsta, Pantheon, SpinupWP) and Cloudflare (zone ID + API token) are purged in step with Silo.
+* Page builders: Elementor, Beaver Builder, Divi, Bricks, Oxygen and Breakdance layouts and templates are tracked, and builder CSS regeneration refreshes every cached page.
 
 == Installation ==
 
@@ -43,15 +49,22 @@ Silo does not minify assets, optimise images, clean the database or touch anythi
 
 Request a product page in a private window and look for the `x-silo-cache` response header: `MISS` on the first request, `HIT` afterwards. Logged-in or carted sessions show `BYPASS`, which is the session boundary working.
 
-= Does this replace WP Rocket, LiteSpeed or W3 Total Cache? =
+= Do I need to remove WP Rocket, LiteSpeed or W3 Total Cache? =
 
-For WooCommerce page caching, yes. Disable page caching in those plugins (and at your host) to avoid two caches serving the same URLs. Their asset optimisation and CDN features can stay on. If another plugin owns advanced-cache.php, Silo leaves it alone and serves from plugins_loaded instead.
+No. When another page cache is active, Silo works alongside it automatically (WooCommerce → Silo → Settings → Other caches and CDN): that plugin serves pages and Silo keeps its cache accurate for WooCommerce. If you prefer Silo to serve pages, choose "Silo serves pages" and turn off only the other plugin's page cache.
 
 = What happens on deactivation and uninstall? =
 
 Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
+
+= 2.2.0 =
+* New: works alongside WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize. Their cache keeps serving pages; Silo purges and rewarms the exact WooCommerce pages in it.
+* New: host caches (Nginx Helper, WP Engine, Kinsta, Pantheon, SpinupWP) and Cloudflare (zone ID + API token) are purged in step with Silo.
+* New: page builder support for Beaver Builder, Divi, Breakdance and theme layout systems, plus Elementor CSS regeneration.
+* New: Settings → Other caches and CDN to choose how pages are served.
+* Change: an inactive Silo plan pauses caching (fail closed) instead of serving pages nothing can invalidate.
 
 = 2.1.1 =
 * Security: Silo-to-store requests are bound to method and route, each signature is accepted once, and v1 signatures are refused after the first v2 request.

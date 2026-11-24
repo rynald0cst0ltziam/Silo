@@ -79,11 +79,11 @@ const TROUBLE = [
   },
   {
     q: "A customer sees another customer's cart",
-    a: "This must never happen with Silo. Capture the request ID from the response header, the store URL and the approximate time, then email support@getsilo.com immediately. Silo disables itself for that store while the session boundary is investigated.",
+    a: "This must never happen with Silo. Capture the request ID from the response header, the store URL and the approximate time, then email support@heysilo.co immediately. Silo disables itself for that store while the session boundary is investigated.",
   },
   {
     q: "Do I keep my existing cache plugin?",
-    a: "You can keep its asset optimization, lazy loading and CDN features, but you must disable its page caching. Two page caches writing the same URLs will fight, and the stale result is the one you will see. Host-level page caching must be disabled too.",
+    a: "Yes. Silo detects WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, FlyingPress, SiteGround Optimizer and others and works alongside them: your plugin keeps serving pages, and Silo purges exactly the right pages in it on every stock, price, sale and order change, then rewarms them. Host caches (Kinsta, WP Engine, Pantheon, SpinupWP, Nginx Helper) and Cloudflare are purged in step. Prefer Silo to serve pages instead? Choose Silo serves pages in WooCommerce → Silo → Settings and turn off only the other plugin's page cache.",
   },
 ];
 
@@ -167,10 +167,10 @@ export default function DocsPage() {
                     Send the store URL and last request ID. A human replies.
                   </p>
                   <a
-                    href="mailto:support@getsilo.com"
+                    href="mailto:support@heysilo.co"
                     className="mt-3 inline-flex items-center gap-1 text-[10.5px] text-accent-hi"
                   >
-                    support@getsilo.com
+                    support@heysilo.co
                     <ArrowUpRight className="h-3 w-3" />
                   </a>
                 </div>
@@ -212,11 +212,12 @@ export default function DocsPage() {
                     <div className="rounded-lg border border-amber/25 bg-amber/[0.06] p-3.5">
                       <p className="flex items-center gap-2 text-[12px] font-medium text-ink/75">
                         <CircleAlert className="h-3.5 w-3.5 text-amber" />
-                        Disable other page caches first.
+                        Keep your other cache plugins.
                       </p>
                       <p className="mt-1 text-[11.5px] leading-relaxed text-ink/50">
-                        Turn off page caching in WP Rocket, FlyingPress, LiteSpeed or your host.
-                        Leave asset optimization and CDN features alone if you use them.
+                        If WP Rocket, LiteSpeed or another page cache is active, Silo works alongside
+                        it automatically. Using Cloudflare caching? Add its zone ID and API token under
+                        Settings → Other caches and CDN so its copies are purged too.
                       </p>
                     </div>
                   </Step>
@@ -252,13 +253,14 @@ x-silo-scope: product:1042`}</Code>
                     ["Outbound access", "HTTPS to the connector API", true],
                     ["HPOS", "Supported, including refunds", true],
                     ["Multisite", "One store key per subsite", true],
-                    ["Other page caches", "Must be disabled", false],
-                    ["Full-page CDN cache", "Must honor private/no-store", false],
+                    ["Other page caches", "Supported: Silo works alongside them", true],
+                    ["Page builders", "Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance", true],
+                    ["Full-page CDN cache", "Cloudflare purged by API; others must honor private/no-store", true],
                   ].map(([label, value, supported], index) => (
                     <div
                       key={label as string}
                       className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                        index !== 9 ? "border-b border-ink/8" : ""
+                        index !== 10 ? "border-b border-ink/8" : ""
                       }`}
                     >
                       <span className="text-[12.5px] font-medium text-ink/70">{label}</span>

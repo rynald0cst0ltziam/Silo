@@ -21,7 +21,7 @@ export default async function StoreOverviewPage({ params }: { params: Promise<{ 
   const store = await prisma.store.findFirst({ where: { id, userId: user.id }, select: { id: true } });
   if (!store) notFound();
 
-  const live = await getStoreLive(store.id, getUserTier(user.subscription));
+  const live = await getStoreLive(store.id, getUserTier(user));
   if (!live) notFound();
 
   return <StoreOverviewLive storeId={store.id} initialData={live} />;

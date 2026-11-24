@@ -13,7 +13,7 @@ const FINAL = new Set(["completed", "partial", "failed"]);
  * show URL-level progress while it runs.
  */
 export async function POST(req: Request) {
-  const auth = await readConnectorRequest<{ jobs?: JobProgress[] }>(req);
+  const auth = await readConnectorRequest<{ jobs?: JobProgress[] }>(req, { allowInactive: true });
   if (!auth.ok) return auth.response;
   const { store, body } = auth;
 

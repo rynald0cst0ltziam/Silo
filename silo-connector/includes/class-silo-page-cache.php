@@ -297,6 +297,8 @@ class Silo_Page_Cache {
 		if ( $pages > 0 ) {
 			delete_transient( 'silo_inventory' );
 		}
+		// Same URLs in every other layer: another page cache, host cache, Cloudflare.
+		Silo_Compat::purge_urls( $urls );
 		return array(
 			'pages' => $pages,
 			'urls'  => count( $urls ),
@@ -331,6 +333,7 @@ class Silo_Page_Cache {
 			Silo_Stats::reset();
 		}
 		delete_transient( 'silo_inventory' );
+		Silo_Compat::purge_all();
 		return $count;
 	}
 

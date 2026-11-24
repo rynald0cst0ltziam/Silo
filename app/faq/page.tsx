@@ -99,10 +99,10 @@ export default function FaqPage() {
                     Send the store URL. A human will tell you honestly whether Silo fits.
                   </p>
                   <a
-                    href="mailto:hello@getsilo.com"
+                    href="mailto:hello@heysilo.co"
                     className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-accent-deep"
                   >
-                    hello@getsilo.com
+                    hello@heysilo.co
                     <ArrowRight className="h-3 w-3" />
                   </a>
                 </div>
@@ -145,7 +145,7 @@ export default function FaqPage() {
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <a
-                    href="mailto:support@getsilo.com"
+                    href="mailto:support@heysilo.co"
                     className="btn btn-outline-dark btn-sm"
                   >
                     <Mail className="h-3.5 w-3.5" />

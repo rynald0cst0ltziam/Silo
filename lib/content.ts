@@ -74,7 +74,7 @@ export const PRICING_FAQS: Faq[] = [
   },
   {
     q: "What happens to my existing cache plugin?",
-    a: "Silo replaces page caching, not everything else. Turn off page caching in WP Rocket, FlyingPress, LiteSpeed, or your host's cache while Silo is active, and leave their asset optimization, lazy loading, and CDN features alone if you use them. Running two page caches on the same URLs will produce exactly the stale results you are trying to escape.",
+    a: "Keep it. When WP Rocket, LiteSpeed Cache, W3 Total Cache, FlyingPress or another page cache is active, Silo works alongside it: that plugin keeps serving pages, and Silo tells it exactly which pages to purge whenever stock, prices, sales or orders change, then rewarms them. Asset optimization, lazy loading and CDN features stay as they are. Host caches and Cloudflare are purged in step too.",
   },
   {
     q: "Is it compatible with HPOS?",
@@ -175,7 +175,11 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Can I keep WP Rocket or FlyingPress?",
-        a: "You can keep asset optimization, lazy loading and CDN features, but you must disable their page caching while Silo is active. Two page caches writing the same URLs will fight, and the stale result is the one shoppers see. Host-level page caching must be disabled too.",
+        a: "Yes. Silo switches to work-alongside mode automatically: your cache plugin serves pages, Silo purges exactly the affected product, category and shop pages in it on every catalog change (including stock changes from orders and scheduled sales, which page caches usually miss), then rewarms them. If you would rather Silo serve pages, pick Silo serves pages in its settings and turn off only the other plugin's page cache.",
+      },
+      {
+        q: "Does Silo work with Elementor and other page builders?",
+        a: "Yes. Elementor, Beaver Builder, Divi, Bricks, Oxygen and Breakdance pages are cached like any other. When you save a product layout, only that product is purged; when you change a header, footer or theme template, or regenerate builder CSS, every cached page is refreshed so nothing references old styles.",
       },
       {
         q: "Is HPOS supported?",

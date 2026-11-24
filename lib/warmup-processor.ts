@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getUserTier } from "@/lib/tier-enforcement";
+import { ACCESS_SELECT, getStoreAccess } from "@/lib/entitlements";
 import { callConnector, utcDay } from "@/lib/connector";
 import type { WarmResult } from "@/lib/store-live";
 import { checkPublicUrl } from "@/lib/url-guard";
@@ -15,7 +16,7 @@ async function fetchUrl(url: string): Promise<WarmResult> {
   }
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; SiloWarmup/2; +https://getsilo.io)" },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; SiloWarmup/2; +https://heysilo.co)" },
       redirect: "manual",
       signal: AbortSignal.timeout(15_000),
       cache: "no-store",
@@ -94,13 +95,15 @@ export async function processWarmupJobs(maxJobs = 10) {
 export async function runDailyPriorityWarmup() {
   const stores = await prisma.store.findMany({
     where: { status: "optimized", config: { not: Prisma.JsonNull } },
-    select: { id: true, url: true, apiKey: true, config: true, user: { select: { subscription: true } } },
+    select: { id: true, userId: true, url: true, apiKey: true, config: true, user: { select: ACCESS_SELECT } },
   });
 
   let queued = 0;
   for (const store of stores) {
+    const access = await getStoreAccess(store.id, store.userId);
+    if (!access?.storeActive) continue;
     const config = store.config as { priority_urls?: string[] } | null;
-    const tier = getUserTier(store.user.subscription);
+    const tier = getUserTier(store.user);
     const urls = (config?.priority_urls ?? []).slice(0, tier.warmupUrlsPerEvent);
     if (!urls.length) continue;
 

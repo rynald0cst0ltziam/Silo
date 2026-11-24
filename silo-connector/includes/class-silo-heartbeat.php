@@ -62,6 +62,7 @@ class Silo_Heartbeat {
 		if ( ! Silo_Settings::is_connected() ) {
 			return;
 		}
+		Silo_Compat::refresh_mode();
 		self::send( true );
 		Silo_Events::maybe_kick();
 		Silo_Page_Cache::drain_refresh_queue();

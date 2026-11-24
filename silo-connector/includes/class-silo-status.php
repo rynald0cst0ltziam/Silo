@@ -13,42 +13,10 @@ defined( 'ABSPATH' ) || exit;
 class Silo_Status {
 
 	/**
-	 * Active plugins whose page cache would fight Silo over the same URLs.
+	 * Other full-page caches active on the site (Silo works alongside them).
 	 */
 	public static function cache_conflicts(): array {
-		if ( ! function_exists( 'is_plugin_active' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		$plugins = array(
-			'wp-rocket/wp-rocket.php'                     => 'WP Rocket',
-			'w3-total-cache/w3-total-cache.php'           => 'W3 Total Cache',
-			'wp-super-cache/wp-cache.php'                 => 'WP Super Cache',
-			'litespeed-cache/litespeed-cache.php'         => 'LiteSpeed Cache',
-			'wp-fastest-cache/wpFastestCache.php'         => 'WP Fastest Cache',
-			'flying-press/flying-press.php'               => 'FlyingPress',
-			'breeze/breeze.php'                           => 'Breeze',
-			'sg-cachepress/sg-cachepress.php'             => 'SiteGround Optimizer',
-			'wp-optimize/wp-optimize.php'                 => 'WP-Optimize',
-			'hummingbird-performance/wp-hummingbird.php'  => 'Hummingbird',
-			'nitropack/main.php'                          => 'NitroPack',
-			'powered-cache/powered-cache.php'             => 'Powered Cache',
-			'cache-enabler/cache-enabler.php'             => 'Cache Enabler',
-			'comet-cache/comet-cache.php'                 => 'Comet Cache',
-			'mamba-cache-for-woocommerce/mamba-cache.php' => 'Mamba Cache',
-		);
-		$found   = array();
-		foreach ( $plugins as $file => $name ) {
-			if ( is_plugin_active( $file ) ) {
-				$found[] = $name;
-			}
-		}
-		if ( 'foreign' === Silo_Installer::dropin_status() ) {
-			$owner = Silo_Installer::foreign_dropin_owner();
-			if ( ! in_array( $owner, $found, true ) ) {
-				$found[] = $owner;
-			}
-		}
-		return $found;
+		return array_column( Silo_Compat::page_caches(), 'name' );
 	}
 
 	/**
@@ -67,6 +35,9 @@ class Silo_Status {
 			'scheduler'  => function_exists( 'as_enqueue_async_action' ),
 			'auth_error' => (string) get_option( 'silo_auth_error', '' ),
 			'mode'       => 'ours' === Silo_Installer::dropin_status() && defined( 'WP_CACHE' ) && WP_CACHE ? 'dropin' : 'late',
+			'cache_mode' => Silo_Compat::mode(),
+			'owner'      => Silo_Compat::owner(),
+			'edge'       => Silo_Compat::edge_layers(),
 		);
 	}
 
@@ -103,13 +74,13 @@ class Silo_Status {
 			'ours'    => __( 'Installed — cached pages are served before WordPress loads', 'silo-connector' ),
 			'stale'   => __( 'Points to an old plugin location — reactivate Silo to rewrite it', 'silo-connector' ),
 			/* translators: %s: plugin name */
-			'foreign' => sprintf( __( 'Owned by %s — Silo serves from plugins_loaded instead (slower)', 'silo-connector' ), Silo_Installer::foreign_dropin_owner() ),
+			'foreign' => sprintf( __( 'Owned by %s, which serves cached pages — Silo works alongside it', 'silo-connector' ), Silo_Installer::foreign_dropin_owner() ),
 			'missing' => __( 'Not installed — wp-content is not writable', 'silo-connector' ),
 		);
 		$checks[]      = array(
 			'id'     => 'dropin',
 			'label'  => __( 'advanced-cache.php drop-in', 'silo-connector' ),
-			'state'  => 'ours' === $dropin ? 'ok' : ( 'missing' === $dropin ? 'fail' : 'warn' ),
+			'state'  => 'ours' === $dropin || ( 'foreign' === $dropin && 'coexist' === Silo_Compat::mode() ) ? 'ok' : ( 'missing' === $dropin && 'silo' === Silo_Compat::mode() ? 'fail' : 'warn' ),
 			'detail' => $dropin_labels[ $dropin ],
 		);
 
@@ -117,8 +88,8 @@ class Silo_Status {
 		$checks[] = array(
 			'id'     => 'wp_cache',
 			'label'  => __( 'WP_CACHE constant', 'silo-connector' ),
-			'state'  => $wp_cache ? 'ok' : 'warn',
-			'detail' => $wp_cache ? __( 'Enabled in wp-config.php', 'silo-connector' ) : __( "Disabled — add define( 'WP_CACHE', true ); to wp-config.php", 'silo-connector' ),
+			'state'  => $wp_cache || 'coexist' === Silo_Compat::mode() ? 'ok' : 'warn',
+			'detail' => $wp_cache ? __( 'Enabled in wp-config.php', 'silo-connector' ) : ( 'coexist' === Silo_Compat::mode() ? __( 'Not needed while another plugin serves cached pages', 'silo-connector' ) : __( "Disabled — add define( 'WP_CACHE', true ); to wp-config.php", 'silo-connector' ) ),
 		);
 
 		$writable = wp_is_writable( silo_cache_root() );
@@ -137,12 +108,29 @@ class Silo_Status {
 			'detail' => $pretty ? (string) get_option( 'permalink_structure' ) : __( 'Plain permalinks cannot be cached by path. Settings → Permalinks.', 'silo-connector' ),
 		);
 
-		$conflicts = self::cache_conflicts();
-		$checks[]  = array(
+		$mode     = Silo_Compat::mode();
+		$owner    = Silo_Compat::owner();
+		$edge     = Silo_Compat::edge_layers();
+		$checks[] = array(
 			'id'     => 'conflicts',
-			'label'  => __( 'Other page caches', 'silo-connector' ),
-			'state'  => $conflicts ? 'warn' : 'ok',
-			'detail' => $conflicts ? sprintf( /* translators: %s: plugin names */ __( '%s active — disable its page caching; keep its asset and CDN features', 'silo-connector' ), implode( ', ', $conflicts ) ) : __( 'None detected', 'silo-connector' ),
+			'label'  => __( 'Other caches', 'silo-connector' ),
+			'state'  => 'silo' === $mode && '' !== $owner ? 'warn' : 'ok',
+			'detail' => 'coexist' === $mode
+				/* translators: %s: cache plugin name */
+				? sprintf( __( '%s serves cached pages. Silo works alongside it: every stock, price, sale and order change purges the exact pages in its cache, then Silo rewarms them. Store API caching stays on.', 'silo-connector' ), '' !== $owner ? $owner : __( 'Another plugin', 'silo-connector' ) )
+				: ( '' !== $owner
+					/* translators: %s: cache plugin name */
+					? sprintf( __( 'Silo is set to serve pages while %s is also active. Switch Silo to "Work alongside" in Settings, or turn off that plugin’s page cache, so pages are not cached twice.', 'silo-connector' ), $owner )
+					: __( 'None — Silo serves cached pages itself', 'silo-connector' ) ),
+		);
+		$checks[] = array(
+			'id'     => 'edge',
+			'label'  => __( 'Host and CDN caches', 'silo-connector' ),
+			'state'  => 'ok',
+			'detail' => $edge
+				/* translators: %s: list of cache layers */
+				? sprintf( __( 'Purged in step with Silo: %s', 'silo-connector' ), implode( ', ', $edge ) )
+				: __( 'None detected. Using Cloudflare? Add a zone ID and API token in Settings so its copies are purged too.', 'silo-connector' ),
 		);
 
 		$scheduler = function_exists( 'as_enqueue_async_action' );

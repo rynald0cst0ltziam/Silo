@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserTier } from "@/lib/tier-enforcement";
+import { audit } from "@/lib/audit";
 import { callConnector, utcDay } from "@/lib/connector";
 import type { SiloConfig } from "@/lib/config-engine";
 import type { Prisma } from "@/lib/generated/prisma/client";
@@ -13,7 +14,7 @@ type PurgeResponse = { purged?: number; urls?: number; type?: string; stats?: Re
  * store, resets statistics on both sides, and re-warms priority pages.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
+  const session = await authSession();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
@@ -44,7 +45,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, include: { subscription: true } });
-  const tier = getUserTier(user?.subscription ?? null);
+  const tier = getUserTier(user!);
+  await audit("store.purged", { userId: session.user.id, target: store.url, detail: { storeId: id, all: !!body.purgeAll, urls: urls.length }, req });
   const config = store.config as unknown as SiloConfig | null;
   const warmUrls = body.purgeAll ? (config?.priority_urls ?? []).slice(0, tier.warmupUrlsPerEvent) : urls.slice(0, tier.warmupUrlsPerEvent);
   const purged = Number(result.data.purged ?? 0);

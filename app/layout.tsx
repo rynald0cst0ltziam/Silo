@@ -44,7 +44,6 @@ export const metadata: Metadata = {
     title: "Silo — The only cache that understands WooCommerce inventory",
     description:
       "Surgical invalidation. Always-accurate stock. Sub-millisecond catalog pages. Built for WooCommerce.",
-    creator: "@getsilo",
   },
   robots: {
     index: true,

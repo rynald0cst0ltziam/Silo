@@ -1,16 +1,6 @@
-import { NextResponse } from "next/server";
 import { runDailyPriorityWarmup } from "@/lib/warmup-processor";
+import { runCron } from "@/lib/cron";
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const result = await runDailyPriorityWarmup();
-
-  return NextResponse.json({
-    ok: true,
-    ...result,
-  });
+  return runCron(req, "daily-warmup", async () => ({ ...(await runDailyPriorityWarmup()) }));
 }

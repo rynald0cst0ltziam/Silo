@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { audit } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const rl = rateLimit(req);
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
         name: typeof name === "string" && name.trim() ? name.trim().slice(0, 120) : null,
       },
     });
+
+    await audit("account.created", { userId: user.id, req });
 
     return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch (error) {

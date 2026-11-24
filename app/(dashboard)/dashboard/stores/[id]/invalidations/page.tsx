@@ -15,7 +15,7 @@ export default async function StoreInvalidationsPage({ params }: { params: Promi
   if (!user) redirect("/sign-in");
   const store = await prisma.store.findFirst({ where: { id, userId: user.id }, select: { id: true } });
   if (!store) notFound();
-  const live = await getStoreLive(store.id, getUserTier(user.subscription), { events: 100 });
+  const live = await getStoreLive(store.id, getUserTier(user), { events: 100 });
   if (!live) notFound();
   return <InvalidationsPageLive storeId={store.id} initial={live} />;
 }

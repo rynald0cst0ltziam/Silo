@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateApiKey } from "@/lib/api-keys";
+import { audit } from "@/lib/audit";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
+  const session = await authSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -27,6 +28,8 @@ export async function POST(
     where: { id },
     data: { apiKey: plain, apiKeyHash: hash },
   });
+
+  await audit("store.key_regenerated", { userId: session.user.id, target: store.url, detail: { storeId: id }, req });
 
   return NextResponse.json({ apiKey: plain });
 }

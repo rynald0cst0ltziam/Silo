@@ -27,6 +27,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   const take = Math.min(100, Math.max(10, Number(new URL(req.url).searchParams.get("events") ?? 25)));
-  const live = await getStoreLive(store.id, getUserTier(user.subscription), { events: take });
+  const live = await getStoreLive(store.id, getUserTier(user), { events: take });
   return NextResponse.json(live, { headers: { "Cache-Control": "no-store" } });
 }

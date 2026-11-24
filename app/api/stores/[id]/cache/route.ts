@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { callConnector } from "@/lib/connector";
 
@@ -7,7 +7,7 @@ import { callConnector } from "@/lib/connector";
  * Live cache inspection: what is cached on the store right now.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
+  const session = await authSession();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;

@@ -61,9 +61,14 @@ export function SignInForm() {
           />
         </div>
         <div>
-          <label htmlFor="signin-password" className="mb-1.5 block text-[12px] font-medium text-paper/60">
-            Password
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label htmlFor="signin-password" className="block text-[13px] font-medium text-paper/60">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-[13px] text-accent/80 hover:text-accent">
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="signin-password"
             type="password"

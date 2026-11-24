@@ -663,13 +663,66 @@ class Silo_Events {
 		if ( ! $post instanceof WP_Post || wp_is_post_revision( $post ) || wp_is_post_autosave( $post ) ) {
 			return;
 		}
-		if ( in_array( $post->post_type, array( 'wp_template', 'wp_template_part', 'wp_global_styles', 'wp_navigation', 'elementor_library', 'ct_template', 'bricks_template' ), true ) ) {
+		if ( in_array( $post->post_type, self::layout_post_types(), true ) ) {
 			self::$global['system.theme'] = array(
 				'reason' => 'Template change',
 				'detail' => $post->post_type . ': ' . $post->post_title,
 			);
 			self::register_flush();
 		}
+	}
+
+	/**
+	 * Post types that hold headers, footers and templates shown across the store: block themes,
+	 * page builders (Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance) and theme
+	 * layout systems (Astra, Kadence, GeneratePress, Blocksy, Flatsome).
+	 */
+	public static function layout_post_types(): array {
+		$types = array(
+			'wp_template',
+			'wp_template_part',
+			'wp_global_styles',
+			'wp_navigation',
+			'elementor_library',
+			'fl-builder-template',
+			'fl-theme-layout',
+			'et_template',
+			'et_theme_builder',
+			'et_header_layout',
+			'et_body_layout',
+			'et_footer_layout',
+			'bricks_template',
+			'ct_template',
+			'breakdance_template',
+			'breakdance_header',
+			'breakdance_footer',
+			'breakdance_block',
+			'astra-advanced-hook',
+			'kadence_element',
+			'gp_elements',
+			'ct_content_block',
+			'blocks',
+		);
+		/**
+		 * Filters the post types whose changes clear every cached page.
+		 *
+		 * @param string[] $types Post types.
+		 */
+		return (array) apply_filters( 'silo_layout_post_types', $types );
+	}
+
+	/**
+	 * A store-wide layout change from outside this class (builders, compat hooks).
+	 *
+	 * @param string $reason Reason shown in the log.
+	 * @param string $detail Detail.
+	 */
+	public static function global_change( string $reason, string $detail ): void {
+		self::$global['system.theme'] = array(
+			'reason' => $reason,
+			'detail' => $detail,
+		);
+		self::register_flush();
 	}
 
 	/**
