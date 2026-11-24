@@ -175,6 +175,10 @@ export const FAQ_GROUPS: FaqGroup[] = [
         a: "WordPress 6.4+, WooCommerce 8.2+, PHP 8.1+ and outbound HTTPS from the store. You install one connector plugin and paste a store key. No DNS change, proxy, theme rewrite or server access is required.",
       },
       {
+        q: "Which plugins, hosts and builders does Silo work with?",
+        a: "Cache plugins: WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize (Silo works alongside them and purges their cache in step). Hosts and CDN: Cloudflare, Kinsta, WP Engine, Pantheon, SpinupWP and Nginx Helper. Page builders and themes: Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, block themes, Astra, Kadence, GeneratePress, Blocksy and Flatsome. Languages and currencies: WPML, Polylang, TranslatePress, Weglot, WooCommerce Multilingual, WOOCS, CURCY, Aelia and YayCurrency. Platform: WooCommerce 8.2+, WordPress 6.4+, PHP 8.1+, HPOS and legacy orders, block cart and checkout, Product Blocks, the Store API and multisite.",
+      },
+      {
         q: "Does it work with Cloudflare and my host's cache?",
         a: "Yes. Host caches on Kinsta, WP Engine, Pantheon and SpinupWP, and Nginx Helper setups, are detected and purged in step with Silo. For Cloudflare caching (APO or cache rules), add your zone ID and an API token with Cache Purge permission under WooCommerce → Silo → Settings → Other caches and CDN; Silo then purges the same pages at Cloudflare.",
       },

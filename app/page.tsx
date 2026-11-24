@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check, ShieldCheck } from "lucide-react";
 import { ConnectButton } from "@/components/connect/connect-button";
 import { HeroPanel } from "@/components/hero-panel";
-import { LogoStrip } from "@/components/logo-strip";
 import { Counter } from "@/components/counter";
 import { ProblemSection } from "@/components/problem-section";
 import { HowSteps } from "@/components/how-steps";
@@ -159,7 +158,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <LogoStrip />
       <ProblemSection />
       <HowSteps />
       <InvalidationGraph />
