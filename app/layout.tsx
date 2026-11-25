@@ -6,6 +6,7 @@ import { ConnectProvider } from "@/components/connect/connect-flow";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Analytics } from "@/components/analytics";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { siteUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -82,6 +83,7 @@ export default function RootLayout({
             <SiteFooter />
           </ConnectProvider>
           <Analytics />
+          <AnalyticsTracker />
         </body>
       </html>
     </SessionProvider>

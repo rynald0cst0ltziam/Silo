@@ -208,3 +208,17 @@ model Metric {
 
   @@unique([storeId, date])
 }
+
+/// Marketing-site page view. No cookies; visitor is a daily salted hash, never an IP or user agent.
+model PageView {
+  id        String   @id @default(cuid())
+  day       DateTime @db.Date
+  path      String
+  referrer  String?
+  country   String?
+  visitor   String
+  createdAt DateTime @default(now())
+
+  @@index([day])
+  @@index([day, path])
+}
