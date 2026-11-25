@@ -15,8 +15,8 @@ export function PlanLimitsTable({ tone = "light", current }: { tone?: "light" | 
       detail: "Shared by all stores on the account; resets on the 1st (UTC)",
       value: (s) => TIERS[s].maxMonthlyEvents.toLocaleString("en-US"),
     },
-    { label: "Warmup per event", detail: "Pages rewarmed after each change, desktop and mobile", value: (s) => `${TIERS[s].warmupUrlsPerEvent} URLs` },
-    { label: "Daily priority warmup", detail: "Bestsellers, shop and top categories every morning", value: (s) => `${TIERS[s].warmupUrlsPerEvent} URLs` },
+    { label: "Warmup per change", detail: "Only the pages a change affects, desktop and mobile", value: (s) => `Up to ${TIERS[s].warmupUrlsPerEvent.toLocaleString("en-US")} pages` },
+    { label: "Daily priority warmup", detail: "Bestsellers, shop and top categories each morning", value: (s) => `Up to ${TIERS[s].warmupUrlsPerEvent.toLocaleString("en-US")} pages` },
     { label: "Log retention", detail: "Invalidation, warmup and metrics history", value: (s) => `${TIERS[s].logRetentionDays} days` },
     { label: "Price", detail: "Monthly, or annual with 2 months free", value: (s) => `$${TIERS[s].priceMonthly}/mo · $${TIERS[s].priceAnnual}/yr` },
   ];
@@ -63,7 +63,7 @@ export function PlanLimitsTable({ tone = "light", current }: { tone?: "light" | 
         An event is one catalog change Silo plans for: a stock change, price or sale change, product edit, order, refund,
         review or category change. Page views, cache hits and warmup fetches never count. If the monthly allowance runs out,
         pages are still purged on your store, so nothing goes stale; only logging and warmup pause until the 1st or an
-        upgrade. The {TRIAL_DAYS}-day trial uses Solo limits.
+        upgrade. Warmup limits are ceilings, not quotas: Silo warms the pages that matter, so a smaller catalog simply uses fewer. The {TRIAL_DAYS}-day trial uses Solo limits.
       </p>
     </div>
   );

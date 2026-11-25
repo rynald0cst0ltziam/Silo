@@ -8,7 +8,6 @@ import { HowSteps } from "@/components/how-steps";
 import { InvalidationGraph } from "@/components/invalidation-graph";
 import { Features } from "@/components/features";
 import { DashboardSection } from "@/components/dashboard-section";
-import { Testimonials } from "@/components/testimonials";
 import { ComparisonTable } from "@/components/comparison-table";
 import { PricingCards, StoreIsolationNote } from "@/components/pricing-cards";
 import { CtaBand } from "@/components/cta-band";
@@ -165,10 +164,6 @@ export default function HomePage() {
       <InvalidationGraph />
       <Features />
       <DashboardSection />
-
-      <div className="surface-dark">
-        <Testimonials />
-      </div>
 
       <section className="surface-paper">
         <div className="container-page section">

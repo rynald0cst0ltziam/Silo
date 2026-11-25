@@ -11,7 +11,7 @@ const SUMMARY =
 export function planLines(): string[] {
   return (Object.keys(TIERS) as Array<keyof typeof TIERS>).map((slug) => {
     const t = TIERS[slug];
-    return `- ${t.name}: $${t.priceMonthly}/month or $${t.priceAnnual}/year. Up to ${t.maxStores} store${t.maxStores === 1 ? "" : "s"}, ${t.maxMonthlyEvents.toLocaleString("en-US")} catalog events per month shared across stores, ${t.warmupUrlsPerEvent} warmup URLs per change, ${t.logRetentionDays}-day logs.`;
+    return `- ${t.name}: $${t.priceMonthly}/month or $${t.priceAnnual}/year. Up to ${t.maxStores} store${t.maxStores === 1 ? "" : "s"}, ${t.maxMonthlyEvents.toLocaleString("en-US")} catalog events per month shared across stores, warmup of up to ${t.warmupUrlsPerEvent.toLocaleString("en-US")} pages per change (a ceiling, not a quota), ${t.logRetentionDays}-day logs.`;
   });
 }
 

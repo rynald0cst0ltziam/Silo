@@ -7,7 +7,7 @@ Requires PHP: 8.1
 Requires Plugins: woocommerce
 WC requires at least: 8.2
 WC tested up to: 9.9
-Stable tag: 2.3.2
+Stable tag: 2.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,10 @@ No. When another page cache is active, Silo works alongside it automatically (Wo
 Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
+
+= 2.3.3 =
+* Fix: the priority list holds products that have actually sold, up to the plan's limit, and is only topped up with featured or recent products to 50. Warmup limits are ceilings, never targets.
+* Change: the plan panel reads "Warmup up to N pages per change".
 
 = 2.3.2 =
 * Change: the priority list ranks as many top products as the plan's warmup limit (up to 1,500). Run a rescan after updating so the new list is built.

@@ -5,6 +5,7 @@ export type TierConfig = {
   name: string;
   maxStores: number;
   maxMonthlyEvents: number;
+  /** Ceiling, not a target: Silo warms only the pages that matter, up to this many per change and per daily pass. */
   warmupUrlsPerEvent: number;
   logRetentionDays: number;
   priceMonthly: number;
@@ -27,7 +28,7 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     name: "Studio",
     maxStores: 3,
     maxMonthlyEvents: 500_000,
-    warmupUrlsPerEvent: 1500,
+    warmupUrlsPerEvent: 500,
     logRetentionDays: 90,
     priceMonthly: 79,
     priceAnnual: 790,
@@ -37,7 +38,7 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     name: "Portfolio",
     maxStores: 5,
     maxMonthlyEvents: 2_000_000,
-    warmupUrlsPerEvent: 500,
+    warmupUrlsPerEvent: 1500,
     logRetentionDays: 180,
     priceMonthly: 149,
     priceAnnual: 1490,

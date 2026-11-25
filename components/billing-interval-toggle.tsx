@@ -76,7 +76,7 @@ export function BillingIntervalToggle({ tiers, intro }: { tiers: TierConfig[]; i
               </li>
               <li className="flex items-center gap-2 text-[13px] text-paper/45">
                 <Check className="h-3 w-3 text-mint/60" />
-                {tier.warmupUrlsPerEvent} warmup URLs/event
+                Warmup of up to {tier.warmupUrlsPerEvent.toLocaleString("en-US")} pages per change
               </li>
               <li className="flex items-center gap-2 text-[13px] text-paper/45">
                 <Check className="h-3 w-3 text-mint/60" />

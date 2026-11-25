@@ -660,7 +660,7 @@
 				( plan.state === 'trial' && null !== plan.trial_days_left ? '<div class="meta">' + num( plan.trial_days_left ) + ' day' + ( 1 === Number( plan.trial_days_left ) ? '' : 's' ) + ' left · Solo limits</div>' : '' ) +
 				( limit ? '<div class="meta">Events this month</div><div class="silo-meter"><span class="' + ( pct >= 100 ? 'is-rose' : pct >= 80 ? 'is-amber' : '' ) + '" style="width:' + pct.toFixed( 1 ) + '%"></span></div>' +
 					'<div class="meta">' + num( used ) + ' / ' + num( limit ) + ' · shared by your stores</div>' : '' ) +
-				( plan.warmup_per_event ? '<div class="meta">Warmup ' + num( plan.warmup_per_event ) + ' URLs per change · logs ' + num( plan.log_days ) + ' days</div>' : '' ) +
+				( plan.warmup_per_event ? '<div class="meta">Warmup up to ' + num( plan.warmup_per_event ) + ' pages per change · logs ' + num( plan.log_days ) + ' days</div>' : '' ) +
 				( plan.billing_url ? '<a class="silo-link" href="' + esc( plan.billing_url ) + '" target="_blank" rel="noopener noreferrer">Billing and plans</a>' : '' ) +
 				'</div>'
 			: '';

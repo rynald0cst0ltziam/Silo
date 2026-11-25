@@ -496,10 +496,11 @@ class Silo_Scanner {
 	}
 
 	/**
-	 * How many top products the priority list ranks: the plan's warmup limit from the last
-	 * config Silo sent, kept between 50 and 1,500.
+	 * The most products the priority list may hold: the plan's warmup limit from the last
+	 * config Silo sent, between 50 and 1,500. It is a ceiling, not a target: a store whose
+	 * top 80 products have sold gets all 80, and is never padded up to the limit.
 	 */
-	private static function priority_product_count(): int {
+	private static function priority_product_cap(): int {
 		$config = Silo_Settings::remote_config();
 		$cap    = (int) ( $config['limits']['warmup_urls_per_event'] ?? 50 );
 		return max( 50, min( 1500, $cap ) );
@@ -508,21 +509,25 @@ class Silo_Scanner {
 	/**
 	 * Scan stage: priority.
 	 *
+	 * Ranks products that have actually sold (best first), up to the plan's ceiling. Only when
+	 * fewer than 50 have sold, such as a new store, is the list topped up with featured and
+	 * recent products, and only to 50, so warmup never grows past the pages that matter.
+	 *
 	 * @param array $state State.
 	 */
 	private static function stage_priority( array &$state ): void {
 		global $wpdb;
 
-		$count  = self::priority_product_count();
+		$cap    = self::priority_product_cap();
+		$floor  = 50;
 		$lookup = $wpdb->prefix . 'wc_product_meta_lookup';
-		$best   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT l.product_id FROM {$lookup} l INNER JOIN {$wpdb->posts} p ON p.ID = l.product_id AND p.post_type = 'product' AND p.post_status = 'publish' WHERE l.total_sales > 0 ORDER BY l.total_sales DESC LIMIT %d", $count ) ) );
+		$best   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT l.product_id FROM {$lookup} l INNER JOIN {$wpdb->posts} p ON p.ID = l.product_id AND p.post_type = 'product' AND p.post_status = 'publish' WHERE l.total_sales > 0 ORDER BY l.total_sales DESC LIMIT %d", $cap ) ) );
 
-		if ( count( $best ) < $count ) {
+		if ( count( $best ) < $floor ) {
 			$featured = function_exists( 'wc_get_featured_product_ids' ) ? array_map( 'intval', wc_get_featured_product_ids() ) : array();
-			$recent   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish' ORDER BY post_date DESC LIMIT %d", $count ) ) );
-			$best     = array_values( array_unique( array_merge( $best, $featured, $recent ) ) );
+			$recent   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish' ORDER BY post_date DESC LIMIT %d", $floor ) ) );
+			$best     = array_slice( array_values( array_unique( array_merge( $best, $featured, $recent ) ) ), 0, $floor );
 		}
-		$best = array_slice( $best, 0, $count );
 
 		$urls = array();
 		$shop = wc_get_page_permalink( 'shop' );

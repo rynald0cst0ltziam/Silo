@@ -27,7 +27,7 @@ export const PLANS: Plan[] = [
     events: `${TIERS.solo.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month`,
     features: [
       "One store, with its own key and cache",
-      `Priority warmup: ${TIERS.solo.warmupUrlsPerEvent} URLs per change, plus a daily pass`,
+      `Warmup of up to ${TIERS.solo.warmupUrlsPerEvent} pages per change, plus a daily pass`,
       `${TIERS.solo.logRetentionDays}-day invalidation log`,
       "Email support",
     ],
@@ -42,7 +42,7 @@ export const PLANS: Plan[] = [
     events: `${TIERS.studio.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month, shared across stores`,
     features: [
       "Everything in Solo, for up to 3 stores",
-      `Priority warmup: ${TIERS.studio.warmupUrlsPerEvent} URLs per change, plus a daily pass`,
+      `Warmup of up to ${TIERS.studio.warmupUrlsPerEvent} pages per change, plus a daily pass`,
       `${TIERS.studio.logRetentionDays}-day invalidation log`,
       "One subscription and one invoice for all stores",
       "Priority email support",
@@ -59,7 +59,7 @@ export const PLANS: Plan[] = [
     events: `${TIERS.portfolio.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month, shared across stores`,
     features: [
       "Everything in Studio, for up to 5 stores",
-      `Priority warmup: ${TIERS.portfolio.warmupUrlsPerEvent.toLocaleString("en-US")} URLs per change, plus a daily pass`,
+      `Warmup of up to ${TIERS.portfolio.warmupUrlsPerEvent.toLocaleString("en-US")} pages per change, plus a daily pass`,
       `${TIERS.portfolio.logRetentionDays}-day invalidation log`,
       "Dedicated support channel",
     ],
@@ -231,7 +231,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "What is warmup doing?",
-        a: "After a change, Silo picks the pages that matter most (the product, the shop, its categories and your bestsellers) and the connector requests them from your own server for desktop and mobile, in the background, so the next shopper gets a cached page. The Warmup tab shows every URL as queued, warming, warm or failed, with how long it took. The number of URLs per event depends on your plan.",
+        a: "After a change, Silo picks the pages that matter most (the product, the shop, its categories and your bestsellers) and the connector requests them from your own server for desktop and mobile, in the background, so the next shopper gets a cached page. The Warmup tab shows every URL as queued, warming, warm or failed, with how long it took. Your plan sets the most it will warm at once. It is a ceiling, not a quota: a stock change usually warms only the handful of pages it touched, and a smaller catalog simply uses fewer.",
       },
       {
         q: "What does the catalog scan do? Does it change anything?",
@@ -266,7 +266,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a trial?",
-        a: "Yes. Every account starts with a 3-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, 150 warmup URLs per change) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
+        a: "Yes. Every account starts with a 3-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, warmup of up to 150 pages per change) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
       },
       {
         q: "Can I change plans later?",

@@ -149,8 +149,8 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           <Meter label="Stores" used={stores.length} max={access.tier.maxStores} hint={stores.length > access.tier.maxStores ? "Stores past the limit are paused." : undefined} />
           <Meter label="Catalog events" used={eventsUsed} max={access.tier.maxMonthlyEvents} hint="Shared by all your stores. At the limit, pages still purge on your stores; logging and warmup pause until the 1st." />
           <div className="border border-white/8 bg-[#0b0d11] p-4">
-            <p className="text-[13px] font-medium uppercase tracking-wider text-paper/45">Warmup per event</p>
-            <p className="mt-2 font-mono text-[22px] text-paper">{access.tier.warmupUrlsPerEvent} <span className="text-[14px] text-paper/40">URLs</span></p>
+            <p className="text-[13px] font-medium uppercase tracking-wider text-paper/45">Warmup per change</p>
+            <p className="mt-2 font-mono text-[22px] text-paper"><span className="text-[14px] text-paper/40">up to </span>{access.tier.warmupUrlsPerEvent.toLocaleString("en-US")} <span className="text-[14px] text-paper/40">pages</span></p>
           </div>
           <div className="border border-white/8 bg-[#0b0d11] p-4">
             <p className="text-[13px] font-medium uppercase tracking-wider text-paper/45">Log retention</p>
