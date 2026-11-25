@@ -175,7 +175,7 @@ export function SignUpForm() {
         Create your account
       </h1>
       <p className="mt-1 text-center text-[12px] text-paper/40">
-        3-day free trial. No card required.
+        7-day free trial. No card required.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

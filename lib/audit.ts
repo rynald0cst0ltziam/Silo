@@ -41,6 +41,8 @@ export const AUDIT_LABELS: Record<string, string> = {
   "account.password_reset": "Password reset with emailed link",
   "account.signout_all": "Signed out of every browser",
   "account.deleted": "Account deleted",
+  "account.trial_reminder": "Emailed: trial ends in 2 days",
+  "account.trial_ended_email": "Emailed: trial has ended",
   "billing.checkout": "Checkout started",
   "billing.subscription": "Subscription updated",
   "billing.canceled": "Subscription ended",

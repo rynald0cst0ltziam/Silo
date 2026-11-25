@@ -3,7 +3,7 @@
  * Plugin Name:          Silo for WooCommerce
  * Plugin URI:           https://heysilo.co
  * Description:          Inventory-aware page and Store API cache for WooCommerce. Surgical invalidation and priority warmup, orchestrated by Silo.
- * Version:              2.3.3
+ * Version:              2.3.4
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Requires Plugins:     woocommerce
@@ -31,7 +31,7 @@ if ( defined( 'SILO_VERSION' ) ) {
 	return;
 }
 
-define( 'SILO_VERSION', '2.3.3' );
+define( 'SILO_VERSION', '2.3.4' );
 define( 'SILO_FILE', __FILE__ );
 define( 'SILO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SILO_URL', plugin_dir_url( __FILE__ ) );

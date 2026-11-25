@@ -193,10 +193,12 @@ class Silo_Admin {
 				'url'  => $url,
 			);
 		}
-		if ( 'trial' === $plan['state'] && isset( $plan['trial_days_left'] ) && (int) $plan['trial_days_left'] <= 1 ) {
+		if ( 'trial' === $plan['state'] && isset( $plan['trial_days_left'] ) && (int) $plan['trial_days_left'] <= 2 ) {
+			$days = max( 1, (int) $plan['trial_days_left'] );
 			return array(
 				'tone' => 'warning',
-				'text' => __( 'Your Silo trial ends within a day. Choose a plan to keep caching on.', 'silo-connector' ),
+				/* translators: %d: days left in the trial */
+				'text' => sprintf( _n( 'Your Silo trial ends in %d day. Choose a plan to keep caching on.', 'Your Silo trial ends in %d days. Choose a plan to keep caching on.', $days, 'silo-connector' ), $days ),
 				'cta'  => __( 'Choose a plan', 'silo-connector' ),
 				'url'  => $url,
 			);

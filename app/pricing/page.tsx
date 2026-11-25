@@ -10,7 +10,7 @@ import { ConnectButton } from "@/components/connect/connect-button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Silo pricing for WooCommerce stores. One, three or five isolated stores from $29/month. Unlimited products, full surgical invalidation, 3-day trial with no card.",
+    "Silo pricing for WooCommerce stores. One, three or five isolated stores from $29/month. Unlimited products, full surgical invalidation, 7-day trial with no card.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Silo pricing — per store, not per panic",
@@ -62,7 +62,7 @@ export default function PricingPage() {
               re-warmed.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] text-paper/40">
-              {["3-day trial", "No card required", "Cancel anytime"].map((item) => (
+              {["7-day trial", "No card required", "Cancel anytime"].map((item) => (
                 <span key={item} className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-mint/70" />
                   {item}

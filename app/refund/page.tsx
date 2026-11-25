@@ -16,7 +16,7 @@ export default function RefundPage() {
     >
       <h2>1. The trial comes first</h2>
       <p>
-        Every account starts with a 3-day trial and no card is required. The trial begins when
+        Every account starts with a 7-day trial and no card is required. The trial begins when
         the account is created and covers one store. You can connect a real store, run a stock
         change and inspect the invalidation log before deciding. If you choose a plan with more
         than two days of the trial left, the first charge happens when the trial ends; otherwise

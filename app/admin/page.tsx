@@ -8,6 +8,7 @@ export const metadata = { title: "Overview" };
 
 const CRON_JOBS: Array<{ name: string; everyMs: number }> = [
   { name: "warmup", everyMs: 5 * 60_000 },
+  { name: "trial-emails", everyMs: 3_600_000 },
   { name: "cleanup", everyMs: 24 * 3_600_000 },
   { name: "daily-warmup", everyMs: 24 * 3_600_000 },
   { name: "reset-events", everyMs: 31 * 24 * 3_600_000 },

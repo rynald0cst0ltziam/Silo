@@ -7,7 +7,7 @@ Requires PHP: 8.1
 Requires Plugins: woocommerce
 WC requires at least: 8.2
 WC tested up to: 9.9
-Stable tag: 2.3.3
+Stable tag: 2.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ No. When another page cache is active, Silo works alongside it automatically (Wo
 Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
+
+= 2.3.4 =
+* Change: the trial notice appears two days before the trial ends and shows how many days are left.
 
 = 2.3.3 =
 * Fix: the priority list holds products that have actually sold, up to the plan's limit, and is only topped up with featured or recent products to 50. Warmup limits are ceilings, never targets.

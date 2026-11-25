@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     default: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
     template: "%s | Silo for WooCommerce",
   },
-  description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
+  description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 7-day free trial.",
   applicationName: "Silo for WooCommerce",
   keywords: [
     "WooCommerce cache",
@@ -36,12 +36,12 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Silo for WooCommerce",
     title: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
-    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
+    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 7-day free trial.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
-    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
+    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 7-day free trial.",
   },
   robots: {
     index: true,

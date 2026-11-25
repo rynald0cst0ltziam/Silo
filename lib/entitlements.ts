@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { TIERS, getDefaultTier, type TierConfig, type TierSlug } from "@/lib/tiers";
 import { isAdmin } from "@/lib/admin-check";
 
-export const TRIAL_DAYS = 3;
+export const TRIAL_DAYS = 7;
 const DAY = 86_400_000;
 
 /** Stripe statuses that keep the service running. past_due is Stripe's retry window. */

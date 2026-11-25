@@ -165,7 +165,7 @@ export default function DashboardPage() {
             {
               href: "/pricing",
               title: "Pick a plan",
-              body: "1, 3 or 5 isolated stores. 3-day trial.",
+              body: "1, 3 or 5 isolated stores. 7-day trial.",
             },
           ].map((card) => (
             <Link

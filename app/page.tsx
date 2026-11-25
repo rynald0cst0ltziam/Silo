@@ -29,7 +29,7 @@ const structuredData = {
       name: "Silo",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
+      description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 7-day free trial.",
       url: siteUrl(),
       offers: PLANS.flatMap((plan) => [
         {
@@ -129,7 +129,7 @@ export default function HomePage() {
                 className="animate-rise mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-paper/40"
                 style={{ animationDelay: "330ms" }}
               >
-                {["3-day trial", "No card required", "Installs in ~4 minutes"].map((item) => (
+                {["7-day trial", "No card required", "Installs in ~4 minutes"].map((item) => (
                   <span key={item} className="flex items-center gap-1.5">
                     <Check className="h-3 w-3 text-mint/70" />
                     {item}

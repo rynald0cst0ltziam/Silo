@@ -8,25 +8,27 @@ datasource db {
 }
 
 model User {
-  id               String               @id @default(cuid())
-  email            String               @unique
-  passwordHash     String
-  name             String?
-  stripeCustomerId String?
-  role             String               @default("user") // user | admin
-  trialEndsAt      DateTime? // null = createdAt + 14 days; admins can extend
-  planOverride     String? // complimentary plan set by an admin: solo | studio | portfolio
-  suspendedAt      DateTime?
-  suspendedReason  String?
-  lastLoginAt      DateTime?
-  sessionVersion   Int                  @default(0) // bumped on password change, suspension, deletion: signs out every session
-  subscription     Subscription?
-  stores           Store[]
-  accounts         Account[]
-  invoices         Invoice[]
-  resetTokens      PasswordResetToken[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  name                String?
+  stripeCustomerId    String?
+  role                String               @default("user") // user | admin
+  trialEndsAt         DateTime? // null = createdAt + 14 days; admins can extend
+  planOverride        String? // complimentary plan set by an admin: solo | studio | portfolio
+  suspendedAt         DateTime?
+  suspendedReason     String?
+  lastLoginAt         DateTime?
+  sessionVersion      Int                  @default(0) // bumped on password change, suspension, deletion: signs out every session
+  trialReminderSentAt DateTime? // "trial ends soon" email, sent once
+  trialEndedEmailAt   DateTime? // "trial has ended" email, sent once
+  subscription        Subscription?
+  stores              Store[]
+  accounts            Account[]
+  invoices            Invoice[]
+  resetTokens         PasswordResetToken[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model Invoice {

@@ -12,7 +12,7 @@ export function AccessBanner({ access, pausedStores, eventsUsed = 0 }: { access:
 
   switch (access.state) {
     case "trial":
-      tone = access.trialDaysLeft <= 1 ? "warn" : "info";
+      tone = access.trialDaysLeft <= 2 ? "warn" : "info";
       text = `Free trial: ${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left (ends ${trialEndLabel(access)}). ${
         trialCarriesOver(access) ? "Choose a plan now and nothing is charged until the trial ends." : "Choose a plan to keep caching on after the trial."
       }`;
@@ -25,7 +25,7 @@ export function AccessBanner({ access, pausedStores, eventsUsed = 0 }: { access:
     case "expired":
     case "canceled":
       tone = "stop";
-      text = `${access.message} Connected stores are serving uncached pages until then — nothing stale is ever shown.`;
+      text = `${access.message} Your stores are showing live pages (never stale ones) until a plan is active, then caching switches straight back on.`;
       break;
     case "suspended":
       tone = "stop";

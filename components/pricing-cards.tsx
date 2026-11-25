@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 /**
  * Plan cards with a Monthly / Annual toggle. The button carries the chosen plan and
  * interval: signed-in visitors go straight to Billing with it preselected; everyone else
- * signs up first (3-day trial, no card) and lands on Billing with the same choice.
+ * signs up first (7-day trial, no card) and lands on Billing with the same choice.
  */
 export function PricingCards() {
   const [interval, setInterval] = useState<Interval>("month");
@@ -104,11 +104,11 @@ export function PricingCards() {
                   plan.popular ? "bg-accent text-white hover:bg-accent/90" : "border border-ink/15 text-ink hover:bg-ink hover:text-paper",
                 )}
               >
-                {signedIn ? `Choose ${plan.name} ${annual ? "annual" : "monthly"}` : "Start 3-day free trial"}
+                {signedIn ? `Choose ${plan.name} ${annual ? "annual" : "monthly"}` : "Start 7-day free trial"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <p className={cn("mt-2.5 text-center font-mono text-[10.5px] uppercase tracking-[0.06em]", plan.popular ? "text-paper/35" : "text-ink/40")}>
-                {signedIn ? "Secure checkout by Stripe" : "3 days free · no card needed"}
+                {signedIn ? "Secure checkout by Stripe" : "7 days free · no card needed"}
               </p>
 
               <div className={cn("my-6 h-px", plan.popular ? "bg-white/10" : "bg-ink/10")} />

@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/utils";
 export const LLMS_NAME = "Silo for WooCommerce";
 
 const SUMMARY =
-  "Silo for WooCommerce is a page cache built only for WooCommerce stores. It keeps product, shop and category pages fast, and when stock, prices, sales or orders change it clears exactly the pages that change affects and reloads them. It works alongside WP Rocket, LiteSpeed, W3 Total Cache, Cloudflare and page builders such as Elementor. Every new account gets a 3-day free trial with no card required.";
+  "Silo for WooCommerce is a page cache built only for WooCommerce stores. It keeps product, shop and category pages fast, and when stock, prices, sales or orders change it clears exactly the pages that change affects and reloads them. It works alongside WP Rocket, LiteSpeed, W3 Total Cache, Cloudflare and page builders such as Elementor. Every new account gets a 7-day free trial with no card required.";
 
 /** Plan facts taken from lib/tiers.ts, the same numbers the service enforces. */
 export function planLines(): string[] {
@@ -30,7 +30,7 @@ export function llmsTxt(): string {
     "",
     `- [How it works](${base}/how-it-works): the catalog graph and how changes are invalidated`,
     `- [Features and compatibility](${base}/faq): what is supported and how it behaves`,
-    `- [Pricing](${base}/pricing): plans, limits and the 3-day free trial`,
+    `- [Pricing](${base}/pricing): plans, limits and the 7-day free trial`,
     `- [Guide](${base}/guide): setup and daily use`,
     `- [Docs](${base}/docs): connector installation and troubleshooting`,
     `- [Status](${base}/status): live status of the service`,
@@ -84,7 +84,7 @@ export function llmsFullTxt(): string {
     "",
     ...planLines(),
     "",
-    "Every new account starts with a 3-day free trial on Solo limits, with no card required. Choosing a plan during the trial carries the remaining time forward when Stripe allows it. When a trial or paid plan ends without a plan, caching pauses on the store until a plan is chosen.",
+    "Every new account starts with a 7-day free trial on Solo limits, with no card required. Choosing a plan during the trial carries the remaining time forward when Stripe allows it. When a trial or paid plan ends without a plan, caching pauses on the store until a plan is chosen.",
     "",
     "## Plans as listed on the site",
     "",

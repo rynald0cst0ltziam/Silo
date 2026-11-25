@@ -38,7 +38,7 @@ export default function TermsPage() {
 
       <h2>3. Trials and fees</h2>
       <p>
-        Trials last 3 days from account creation and do not require a card. When a trial or
+        Trials last 7 days from account creation and do not require a card. When a trial or
         paid plan ends, the service pauses caching on connected stores until a plan is active. Paid
         plans are billed per plan (Solo, Studio or Portfolio), monthly or annually in advance. Fees
         exclude taxes, which are added where required. Subscriptions renew automatically until
