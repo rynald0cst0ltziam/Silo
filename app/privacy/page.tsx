@@ -71,8 +71,13 @@ export default function PrivacyPage() {
       <h2>4. Cookies and analytics</h2>
       <p>
         The dashboard uses an essential session cookie to keep you signed in. The marketing site
-        uses no advertising cookies. Where privacy-friendly analytics are enabled (Plausible),
-        measurement is aggregate and cookie-less. We do not sell personal data or use it for
+        uses no advertising cookies and no analytics cookies. To understand how the site is used,
+        we count page views ourselves. Each view stores the page path, the referring website's
+        domain (if any), the visitor's country, and a visitor code that is a one-way hash of the
+        IP address and browser, combined with a secret and the date, so it can't identify you and
+        can't be linked from one day to the next. We don't store IP addresses or full browser
+        details. Browsers sending Do Not Track or Global Privacy Control are not counted, and
+        visits from automated tools are ignored. We do not sell personal data or use it for
         cross-site advertising.
       </p>
 
