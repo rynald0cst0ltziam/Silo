@@ -16,14 +16,21 @@ export function BillingIntervalToggle({
   intro,
   initialInterval = "month",
   selected = null,
+  trialCarry = false,
+  trialEndsLabel = "",
 }: {
   tiers: TierConfig[];
   intro?: string;
   initialInterval?: Interval;
   selected?: string | null;
+  /** True while free-trial time can still carry into the subscription (charge deferred). */
+  trialCarry?: boolean;
+  trialEndsLabel?: string;
 }) {
   const [interval, setInterval] = useState<Interval>(initialInterval);
+  const [startToday, setStartToday] = useState(false);
   const annual = interval === "year";
+  const deferred = trialCarry && !startToday;
 
   return (
     <div>
@@ -48,6 +55,36 @@ export function BillingIntervalToggle({
           ))}
         </div>
       </div>
+
+      {trialCarry ? (
+        <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
+          <legend className="mb-2 text-[13px] font-medium text-paper/70">When should your paid plan start?</legend>
+          {[
+            { value: false, title: "When my trial ends", body: `Nothing is charged today. Your card is charged on ${trialEndsLabel}.` },
+            { value: true, title: "Today", body: "Pay now and start the paid plan straight away. The rest of the free trial is skipped." },
+          ].map((option) => (
+            <label
+              key={String(option.value)}
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition",
+                startToday === option.value ? "border-accent bg-accent/[0.08]" : "border-white/10 bg-white/[0.02] hover:border-white/20",
+              )}
+            >
+              <input
+                type="radio"
+                name="plan-start"
+                checked={startToday === option.value}
+                onChange={() => setStartToday(option.value)}
+                className="mt-1 accent-[#3d6bff]"
+              />
+              <span>
+                <span className="block text-[14px] font-medium text-paper">{option.title}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-paper/55">{option.body}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {tiers.map((tier) => {
@@ -106,11 +143,19 @@ export function BillingIntervalToggle({
               <CheckoutButton
                 tier={tier.slug}
                 interval={interval}
+                startNow={trialCarry && startToday}
                 variant={isSelected || (!selected && tier.slug === "studio") ? "primary" : "outline"}
                 className="mt-5 w-full"
               >
-                Choose {tier.name} {annual ? "annual" : "monthly"}
+                {deferred
+                  ? `Choose ${tier.name} ${annual ? "annual" : "monthly"}`
+                  : `Pay $${(annual ? tier.priceAnnual : tier.priceMonthly).toLocaleString("en-US")} now`}
               </CheckoutButton>
+              <p className="mt-2 text-center text-[12px] text-paper/40">
+                {deferred
+                  ? `$0 today · first charge ${trialEndsLabel}`
+                  : `Then $${(annual ? tier.priceAnnual : tier.priceMonthly).toLocaleString("en-US")} every ${annual ? "year" : "month"}`}
+              </p>
             </div>
           );
         })}

@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 type CheckoutButtonProps = {
   tier: string;
   interval: "month" | "year";
+  /** Charge today instead of when the free trial ends. */
+  startNow?: boolean;
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "outline";
@@ -15,6 +17,7 @@ type CheckoutButtonProps = {
 export function CheckoutButton({
   tier,
   interval,
+  startNow = false,
   children,
   className,
   variant = "primary",
@@ -29,7 +32,7 @@ export function CheckoutButton({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, interval }),
+        body: JSON.stringify({ tier, interval, startNow }),
       });
       if (res.status === 401) {
         window.location.href = `/sign-up?next=${encodeURIComponent(`/dashboard/billing?plan=${tier}&interval=${interval}#plans`)}`;

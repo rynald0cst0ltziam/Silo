@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  let body: { tier: string; interval: string };
+  let body: { tier: string; interval: string; startNow?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
   }
 
   const { tier, interval } = body;
+  const startNow = body.startNow === true;
   if (!TIERS[tier as TierSlug]) {
     return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
   }
@@ -52,12 +53,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "You already have a subscription. Change plans from Billing → Manage subscription.", portal: true }, { status: 409 });
   }
 
-  // Time left on the no-card trial carries over, so choosing a plan early never costs trial time.
+  // By default, time left on the no-card trial carries over, so choosing a plan early never
+  // costs trial time. The customer can instead start (and pay for) the plan today with startNow.
   // Stripe only accepts a trial that ends at least 48 hours out; with less left, billing starts now.
   // Accounts that have paid before get no trial.
   const hadPaid = !!user.subscription;
   const trialEndSec = Math.floor(access.trialEndsAt.getTime() / 1000);
-  const carryTrial = !hadPaid && access.state === "trial" && trialEndSec - Date.now() / 1000 > 48 * 3600 + 600;
+  const carryTrial = !startNow && !hadPaid && access.state === "trial" && trialEndSec - Date.now() / 1000 > 48 * 3600 + 600;
   const trialDays = carryTrial ? access.trialDaysLeft : 0;
   const base = siteUrl().replace(/\/+$/, "");
 
@@ -89,7 +91,7 @@ export async function POST(req: Request) {
     allow_promotion_codes: true,
   });
 
-  await audit("billing.checkout", { userId: user.id, detail: { tier, interval, trialDays }, req });
+  await audit("billing.checkout", { userId: user.id, detail: { tier, interval, trialDays, startNow }, req });
 
   return NextResponse.json({ url: checkoutSession.url });
 }

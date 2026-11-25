@@ -14,7 +14,7 @@ export function AccessBanner({ access, pausedStores, eventsUsed = 0 }: { access:
     case "trial":
       tone = access.trialDaysLeft <= 2 ? "warn" : "info";
       text = `Free trial: ${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left (ends ${trialEndLabel(access)}). ${
-        trialCarriesOver(access) ? "Choose a plan now and nothing is charged until the trial ends." : "Choose a plan to keep caching on after the trial."
+        trialCarriesOver(access) ? "Choose a plan any time: start it today, or let billing begin when the trial ends." : "Choose a plan to keep caching on after the trial."
       }`;
       break;
     case "past_due":

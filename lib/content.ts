@@ -266,7 +266,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a trial?",
-        a: "Yes. Every account starts with a 7-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, warmup of up to 150 pages per change) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
+        a: "Yes. Every account starts with a 7-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, warmup of up to 150 pages per change) and the full engine, not a reduced preview. You can choose a plan any time from Billing and decide when it starts: today (paid now, and the rest of the trial is skipped), or when the trial ends (nothing charged until then; this option needs more than two days of trial left). If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
       },
       {
         q: "Can I change plans later?",

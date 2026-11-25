@@ -170,7 +170,15 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
               tiers={TIER_ORDER.map((slug) => TIERS[slug])}
               initialInterval={chosenInterval}
               selected={chosenPlan}
-              intro={access.state === "trial" ? (trialCarriesOver(access) ? `Choose now and nothing is charged until your trial ends (${trialEndLabel(access)}).` : `Your trial ends ${trialEndLabel(access)}. Choose a plan to keep caching on; billing starts today.`) : "Choose a plan to switch caching back on."}
+              intro={
+                access.state === "trial"
+                  ? trialCarriesOver(access)
+                    ? `Pick a plan and when it starts: today, or when your free trial ends (${trialEndLabel(access)}).`
+                    : `Your trial ends ${trialEndLabel(access)}. Choose a plan to keep caching on; billing starts today.`
+                  : "Choose a plan to switch caching back on. Billing starts today."
+              }
+              trialCarry={trialCarriesOver(access)}
+              trialEndsLabel={trialEndLabel(access)}
             />
           </div>
         </section>
