@@ -46,32 +46,9 @@ export default async function OpengraphImage() {
         />
 
         <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              width: 34,
-              height: 34,
-              gap: 3,
-              marginRight: 14,
-            }}
-          >
-            {["#f6f5f1", "#3d6bff", "#f6f5f1", "#f6f5f1"].map((color, index) => (
-              <div
-                key={index}
-                style={{
-                  width: 15,
-                  height: 15,
-                  borderRadius: 3,
-                  background: color,
-                  opacity: index > 1 ? 0.35 : 1,
-                  display: "flex",
-                }}
-              />
-            ))}
-          </div>
-          <div style={{ display: "flex", fontSize: 34, color: "#f6f5f1", letterSpacing: -1 }}>
+          <div style={{ display: "flex", fontSize: 34, color: "#f6f5f1", letterSpacing: -1.5, alignItems: "flex-start" }}>
             silo
+            <div style={{ display: "flex", width: 9, height: 9, borderRadius: 9, background: "#1ed6a1", marginLeft: 3, marginTop: 4 }} />
           </div>
           <div
             style={{

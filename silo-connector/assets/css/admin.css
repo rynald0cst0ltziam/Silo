@@ -126,42 +126,75 @@ body.silo-screen #wpbody-content > .updated {
 /* Logo mark (2×2 grid from the site) ------------------------------------- */
 
 .silo-mark {
-	display: inline-grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 2.5px;
-	width: 26px;
-	height: 26px;
-	padding: 4px;
-	border-radius: 0;
-	background: rgba(255, 255, 255, 0.06);
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	background: #08090b;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+	color: var(--paper);
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.05em;
+	line-height: 1;
 	flex-shrink: 0;
 }
 
 .silo-mark i {
-	display: block;
-	border-radius: 0;
-	background: rgba(246, 245, 241, 0.35);
-}
-
-.silo-mark i:nth-child(1) {
-	background: var(--paper);
-}
-
-.silo-mark i:nth-child(2) {
-	background: var(--accent);
+	position: absolute;
+	top: 18%;
+	right: 18%;
+	width: 22%;
+	height: 22%;
+	border-radius: 50%;
+	background: var(--mint);
 }
 
 .silo-mark.is-lg {
-	width: 52px;
-	height: 52px;
-	padding: 8px;
-	gap: 5px;
-	border-radius: 0;
+	width: 56px;
+	height: 56px;
+	font-size: 34px;
 }
 
-.silo-mark.is-lg i {
-	border-radius: 0;
+.silo-live {
+	position: relative;
+	display: inline-block;
+	width: 0.24em;
+	height: 0.24em;
+	margin-left: 0.07em;
+	border-radius: 50%;
+	background: var(--mint);
+	color: var(--mint);
+	vertical-align: 0.62em;
+}
+
+.silo-live::after {
+	content: "";
+	position: absolute;
+	inset: -0.11em;
+	border: 0.045em solid currentColor;
+	border-radius: 50%;
+	opacity: 0;
+	animation: silo-live 2.6s ease-out infinite;
+}
+
+@keyframes silo-live {
+	0% {
+		opacity: 0.85;
+		transform: scale(0.55);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(1.8);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.silo-live::after {
+		animation: none;
+	}
 }
 
 /* App frame -------------------------------------------------------------- */

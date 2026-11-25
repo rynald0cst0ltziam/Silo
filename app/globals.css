@@ -616,3 +616,40 @@ details > summary {
 details > summary::-webkit-details-marker {
   display: none;
 }
+
+/* Live dot: the logo's status light. Sized in em so it scales with the wordmark. */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.24em;
+  height: 0.24em;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -0.11em;
+  border-radius: 9999px;
+  border: 0.045em solid currentColor;
+  opacity: 0;
+  animation: live-dot 2.6s ease-out infinite;
+}
+
+@keyframes live-dot {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot::after {
+    animation: none;
+  }
+}

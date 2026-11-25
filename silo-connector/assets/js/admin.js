@@ -152,7 +152,7 @@
 	const icon = ( name ) =>
 		'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ( ICONS[ name ] || '' ) + '</svg>';
 
-	const mark = ( lg ) => '<span class="silo-mark' + ( lg ? ' is-lg' : '' ) + '" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+	const mark = ( lg ) => '<span class="silo-mark' + ( lg ? ' is-lg' : '' ) + '" aria-hidden="true">s<i></i></span>';
 
 	/* ------------------------------------------------------------------ */
 	/* Server                                                              */
@@ -327,7 +327,7 @@
 		const st = S.state;
 		return (
 			'<header class="silo-top">' +
-			'<div class="silo-brand">' + mark() + '<span class="silo-wordmark">silo</span><span class="silo-for">for WooCommerce</span></div>' +
+			'<div class="silo-brand"><span class="silo-wordmark">silo<span class="silo-live" aria-hidden="true"></span></span></div>' +
 			'<div class="silo-top-right">' +
 			'<span class="silo-host">' + esc( ( st.store && st.store.name ) || ( st.site && st.site.host ) || '' ) + '</span>' +
 			syncPill() +
