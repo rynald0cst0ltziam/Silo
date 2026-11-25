@@ -136,7 +136,7 @@ export function generateConfig(
     priority_products: snapshot.bestsellers ?? [],
     // Keep the full priority list (largest plan's cap); each use slices it to the current plan,
     // so an upgrade takes effect immediately without a rescan.
-    priority_urls: priorityUrls.slice(0, 500),
+    priority_urls: priorityUrls.slice(0, 2000),
     invalidation_rules: buildInvalidationRules(isHighVariation, hasStockMgmt),
     store_api: {
       enabled: true,

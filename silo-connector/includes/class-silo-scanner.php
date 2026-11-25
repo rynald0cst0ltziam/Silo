@@ -496,6 +496,16 @@ class Silo_Scanner {
 	}
 
 	/**
+	 * How many top products the priority list ranks: the plan's warmup limit from the last
+	 * config Silo sent, kept between 50 and 1,500.
+	 */
+	private static function priority_product_count(): int {
+		$config = Silo_Settings::remote_config();
+		$cap    = (int) ( $config['limits']['warmup_urls_per_event'] ?? 50 );
+		return max( 50, min( 1500, $cap ) );
+	}
+
+	/**
 	 * Scan stage: priority.
 	 *
 	 * @param array $state State.
@@ -503,15 +513,16 @@ class Silo_Scanner {
 	private static function stage_priority( array &$state ): void {
 		global $wpdb;
 
+		$count  = self::priority_product_count();
 		$lookup = $wpdb->prefix . 'wc_product_meta_lookup';
-		$best   = array_map( 'intval', (array) $wpdb->get_col( "SELECT l.product_id FROM {$lookup} l INNER JOIN {$wpdb->posts} p ON p.ID = l.product_id AND p.post_type = 'product' AND p.post_status = 'publish' WHERE l.total_sales > 0 ORDER BY l.total_sales DESC LIMIT 50" ) );
+		$best   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT l.product_id FROM {$lookup} l INNER JOIN {$wpdb->posts} p ON p.ID = l.product_id AND p.post_type = 'product' AND p.post_status = 'publish' WHERE l.total_sales > 0 ORDER BY l.total_sales DESC LIMIT %d", $count ) ) );
 
-		if ( count( $best ) < 50 ) {
+		if ( count( $best ) < $count ) {
 			$featured = function_exists( 'wc_get_featured_product_ids' ) ? array_map( 'intval', wc_get_featured_product_ids() ) : array();
-			$recent   = array_map( 'intval', (array) $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish' ORDER BY post_date DESC LIMIT 50" ) );
+			$recent   = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status = 'publish' ORDER BY post_date DESC LIMIT %d", $count ) ) );
 			$best     = array_values( array_unique( array_merge( $best, $featured, $recent ) ) );
 		}
-		$best = array_slice( $best, 0, 50 );
+		$best = array_slice( $best, 0, $count );
 
 		$urls = array();
 		$shop = wc_get_page_permalink( 'shop' );

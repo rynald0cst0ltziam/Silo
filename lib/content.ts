@@ -1,3 +1,5 @@
+import { TIERS } from "@/lib/tiers";
+
 export type Plan = {
   name: string;
   price: number;
@@ -10,57 +12,55 @@ export type Plan = {
   popular?: boolean;
 };
 
+/**
+ * Plan cards. Each card lists only what that plan adds; everything shared is in
+ * "In every plan" on the pricing page. Numbers come from lib/tiers.ts.
+ */
 export const PLANS: Plan[] = [
   {
     name: "Solo",
-    price: 29,
-    annual: 290,
+    price: TIERS.solo.priceMonthly,
+    annual: TIERS.solo.priceAnnual,
     stores: 1,
     storeLabel: "1 store",
     tagline: "For one catalog that has to stay exact.",
-    events: "100,000 catalog events / month",
+    events: `${TIERS.solo.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month`,
     features: [
-      "1 isolated store environment",
-      "Unlimited products and variations",
-      "Full surgical invalidation engine",
-      "Priority warmup — 50 URLs per event",
-      "Currency, language and geo-aware cache keys",
-      "Works alongside your cache plugin, host and Cloudflare",
-      "30-day invalidation log",
+      "One store, with its own key and cache",
+      `Priority warmup: ${TIERS.solo.warmupUrlsPerEvent} URLs per change, plus a daily pass`,
+      `${TIERS.solo.logRetentionDays}-day invalidation log`,
       "Email support",
     ],
   },
   {
     name: "Studio",
-    price: 79,
-    annual: 790,
+    price: TIERS.studio.priceMonthly,
+    annual: TIERS.studio.priceAnnual,
     stores: 3,
     storeLabel: "3 stores",
     tagline: "For teams running a family of storefronts.",
-    events: "500,000 catalog events / month, shared",
+    events: `${TIERS.studio.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month, shared across stores`,
     features: [
-      "Everything in Solo, for 3 stores",
-      "Per-store isolation and keys",
-      "Priority warmup — 250 URLs per event",
-      "90-day invalidation log",
-      "One account and one invoice for 3 stores",
+      "Everything in Solo, for up to 3 stores",
+      `Priority warmup: ${TIERS.studio.warmupUrlsPerEvent} URLs per change, plus a daily pass`,
+      `${TIERS.studio.logRetentionDays}-day invalidation log`,
+      "One subscription and one invoice for all stores",
       "Priority email support",
     ],
     popular: true,
   },
   {
     name: "Portfolio",
-    price: 149,
-    annual: 1490,
+    price: TIERS.portfolio.priceMonthly,
+    annual: TIERS.portfolio.priceAnnual,
     stores: 5,
     storeLabel: "5 stores",
-    tagline: "For multi-region, multi-currency catalogs.",
-    events: "2,000,000 catalog events / month, shared",
+    tagline: "For agencies and groups running several storefronts.",
+    events: `${TIERS.portfolio.maxMonthlyEvents.toLocaleString("en-US")} catalog events / month, shared across stores`,
     features: [
-      "Everything in Studio, for 5 stores",
-      "Priority warmup — 500 URLs per event",
-      "180-day invalidation log",
-      "Guided connector onboarding",
+      "Everything in Studio, for up to 5 stores",
+      `Priority warmup: ${TIERS.portfolio.warmupUrlsPerEvent.toLocaleString("en-US")} URLs per change, plus a daily pass`,
+      `${TIERS.portfolio.logRetentionDays}-day invalidation log`,
       "Dedicated support channel",
     ],
   },
@@ -266,7 +266,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a trial?",
-        a: "Yes. Every account starts with a 3-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, 50 warmup URLs per event) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
+        a: "Yes. Every account starts with a 3-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, 150 warmup URLs per change) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
       },
       {
         q: "Can I change plans later?",

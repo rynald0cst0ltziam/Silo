@@ -67,7 +67,7 @@ export function PricingCards() {
               plan.popular ? "text-paper/30" : "text-ink/35",
             )}
           >
-            ${plan.annual} / year · two months free
+            or ${plan.annual} billed yearly (${(plan.annual / 12).toFixed(2)}/mo), saving ${plan.price * 12 - plan.annual}
           </p>
 
           <ConnectButton
