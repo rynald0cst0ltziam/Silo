@@ -35,7 +35,7 @@ export function LegalPage({
             <h1 className="display-tight mt-5 text-[clamp(32px,4vw,46px)] text-paper">{title}</h1>
             <p className="lede mt-4 max-w-[640px]">{intro}</p>
             <p className="mt-5 font-mono text-[9px] uppercase tracking-[0.08em] text-paper/25">
-              Last updated {updated} · Silo Systems, Inc.
+              Last updated {updated} · Silo for WooCommerce
             </p>
           </div>
         </div>

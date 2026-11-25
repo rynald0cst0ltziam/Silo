@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Github, Linkedin, Mail } from "lucide-react";
+import { ArrowUpRight, Linkedin, Mail } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 const PRODUCT_LINKS = [
@@ -47,28 +47,19 @@ export function SiteFooter() {
                 <Mail className="h-3.5 w-3.5" />
               </a>
               <a
-                href="https://x.com"
+                href="https://x.com/Rynald0c"
                 target="_blank"
-                rel="noreferrer"
-                aria-label="Silo on X"
+                rel="noopener noreferrer"
+                aria-label="Silo on X, by Rynaldo Stoltz"
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-paper/45 transition hover:border-white/25 hover:text-paper"
               >
                 <span className="text-[11px] font-semibold">X</span>
               </a>
               <a
-                href="https://github.com"
+                href="https://www.linkedin.com/in/rynaldo-stoltz"
                 target="_blank"
-                rel="noreferrer"
-                aria-label="Silo on GitHub"
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-paper/45 transition hover:border-white/25 hover:text-paper"
-              >
-                <Github className="h-3.5 w-3.5" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Silo on LinkedIn"
+                rel="noopener noreferrer"
+                aria-label="Rynaldo Stoltz on LinkedIn"
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-paper/45 transition hover:border-white/25 hover:text-paper"
               >
                 <Linkedin className="h-3.5 w-3.5" />
@@ -83,7 +74,7 @@ export function SiteFooter() {
 
         <div className="mt-14 flex flex-col gap-4 border-t border-white/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11.5px] text-paper/30">
-            <span>© 2026 Silo Systems, Inc.</span>
+            <span>© 2026 Silo for WooCommerce</span>
             <span className="hidden h-3 w-px bg-white/10 sm:block" />
             <span>Built for WooCommerce, not blogs.</span>
           </div>

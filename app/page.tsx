@@ -30,8 +30,7 @@ const structuredData = {
       name: "Silo",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      description:
-        "A WooCommerce-only cache with inventory-aware surgical invalidation. Silo invalidates the exact product, variation, category and Store API response that changed, then re-warms priority pages.",
+      description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
       url: siteUrl(),
       offers: PLANS.map((plan) => ({
         "@type": "Offer",
@@ -53,15 +52,17 @@ const structuredData = {
       ],
       publisher: {
         "@type": "Organization",
-        name: "Silo Systems, Inc.",
+        name: "Silo for WooCommerce",
         url: siteUrl(),
+        logo: `${siteUrl()}/icon.svg`,
+        sameAs: ["https://www.linkedin.com/in/rynaldo-stoltz", "https://x.com/Rynald0c"],
       },
     },
     {
       "@type": "WebSite",
-      name: "Silo",
+      name: "Silo for WooCommerce",
       url: siteUrl(),
-      description: "Cache for WooCommerce. Surgical invalidation, accurate stock.",
+      description: "Inventory-aware page cache for WooCommerce.",
     },
   ],
 };

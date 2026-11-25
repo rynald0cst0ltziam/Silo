@@ -40,3 +40,6 @@ lib/generated/
 
 # build artifacts
 public/silo-connector.zip
+
+.vercel
+.env*

@@ -11,12 +11,11 @@ import { siteUrl } from "@/lib/utils";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "Silo — The only cache that understands WooCommerce inventory",
-    template: "%s — Silo",
+    default: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
+    template: "%s | Silo for WooCommerce",
   },
-  description:
-    "Cache built only for WooCommerce. Every order, refund, sale and stock change clears exactly the pages it affects and rewarms them. Works alongside WP Rocket, LiteSpeed and Cloudflare.",
-  applicationName: "Silo",
+  description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
+  applicationName: "Silo for WooCommerce",
   keywords: [
     "WooCommerce cache",
     "WooCommerce caching plugin",
@@ -26,24 +25,22 @@ export const metadata: Metadata = {
     "HPOS cache",
     "surgical invalidation",
   ],
-  authors: [{ name: "Silo Systems, Inc." }],
-  creator: "Silo",
-  publisher: "Silo Systems, Inc.",
+  authors: [{ name: "Rynaldo Stoltz", url: "https://www.linkedin.com/in/rynaldo-stoltz" }],
+  creator: "Rynaldo Stoltz",
+  publisher: "Silo for WooCommerce",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "/",
-    siteName: "Silo",
-    title: "Silo — The only cache that understands WooCommerce inventory",
-    description:
-      "Full-page cache speed for WooCommerce without stale stock or prices. Surgical invalidation, priority warmup, and it works alongside the cache you already run.",
+    siteName: "Silo for WooCommerce",
+    title: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
+    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Silo — The only cache that understands WooCommerce inventory",
-    description:
-      "Full-page cache speed for WooCommerce without stale stock or prices. Works alongside WP Rocket, LiteSpeed and Cloudflare.",
+    title: "Silo for WooCommerce — Inventory-aware WooCommerce cache",
+    description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
   },
   robots: {
     index: true,

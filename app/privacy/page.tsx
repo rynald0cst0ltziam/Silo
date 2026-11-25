@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       <p>
         This policy covers the Silo marketing site, the Silo dashboard and the Silo connector
         plugin. It explains what we collect, why, how long we keep it and the choices you have.
-        Silo Systems, Inc. is the controller of account data; your store remains the controller
+        Silo for WooCommerce is the controller of account data; your store remains the controller
         of its own customer data.
       </p>
 
