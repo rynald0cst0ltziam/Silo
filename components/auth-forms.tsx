@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { safeNext } from "@/lib/plan-intent";
+
+/** Where to go after signing in or up: ?next= or ?callbackUrl= (same-site only), else the dashboard. */
+function nextTarget(): string {
+  const params = new URLSearchParams(window.location.search);
+  return safeNext(params.get("next")) ?? safeNext(params.get("callbackUrl")) ?? "/dashboard";
+}
+
+/** Keeps ?next= when switching between sign-in and sign-up. */
+function useCarriedSearch(): string {
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next") ?? new URLSearchParams(window.location.search).get("callbackUrl");
+    setSearch(safeNext(next) ? `?next=${encodeURIComponent(next as string)}` : "");
+  }, []);
+  return search;
+}
 
 export function SignInForm() {
+  const carried = useCarriedSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +47,7 @@ export function SignInForm() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = nextTarget();
   }
 
   return (
@@ -99,7 +117,7 @@ export function SignInForm() {
 
       <p className="mt-5 text-center text-[11px] text-paper/30">
         No account?{" "}
-        <Link href="/sign-up" className="text-accent/70 underline underline-offset-2 hover:text-accent">
+        <Link href={`/sign-up${carried}`} className="text-accent/70 underline underline-offset-2 hover:text-accent">
           Create one
         </Link>
       </p>
@@ -108,6 +126,7 @@ export function SignInForm() {
 }
 
 export function SignUpForm() {
+  const carried = useCarriedSearch();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -144,7 +163,7 @@ export function SignUpForm() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = nextTarget();
   }
 
   return (
@@ -231,7 +250,7 @@ export function SignUpForm() {
 
       <p className="mt-3 text-center text-[11px] text-paper/30">
         Already have an account?{" "}
-        <Link href="/sign-in" className="text-accent/70 underline underline-offset-2 hover:text-accent">
+        <Link href={`/sign-in${carried}`} className="text-accent/70 underline underline-offset-2 hover:text-accent">
           Sign in
         </Link>
       </p>

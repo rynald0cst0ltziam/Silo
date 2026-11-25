@@ -32,7 +32,7 @@ export function CheckoutButton({
         body: JSON.stringify({ tier, interval }),
       });
       if (res.status === 401) {
-        window.location.href = `/sign-up?plan=${encodeURIComponent(tier)}`;
+        window.location.href = `/sign-up?next=${encodeURIComponent(`/dashboard/billing?plan=${tier}&interval=${interval}#plans`)}`;
         return;
       }
       const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string; portal?: boolean };
@@ -53,7 +53,7 @@ export function CheckoutButton({
   }
 
   return (
-    <span className="inline-flex flex-col items-stretch gap-1.5">
+    <span className="flex flex-col items-stretch gap-1.5">
     <button
       type="button"
       onClick={handleClick}

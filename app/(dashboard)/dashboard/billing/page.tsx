@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { TIERS, type TierSlug } from "@/lib/tiers";
 import { getAccess, trialCarriesOver, trialEndLabel, type AccessState } from "@/lib/entitlements";
 import { BillingIntervalToggle } from "@/components/billing-interval-toggle";
+import { asInterval, asPlan } from "@/lib/plan-intent";
 import { CheckoutRefresh } from "@/components/account/checkout-refresh";
 import { PlanLimitsTable } from "@/components/plan-limits-table";
 
@@ -57,10 +58,12 @@ function Meter({ label, used, max, hint }: { label: string; used: number; max: n
   );
 }
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string }> }) {
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string; plan?: string; interval?: string }> }) {
   const user = await getUser();
   if (!user) redirect("/sign-in");
-  const { checkout } = await searchParams;
+  const { checkout, plan: planParam, interval: intervalParam } = await searchParams;
+  const chosenPlan = asPlan(planParam);
+  const chosenInterval = asInterval(intervalParam) ?? "month";
 
   const access = getAccess(user);
   const sub = user.subscription;
@@ -160,11 +163,13 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       </section>
 
       {!live && access.state !== "comped" && access.state !== "suspended" ? (
-        <section>
+        <section id="plans" className="scroll-mt-24">
           <h2 className="text-[17px] font-semibold text-paper">Plans</h2>
           <div className="mt-4">
             <BillingIntervalToggle
               tiers={TIER_ORDER.map((slug) => TIERS[slug])}
+              initialInterval={chosenInterval}
+              selected={chosenPlan}
               intro={access.state === "trial" ? (trialCarriesOver(access) ? `Choose now and nothing is charged until your trial ends (${trialEndLabel(access)}).` : `Your trial ends ${trialEndLabel(access)}. Choose a plan to keep caching on; billing starts today.`) : "Choose a plan to switch caching back on."}
             />
           </div>

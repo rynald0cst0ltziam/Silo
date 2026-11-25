@@ -31,14 +31,24 @@ const structuredData = {
       operatingSystem: "Web",
       description: "WooCommerce page cache with inventory-aware invalidation. Stock and prices stay accurate. Works with WP Rocket and LiteSpeed. 3-day free trial.",
       url: siteUrl(),
-      offers: PLANS.map((plan) => ({
-        "@type": "Offer",
-        name: plan.name,
-        price: String(plan.price),
-        priceCurrency: "USD",
-        description: `${plan.storeLabel}, ${plan.events}`,
-        url: `${siteUrl()}/pricing`,
-      })),
+      offers: PLANS.flatMap((plan) => [
+        {
+          "@type": "Offer",
+          name: `${plan.name} (monthly)`,
+          price: String(plan.price),
+          priceCurrency: "USD",
+          description: `${plan.storeLabel}, ${plan.events}, billed monthly`,
+          url: `${siteUrl()}/pricing`,
+        },
+        {
+          "@type": "Offer",
+          name: `${plan.name} (annual)`,
+          price: String(plan.annual),
+          priceCurrency: "USD",
+          description: `${plan.storeLabel}, ${plan.events}, billed yearly (2 months free)`,
+          url: `${siteUrl()}/pricing`,
+        },
+      ]),
       featureList: [
         "Surgical invalidation for WooCommerce",
         "Inventory and variation aware",
