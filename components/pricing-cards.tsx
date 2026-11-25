@@ -76,7 +76,7 @@ export function PricingCards() {
             full
             className="mt-7"
           >
-            Start 14-day trial
+            Start 3-day trial
           </ConnectButton>
           <p
             className={cn(
@@ -84,7 +84,7 @@ export function PricingCards() {
               plan.popular ? "text-paper/25" : "text-ink/30",
             )}
           >
-            14 days · no card
+            3 days · no card
           </p>
 
           <div

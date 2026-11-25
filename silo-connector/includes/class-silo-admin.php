@@ -25,6 +25,7 @@ class Silo_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'admin_init', array( __CLASS__, 'activation_redirect' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notice_connect' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'notice_plan' ) );
 		add_filter( 'plugin_action_links_' . SILO_BASENAME, array( __CLASS__, 'action_links' ) );
 		add_filter( 'admin_body_class', array( __CLASS__, 'body_class' ) );
 
@@ -133,6 +134,86 @@ class Silo_Admin {
 	}
 
 	/**
+	 * Store-wide notice when the Silo plan needs attention: caching paused, trial ending, or the
+	 * monthly event allowance nearly used. The Silo screen shows its own banner instead.
+	 */
+	public static function notice_plan(): void {
+		if ( self::is_screen() || ! current_user_can( 'manage_woocommerce' ) || ! Silo_Settings::is_connected() ) {
+			return;
+		}
+		$notice = self::plan_notice( Silo_Settings::plan() );
+		if ( null === $notice ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-%1$s"><p><strong>%2$s</strong> %3$s <a href="%4$s">%5$s</a></p></div>',
+			esc_attr( 'error' === $notice['tone'] ? 'error' : 'warning' ),
+			esc_html__( 'Silo:', 'silo-connector' ),
+			esc_html( $notice['text'] ),
+			esc_url( '' !== $notice['url'] ? $notice['url'] : admin_url( 'admin.php?page=silo' ) ),
+			esc_html( $notice['cta'] )
+		);
+	}
+
+	/**
+	 * Decide which plan notice (if any) applies. Shared by the WordPress notice and the Silo screen.
+	 *
+	 * @param array $plan Plan summary from Silo.
+	 * @return array{tone:string,text:string,cta:string,url:string}|null
+	 */
+	public static function plan_notice( array $plan ): ?array {
+		if ( empty( $plan['state'] ) ) {
+			return null;
+		}
+		$url   = (string) ( $plan['billing_url'] ?? '' );
+		$used  = (int) ( $plan['events_used'] ?? 0 );
+		$limit = (int) ( $plan['events_limit'] ?? 0 );
+		if ( empty( $plan['active'] ) ) {
+			return array(
+				'tone' => 'error',
+				'text' => trim( (string) ( $plan['message'] ?? '' ) . ' ' . __( 'Caching is paused, so shoppers see live pages and never stale prices.', 'silo-connector' ) ),
+				'cta'  => __( 'Choose a plan', 'silo-connector' ),
+				'url'  => $url,
+			);
+		}
+		if ( $limit > 0 && $used >= $limit ) {
+			return array(
+				'tone' => 'error',
+				/* translators: 1: events used, 2: event limit */
+				'text' => sprintf( __( 'Monthly event limit reached (%1$s of %2$s). Pages are still purged here, but logging and warmup are paused until the 1st.', 'silo-connector' ), number_format_i18n( $used ), number_format_i18n( $limit ) ),
+				'cta'  => __( 'Upgrade', 'silo-connector' ),
+				'url'  => $url,
+			);
+		}
+		if ( 'past_due' === $plan['state'] ) {
+			return array(
+				'tone' => 'warning',
+				'text' => (string) ( $plan['message'] ?? '' ),
+				'cta'  => __( 'Update card', 'silo-connector' ),
+				'url'  => $url,
+			);
+		}
+		if ( 'trial' === $plan['state'] && isset( $plan['trial_days_left'] ) && (int) $plan['trial_days_left'] <= 1 ) {
+			return array(
+				'tone' => 'warning',
+				'text' => __( 'Your Silo trial ends within a day. Choose a plan to keep caching on.', 'silo-connector' ),
+				'cta'  => __( 'Choose a plan', 'silo-connector' ),
+				'url'  => $url,
+			);
+		}
+		if ( $limit > 0 && $used >= 0.8 * $limit ) {
+			return array(
+				'tone' => 'warning',
+				/* translators: 1: events used, 2: event limit */
+				'text' => sprintf( __( '%1$s of %2$s monthly events used.', 'silo-connector' ), number_format_i18n( $used ), number_format_i18n( $limit ) ),
+				'cta'  => __( 'See plans', 'silo-connector' ),
+				'url'  => $url,
+			);
+		}
+		return null;
+	}
+
+	/**
 	 * Notice missing woocommerce.
 	 */
 	public static function notice_missing_woocommerce(): void {
@@ -188,6 +269,8 @@ class Silo_Admin {
 			),
 			'env'          => Silo_Status::compact(),
 			'settings'     => Silo_Settings::all(),
+			'plan'         => Silo_Settings::plan(),
+			'plan_notice'  => self::plan_notice( Silo_Settings::plan() ),
 			'compat'       => Silo_Compat::summary() + array( 'owner' => Silo_Compat::owner() ),
 			'cloudflare'   => array(
 				'zone'      => Silo_Compat::cloudflare()['zone'],

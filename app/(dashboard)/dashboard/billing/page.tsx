@@ -4,9 +4,10 @@ import { ExternalLink, FileText } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TIERS, type TierSlug } from "@/lib/tiers";
-import { getAccess, type AccessState } from "@/lib/entitlements";
+import { getAccess, trialCarriesOver, trialEndLabel, type AccessState } from "@/lib/entitlements";
 import { BillingIntervalToggle } from "@/components/billing-interval-toggle";
 import { CheckoutRefresh } from "@/components/account/checkout-refresh";
+import { PlanLimitsTable } from "@/components/plan-limits-table";
 
 export const metadata: Metadata = {
   title: "Billing",
@@ -83,7 +84,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   }
 
   let timeline = "";
-  if (access.state === "trial") timeline = `Trial ends ${day(access.trialEndsAt)}. No card on file — nothing is charged.`;
+  if (access.state === "trial") timeline = `Trial ends ${trialEndLabel(access)}. No card on file, nothing is charged. Caching pauses when the trial ends unless a plan is chosen.`;
   else if (live && sub?.status === "trialing" && sub.trialEnd) timeline = `First charge on ${day(sub.trialEnd)}.`;
   else if (live && sub?.cancelAtPeriodEnd) timeline = `Cancels on ${day(sub.currentPeriodEnd)}. Caching keeps running until then.`;
   else if (live && sub) timeline = `Renews ${day(sub.currentPeriodEnd)}.`;
@@ -146,7 +147,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Meter label="Stores" used={stores.length} max={access.tier.maxStores} hint={stores.length > access.tier.maxStores ? "Stores past the limit are paused." : undefined} />
-          <Meter label="Catalog events" used={eventsUsed} max={access.tier.maxMonthlyEvents} hint="Product, stock, price and order changes Silo handled." />
+          <Meter label="Catalog events" used={eventsUsed} max={access.tier.maxMonthlyEvents} hint="Shared by all your stores. At the limit, pages still purge on your stores; logging and warmup pause until the 1st." />
           <div className="border border-white/8 bg-[#0b0d11] p-4">
             <p className="text-[13px] font-medium uppercase tracking-wider text-paper/45">Warmup per event</p>
             <p className="mt-2 font-mono text-[22px] text-paper">{access.tier.warmupUrlsPerEvent} <span className="text-[14px] text-paper/40">URLs</span></p>
@@ -164,11 +165,18 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           <div className="mt-4">
             <BillingIntervalToggle
               tiers={TIER_ORDER.map((slug) => TIERS[slug])}
-              intro={access.state === "trial" ? `Choose now or later — your ${access.trialDaysLeft} remaining trial day${access.trialDaysLeft === 1 ? "" : "s"} carry over and you are charged when the trial ends.` : "Choose a plan to switch caching back on."}
+              intro={access.state === "trial" ? (trialCarriesOver(access) ? `Choose now and nothing is charged until your trial ends (${trialEndLabel(access)}).` : `Your trial ends ${trialEndLabel(access)}. Choose a plan to keep caching on; billing starts today.`) : "Choose a plan to switch caching back on."}
             />
           </div>
         </section>
       ) : null}
+
+      <section>
+        <h2 className="text-[17px] font-semibold text-paper">Plan limits</h2>
+        <div className="mt-3">
+          <PlanLimitsTable tone="dark" current={access.plan} />
+        </div>
+      </section>
 
       <section>
         <h2 className="text-[17px] font-semibold text-paper">Invoices</h2>

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { TIERS, getDefaultTier, type TierConfig, type TierSlug } from "@/lib/tiers";
 import { isAdmin } from "@/lib/admin-check";
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 3;
 const DAY = 86_400_000;
 
 /** Stripe statuses that keep the service running. past_due is Stripe's retry window. */
@@ -159,4 +159,14 @@ export async function getStoreAccess(storeId: string, userId: string): Promise<S
     };
   }
   return { ...access, storeActive: true, storeMessage: access.message };
+}
+
+/** Stripe accepts a trial only if it ends at least 48 hours out; true when the rest of the trial carries into a subscription. */
+export function trialCarriesOver(access: Pick<Access, "state" | "trialEndsAt">, now = Date.now()): boolean {
+  return access.state === "trial" && access.trialEndsAt.getTime() - now > 48 * 3_600_000 + 600_000;
+}
+
+/** "Nov 27, 3:04 PM UTC" */
+export function trialEndLabel(access: Pick<Access, "trialEndsAt">): string {
+  return `${access.trialEndsAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" })} UTC`;
 }

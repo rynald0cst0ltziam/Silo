@@ -18,7 +18,7 @@ export const PLANS: Plan[] = [
     stores: 1,
     storeLabel: "1 store",
     tagline: "For one catalog that has to stay exact.",
-    events: "100k invalidations / month",
+    events: "100,000 catalog events / month",
     features: [
       "1 isolated store environment",
       "Unlimited products and variations",
@@ -37,7 +37,7 @@ export const PLANS: Plan[] = [
     stores: 3,
     storeLabel: "3 stores",
     tagline: "For teams running a family of storefronts.",
-    events: "500k invalidations / month",
+    events: "500,000 catalog events / month, shared",
     features: [
       "Everything in Solo, for 3 stores",
       "Per-store isolation and keys",
@@ -55,7 +55,7 @@ export const PLANS: Plan[] = [
     stores: 5,
     storeLabel: "5 stores",
     tagline: "For multi-region, multi-currency catalogs.",
-    events: "2M invalidations / month",
+    events: "2,000,000 catalog events / month, shared",
     features: [
       "Everything in Studio, for 5 stores",
       "Priority warmup — 500 URLs per event",
@@ -95,7 +95,7 @@ export const PRICING_FAQS: Faq[] = [
   },
   {
     q: "Can I cancel or get a refund?",
-    a: "Yes. Start with a 14-day trial, no card required. Cancel any time from Billing in the dashboard; monthly plans stay active to the end of the paid period and annual plans are refundable within 30 days. See the refund policy for the details.",
+    a: "Yes. Start with a 3-day trial, no card required. Cancel any time from Billing in the dashboard; monthly plans stay active to the end of the paid period and annual plans are refundable within 30 days. See the refund policy for the details.",
   },
 ];
 
@@ -266,7 +266,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a trial?",
-        a: "Yes. Every account starts with a 14-day trial and no card is required. The trial covers one store with the full invalidation engine, priority warmup and dashboard, not a reduced preview. Choose a plan any time from Billing: the remaining trial days carry over and the first charge happens when the trial ends. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
+        a: "Yes. Every account starts with a 3-day trial and no card is required. The trial covers one store with Solo limits (100,000 events, 50 warmup URLs per event) and the full engine, not a reduced preview. Choose a plan any time from Billing: if more than two days are left, billing starts when the trial ends; otherwise it starts the day you subscribe. If the trial ends without a plan, caching pauses on the store (it never serves stale pages) and switches back on the moment a plan starts.",
       },
       {
         q: "Can I change plans later?",

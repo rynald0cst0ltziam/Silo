@@ -272,10 +272,56 @@ class Silo_Settings {
 	}
 
 	/**
+	 * Remember the plan, trial and usage summary Silo sends (heartbeat) or the reason it
+	 * refused the store (403 PLAN_INACTIVE), for the notices in WordPress.
+	 *
+	 * @param array|WP_Error $response Result of Silo_Api::post().
+	 */
+	public static function record_plan( $response ): void {
+		if ( is_wp_error( $response ) || ! is_array( $response['body'] ?? null ) ) {
+			return;
+		}
+		$body = $response['body'];
+		$plan = is_array( $body['plan'] ?? null ) ? $body['plan'] : null;
+		if ( 403 === (int) $response['code'] && 'PLAN_INACTIVE' === ( $body['code'] ?? '' ) ) {
+			$plan = array_merge(
+				array(
+					'state'   => 'inactive',
+					'message' => (string) ( $body['error'] ?? '' ),
+				),
+				(array) $plan,
+				array( 'active' => false )
+			);
+		}
+		if ( null === $plan ) {
+			return;
+		}
+		$clean = array();
+		foreach ( array( 'state', 'plan', 'tier', 'message', 'billing_url' ) as $key ) {
+			$clean[ $key ] = isset( $plan[ $key ] ) ? sanitize_text_field( (string) $plan[ $key ] ) : '';
+		}
+		foreach ( array( 'trial_ends_at', 'trial_days_left', 'events_used', 'events_limit', 'warmup_per_event', 'stores_used', 'stores_limit', 'log_days', 'resets_at' ) as $key ) {
+			$clean[ $key ] = isset( $plan[ $key ] ) ? (int) $plan[ $key ] : null;
+		}
+		$clean['active']      = ! empty( $plan['active'] );
+		$clean['billing_url'] = esc_url_raw( $clean['billing_url'] );
+		$clean['at']          = time();
+		update_option( 'silo_plan', $clean, false );
+	}
+
+	/**
+	 * Last plan summary from Silo, or an empty array.
+	 */
+	public static function plan(): array {
+		$plan = get_option( 'silo_plan', array() );
+		return is_array( $plan ) ? $plan : array();
+	}
+
+	/**
 	 * Disconnect.
 	 */
 	public static function disconnect(): void {
-		foreach ( array( 'silo_api_key', 'silo_store', 'silo_config', 'silo_hb_last', 'silo_hb_ok', 'silo_hb_error', 'silo_auth_error' ) as $option ) {
+		foreach ( array( 'silo_api_key', 'silo_store', 'silo_config', 'silo_hb_last', 'silo_hb_ok', 'silo_hb_error', 'silo_auth_error', 'silo_plan' ) as $option ) {
 			delete_option( $option );
 		}
 		Silo_Scanner::reset();

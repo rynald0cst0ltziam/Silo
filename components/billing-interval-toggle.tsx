@@ -90,14 +90,14 @@ export function BillingIntervalToggle({ tiers, intro }: { tiers: TierConfig[]; i
               variant={tier.slug === "studio" ? "primary" : "outline"}
               className="mt-5 w-full"
             >
-              Start 14-day trial
+              Choose {tier.name}
             </CheckoutButton>
           </div>
         ))}
       </div>
 
       <p className="mt-3 text-center text-[12px] text-paper/25">
-        14-day trial · no card required · cancel anytime
+        Secure checkout by Stripe · prorated plan changes · cancel anytime
       </p>
     </div>
   );

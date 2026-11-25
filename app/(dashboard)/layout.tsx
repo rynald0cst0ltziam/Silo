@@ -11,13 +11,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/sign-in");
 
   const access = getAccess(user);
-  const storeCount = await prisma.store.count({ where: { userId: user.id } });
+  const [storeCount, usage] = await Promise.all([
+    prisma.store.count({ where: { userId: user.id } }),
+    prisma.store.aggregate({ where: { userId: user.id }, _sum: { monthlyEvents: true } }),
+  ]);
   const pausedStores = access.active ? Math.max(0, storeCount - access.tier.maxStores) : 0;
 
   return (
     <div className="min-h-screen bg-[#07080a]">
       <DashboardNav admin={isAdmin(user)} />
-      <AccessBanner access={access} pausedStores={pausedStores} />
+      <AccessBanner access={access} pausedStores={pausedStores} eventsUsed={usage._sum.monthlyEvents ?? 0} />
       <div className="container-page py-6 sm:py-8">{children}</div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { stripe, siloPortalConfiguration } from "@/lib/stripe";
 import { siteUrl } from "@/lib/utils";
 
 export async function GET() {
@@ -17,6 +17,7 @@ export async function GET() {
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
+    configuration: await siloPortalConfiguration(),
     return_url: `${siteUrl().replace(/\/+$/, "")}/dashboard/billing`,
   });
 

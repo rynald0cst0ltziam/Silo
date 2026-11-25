@@ -134,7 +134,9 @@ export function generateConfig(
     exclusions: [...new Set(exclusions)],
     ttl,
     priority_products: snapshot.bestsellers ?? [],
-    priority_urls: priorityUrls.slice(0, Math.max(tier.warmupUrlsPerEvent, 25)),
+    // Keep the full priority list (largest plan's cap); each use slices it to the current plan,
+    // so an upgrade takes effect immediately without a rescan.
+    priority_urls: priorityUrls.slice(0, 500),
     invalidation_rules: buildInvalidationRules(isHighVariation, hasStockMgmt),
     store_api: {
       enabled: true,

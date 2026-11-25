@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStoreAccess, type StoreAccess } from "@/lib/entitlements";
+import { siteUrl } from "@/lib/utils";
 
 export type ConnectorStore = {
   id: string;
@@ -76,7 +77,23 @@ export async function readConnectorRequest<T = Record<string, unknown>>(
   const access = await getStoreAccess(store.id, store.userId);
   if (!access) return deny("Account not found", 401);
   if (!access.storeActive && !options.allowInactive) {
-    return deny(access.storeMessage, 403, "PLAN_INACTIVE");
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          error: access.storeMessage,
+          code: "PLAN_INACTIVE",
+          plan: {
+            state: access.active ? "store_paused" : access.state,
+            active: false,
+            tier: access.tier.name,
+            message: access.storeMessage,
+            billing_url: `${siteUrl().replace(/\/+$/, "")}/dashboard/billing`,
+          },
+        },
+        { status: 403 },
+      ),
+    };
   }
 
   return { ok: true, store, body, access };

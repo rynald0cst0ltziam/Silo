@@ -1,19 +1,21 @@
 import Link from "next/link";
-import type { Access } from "@/lib/entitlements";
+import { trialCarriesOver, trialEndLabel, type Access } from "@/lib/entitlements";
 
 /**
  * Account-wide notice under the dashboard nav: trial countdown, failed payment,
  * expired trial or suspension. Silent for healthy paid and complimentary accounts.
  */
-export function AccessBanner({ access, pausedStores }: { access: Access; pausedStores: number }) {
+export function AccessBanner({ access, pausedStores, eventsUsed = 0 }: { access: Access; pausedStores: number; eventsUsed?: number }) {
   let tone: "info" | "warn" | "stop" | null = null;
   let text = "";
   let cta: { href: string; label: string } | null = { href: "/dashboard/billing", label: "Choose a plan" };
 
   switch (access.state) {
     case "trial":
-      tone = access.trialDaysLeft <= 3 ? "warn" : "info";
-      text = `Free trial — ${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left (ends ${access.trialEndsAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}). Pick a plan any time; the remaining trial days carry over.`;
+      tone = access.trialDaysLeft <= 1 ? "warn" : "info";
+      text = `Free trial: ${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left (ends ${trialEndLabel(access)}). ${
+        trialCarriesOver(access) ? "Choose a plan now and nothing is charged until the trial ends." : "Choose a plan to keep caching on after the trial."
+      }`;
       break;
     case "past_due":
       tone = "warn";
@@ -36,6 +38,23 @@ export function AccessBanner({ access, pausedStores }: { access: Access; pausedS
         text = `${pausedStores} store${pausedStores === 1 ? " is" : "s are"} over the ${access.tier.name} plan's limit of ${access.tier.maxStores} and paused. Upgrade or remove a store.`;
         cta = { href: "/dashboard/billing", label: "See plans" };
       }
+  }
+
+  // Usage warnings for accounts that are otherwise fine (or on trial, appended).
+  if (access.active && (tone === null || tone === "info")) {
+    const limit = access.tier.maxMonthlyEvents;
+    const pct = limit ? (eventsUsed / limit) * 100 : 0;
+    const now = new Date();
+    const resets = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    if (pct >= 100) {
+      tone = "stop";
+      text = `Monthly event limit reached: ${eventsUsed.toLocaleString("en-US")} of ${limit.toLocaleString("en-US")}. Pages are still purged on your stores, so nothing goes stale, but logging and warmup are paused until ${resets}.`;
+      cta = { href: "/dashboard/billing", label: "Upgrade" };
+    } else if (pct >= 80) {
+      tone = "warn";
+      text = `${Math.floor(pct)}% of this month's events used (${eventsUsed.toLocaleString("en-US")} of ${limit.toLocaleString("en-US")}). Resets ${resets}.`;
+      cta = { href: "/dashboard/billing", label: "See plans" };
+    }
   }
 
   if (!tone) return null;

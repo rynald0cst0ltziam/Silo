@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { PricingCards, StoreIsolationNote } from "@/components/pricing-cards";
+import { PlanLimitsTable } from "@/components/plan-limits-table";
 import { FaqList } from "@/components/faq";
 import { CtaBand } from "@/components/cta-band";
 import { ConnectButton } from "@/components/connect/connect-button";
@@ -9,7 +10,7 @@ import { ConnectButton } from "@/components/connect/connect-button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Silo pricing for WooCommerce stores. One, three or five isolated stores from $29/month. Unlimited products, full surgical invalidation, 14-day trial with no card.",
+    "Silo pricing for WooCommerce stores. One, three or five isolated stores from $29/month. Unlimited products, full surgical invalidation, 3-day trial with no card.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Silo pricing — per store, not per panic",
@@ -61,7 +62,7 @@ export default function PricingPage() {
               re-warmed.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11.5px] text-paper/40">
-              {["14-day trial", "No card required", "Cancel anytime"].map((item) => (
+              {["3-day trial", "No card required", "Cancel anytime"].map((item) => (
                 <span key={item} className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-mint/70" />
                   {item}
@@ -76,7 +77,7 @@ export default function PricingPage() {
         <div className="container-page pb-16 pt-12">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 pb-3">
             <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink/35">
-              Plans / per isolated store
+              Plans / per account
             </p>
             <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink/35">
               USD · monthly or annual
@@ -84,6 +85,15 @@ export default function PricingPage() {
           </div>
           <PricingCards />
           <StoreIsolationNote />
+          <div className="mt-14">
+            <h2 className="display-tight text-[clamp(24px,2.8vw,32px)] text-ink">Every limit, in one place.</h2>
+            <p className="mt-2 max-w-[620px] text-[15px] leading-relaxed text-ink/55">
+              The same numbers the service enforces. Upgrades apply instantly, including to warmup.
+            </p>
+            <div className="mt-6">
+              <PlanLimitsTable />
+            </div>
+          </div>
         </div>
       </section>
 

@@ -645,13 +645,33 @@
 				? '<div class="silo-note" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 16px"><span>Catalog scan in progress · ' + num( st.scan.percent ) + '%</span><button type="button" class="silo-btn" data-act="show-scan">View scan</button></div>'
 				: '';
 
+		const plan = st.plan || {};
+		const pn = st.plan_notice;
+		const planBanner = pn
+			? '<div class="silo-plan-banner is-' + ( 'error' === pn.tone ? 'error' : 'warning' ) + '" role="alert"><span>' + esc( pn.text ) + '</span>' +
+				( pn.url ? '<a class="silo-btn" href="' + esc( pn.url ) + '" target="_blank" rel="noopener noreferrer">' + esc( pn.cta ) + '</a>' : '' ) + '</div>'
+			: '';
+
+		const used = Number( plan.events_used || 0 );
+		const limit = Number( plan.events_limit || 0 );
+		const pct = limit ? Math.min( 100, ( used / limit ) * 100 ) : 0;
+		const planCard = plan.state
+			? '<div class="silo-plancard"><div class="label"><span>Plan</span><span>' + esc( plan.state === 'trial' ? 'Trial' : plan.tier || '' ) + '</span></div>' +
+				( plan.state === 'trial' && null !== plan.trial_days_left ? '<div class="meta">' + num( plan.trial_days_left ) + ' day' + ( 1 === Number( plan.trial_days_left ) ? '' : 's' ) + ' left · Solo limits</div>' : '' ) +
+				( limit ? '<div class="meta">Events this month</div><div class="silo-meter"><span class="' + ( pct >= 100 ? 'is-rose' : pct >= 80 ? 'is-amber' : '' ) + '" style="width:' + pct.toFixed( 1 ) + '%"></span></div>' +
+					'<div class="meta">' + num( used ) + ' / ' + num( limit ) + ' · shared by your stores</div>' : '' ) +
+				( plan.warmup_per_event ? '<div class="meta">Warmup ' + num( plan.warmup_per_event ) + ' URLs per change · logs ' + num( plan.log_days ) + ' days</div>' : '' ) +
+				( plan.billing_url ? '<a class="silo-link" href="' + esc( plan.billing_url ) + '" target="_blank" rel="noopener noreferrer">Billing and plans</a>' : '' ) +
+				'</div>'
+			: '';
+
 		const views = { overview: overviewView, catalog: catalogView, invalidations: invalidationsView, warmup: warmupView, status: statusView, settings: settingsView };
 		const animate = S.renderedView !== S.view;
 		S.renderedView = S.view;
 
 		return (
-			'<div class="silo-body"><aside class="silo-side"><nav class="silo-nav" aria-label="Silo">' + nav + '</nav>' + keycard + '</aside>' +
-			'<main class="silo-main"' + ( animate ? '' : ' style="animation:none"' ) + '>' + banner + ( S.pollError ? '<div class="silo-error" style="margin:0 0 14px">' + esc( S.pollError ) + '</div>' : '' ) + views[ S.view ]() + '</main></div>'
+			'<div class="silo-body"><aside class="silo-side"><nav class="silo-nav" aria-label="Silo">' + nav + '</nav>' + keycard + planCard + '</aside>' +
+			'<main class="silo-main"' + ( animate ? '' : ' style="animation:none"' ) + '>' + planBanner + banner + ( S.pollError ? '<div class="silo-error" style="margin:0 0 14px">' + esc( S.pollError ) + '</div>' : '' ) + views[ S.view ]() + '</main></div>'
 		);
 	}
 

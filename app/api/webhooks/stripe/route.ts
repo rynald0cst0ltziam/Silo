@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { stripe, priceIdToTier } from "@/lib/stripe";
+import { stripe, tierFromPrice } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/audit";
 
@@ -41,17 +41,19 @@ async function findUser(customerId: string | null, metadataUserId?: unknown) {
  */
 async function syncSubscription(sub: Stripe.Subscription, eventType: string) {
   const raw = sub as unknown as Loose;
+  const item = sub.items?.data?.[0] as unknown as Loose | undefined;
+  const price = (item?.price ?? {}) as Loose;
+  // The Stripe account is shared with other products: only Silo prices are synced.
+  const mapped = tierFromPrice(price as Parameters<typeof tierFromPrice>[0]);
+  if (!mapped) return;
+
   const customerId = customerIdOf(sub.customer);
   const user = await findUser(customerId, sub.metadata?.userId);
   if (!user) return;
 
-  const item = sub.items?.data?.[0] as unknown as Loose | undefined;
-  const price = (item?.price ?? {}) as Loose;
   const priceId = typeof price.id === "string" ? price.id : "";
-  const mapped = priceIdToTier(priceId);
-  const recurring = (price.recurring ?? {}) as Loose;
-  const interval = recurring.interval === "year" || mapped?.interval === "annual" ? "year" : "month";
-  const tier = mapped?.tier ?? (typeof sub.metadata?.tier === "string" ? sub.metadata.tier : "solo");
+  const interval = mapped.interval;
+  const tier = mapped.tier;
   const periodEnd = toDate(item?.current_period_end) ?? toDate(raw.current_period_end) ?? new Date();
   const amount = typeof price.unit_amount === "number" ? price.unit_amount : null;
   const currency = typeof price.currency === "string" ? price.currency : null;

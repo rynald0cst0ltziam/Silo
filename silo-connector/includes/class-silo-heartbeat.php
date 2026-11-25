@@ -132,6 +132,7 @@ class Silo_Heartbeat {
 		if ( ! $blocking ) {
 			return null;
 		}
+		Silo_Settings::record_plan( $response );
 		if ( is_wp_error( $response ) || 200 !== $response['code'] ) {
 			update_option( 'silo_hb_error', Silo_Api::error_message( $response ), false );
 			if ( ! is_wp_error( $response ) && in_array( $response['code'], array( 401, 403 ), true ) ) {

@@ -43,7 +43,7 @@ export function CtaBand() {
             </div>
 
             <p className="mt-5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-paper/25">
-              14-day trial · no card · WooCommerce 8.2+ · HPOS ready
+              3-day trial · no card · WooCommerce 8.2+ · HPOS ready
             </p>
           </div>
         </div>

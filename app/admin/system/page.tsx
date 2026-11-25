@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { STRIPE_PRICES } from "@/lib/stripe";
+
 import { emailConfigured } from "@/lib/email";
 import { Empty, PageHead, Panel, Pill, Table, Td, ago } from "@/components/admin/ui";
 
@@ -17,7 +18,7 @@ function configChecks() {
     { label: "Database (DATABASE_URL)", ok: has("DATABASE_URL"), detail: has("DATABASE_URL") ? "Set" : "Missing" },
     { label: "Stripe secret key", ok: has("STRIPE_SECRET_KEY"), detail: has("STRIPE_SECRET_KEY") ? (process.env.STRIPE_SECRET_KEY!.startsWith("sk_live") ? "Live mode" : "Test mode") : "Missing — checkout disabled" },
     { label: "Stripe webhook secret", ok: has("STRIPE_WEBHOOK_SECRET"), detail: has("STRIPE_WEBHOOK_SECRET") ? "Set" : "Missing — subscriptions will not sync" },
-    { label: "Stripe prices", ok: Object.values(STRIPE_PRICES).every(Boolean), detail: `${Object.values(STRIPE_PRICES).filter(Boolean).length}/6 configured` },
+    { label: "Stripe prices", ok: true, detail: Object.values(STRIPE_PRICES).some(Boolean) ? `${Object.values(STRIPE_PRICES).filter(Boolean).length}/6 set by env; the rest found by lookup key (silo_{plan}_{monthly|annual})` : "Found in Stripe by lookup key silo_{plan}_{monthly|annual}" },
     { label: "Cron secret (CRON_SECRET)", ok: has("CRON_SECRET"), detail: has("CRON_SECRET") ? "Set" : "Missing — scheduled jobs refuse to run" },
     { label: "Email (RESEND_API_KEY + EMAIL_FROM)", ok: emailConfigured(), detail: emailConfigured() ? "Password reset emails on" : "Not set — password reset by email is off" },
     { label: "Admins (ADMIN_EMAILS)", ok: true, detail: process.env.ADMIN_EMAILS ? `${process.env.ADMIN_EMAILS.split(",").filter(Boolean).length} address(es)` : "Not set — admins come from the database role only" },

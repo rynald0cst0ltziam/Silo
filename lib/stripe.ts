@@ -43,10 +43,57 @@ export const STRIPE_PRICES: PriceMap = {
 
 export function priceIdToTier(priceId: string): { tier: string; interval: string } | null {
   for (const [key, value] of Object.entries(STRIPE_PRICES)) {
-    if (value === priceId) {
+    if (value && value === priceId) {
       const [tier, interval] = key.split("_");
       return { tier, interval };
     }
   }
   return null;
+}
+
+type PriceLike = { id?: string; lookup_key?: string | null; metadata?: Record<string, string> | null; recurring?: { interval?: string } | null };
+
+/**
+ * Silo plan for a Stripe price, or null when the price belongs to another product on the
+ * same Stripe account. Prices created for Silo carry metadata app=silo and a lookup key
+ * silo_{tier}_{monthly|annual}; env price IDs are still honoured.
+ */
+export function tierFromPrice(price: PriceLike | null | undefined): { tier: string; interval: "month" | "year" } | null {
+  if (!price) return null;
+  const meta = price.metadata ?? {};
+  if (meta.app === "silo" && meta.tier) {
+    return { tier: meta.tier, interval: price.recurring?.interval === "year" ? "year" : "month" };
+  }
+  const key = price.lookup_key ?? "";
+  const m = /^silo_(solo|studio|portfolio)_(monthly|annual)$/.exec(key);
+  if (m) return { tier: m[1], interval: m[2] === "annual" ? "year" : "month" };
+  const env = price.id ? priceIdToTier(price.id) : null;
+  return env ? { tier: env.tier, interval: env.interval === "annual" ? "year" : "month" } : null;
+}
+
+const priceCache = new Map<string, { id: string; at: number }>();
+
+/** Price ID for a plan: env override first, then the Stripe lookup key (cached 10 minutes). */
+export async function siloPriceId(tier: string, interval: "month" | "year"): Promise<string | null> {
+  const envKey = `${tier}_${interval === "month" ? "monthly" : "annual"}` as keyof PriceMap;
+  if (STRIPE_PRICES[envKey]) return STRIPE_PRICES[envKey];
+  const lookup = `silo_${envKey}`;
+  const cached = priceCache.get(lookup);
+  if (cached && Date.now() - cached.at < 600_000) return cached.id;
+  const list = await getStripe().prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
+  const id = list.data[0]?.id ?? null;
+  if (id) priceCache.set(lookup, { id, at: Date.now() });
+  return id;
+}
+
+let portalConfig: { id: string | undefined; at: number } | null = null;
+
+/** Silo's billing portal configuration (the account is shared, so never the default one). */
+export async function siloPortalConfiguration(): Promise<string | undefined> {
+  if (process.env.STRIPE_PORTAL_CONFIGURATION) return process.env.STRIPE_PORTAL_CONFIGURATION;
+  if (portalConfig && Date.now() - portalConfig.at < 600_000) return portalConfig.id;
+  const list = await getStripe().billingPortal.configurations.list({ active: true, limit: 50 });
+  const id = list.data.find((c) => c.metadata?.app === "silo")?.id;
+  portalConfig = { id, at: Date.now() };
+  return id;
 }

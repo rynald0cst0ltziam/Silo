@@ -1309,6 +1309,7 @@ class Silo_Events {
 			}
 
 			if ( 401 === $response['code'] || 403 === $response['code'] ) {
+				Silo_Settings::record_plan( $response );
 				Silo_Settings::set_auth_error( Silo_Api::error_message( $response ) );
 				foreach ( $rows as $row ) {
 					Silo_Log::update( (int) $row->id, array( 'state' => 'failed' ) );

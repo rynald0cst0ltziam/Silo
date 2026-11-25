@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readConnectorRequest } from "@/lib/hmac";
-import { getUserTier } from "@/lib/tier-enforcement";
 import { resolveInvalidation, type EventPayload } from "@/lib/invalidation-engine";
 import { rateLimit } from "@/lib/rate-limit";
 import { utcDay } from "@/lib/connector";
@@ -51,12 +50,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Store not found" }, { status: 404 });
   }
 
-  const tier = getUserTier(user);
+  // Current plan limits (never the copy baked into the store config at scan time), with the
+  // monthly event allowance shared by every store on the account.
+  const tier = auth.access.tier;
+  const accountUsed = await prisma.store.aggregate({ where: { userId: store.userId }, _sum: { monthlyEvents: true } });
   const config = record.config as unknown as SiloConfig | null;
   const snapshot = record.profile as unknown as Partial<StoreSnapshot> | null;
-  const warmCap = config?.limits?.warmup_urls_per_event ?? tier.warmupUrlsPerEvent;
+  const warmCap = tier.warmupUrlsPerEvent;
 
-  let used = record.monthlyEvents;
+  let used = accountUsed._sum.monthlyEvents ?? 0;
   let counted = 0;
   let purgedTotal = 0;
   const results: Array<Record<string, unknown>> = [];
@@ -95,7 +97,11 @@ export async function POST(req: Request) {
 
     const countsAgainstPlan = isCounted(type);
     if (countsAgainstPlan && used >= tier.maxMonthlyEvents) {
-      results.push({ ref, error: `Monthly event limit reached (${used.toLocaleString()}/${tier.maxMonthlyEvents.toLocaleString()})`, code: "EVENT_LIMIT" });
+      results.push({
+        ref,
+        error: `Monthly event limit reached (${used.toLocaleString()} of ${tier.maxMonthlyEvents.toLocaleString()} on the ${tier.name} plan). Pages are still purged on your store; logging and warmup resume next month or after an upgrade.`,
+        code: "EVENT_LIMIT",
+      });
       continue;
     }
 

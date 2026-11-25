@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { readConnectorRequest } from "@/lib/hmac";
 import { ingestHeartbeat, type HeartbeatPayload } from "@/lib/connector";
+import { planStatus } from "@/lib/plan-status";
 
 /**
  * Connector heartbeat: cumulative counters (deltas computed here), inventory, queue
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
   if (!auth.ok) return auth.response;
   const { store, body } = auth;
 
-  const result = await ingestHeartbeat(store.id, body);
+  const [result, plan] = await Promise.all([ingestHeartbeat(store.id, body), planStatus(store.userId, auth.access)]);
 
   const current = await prisma.store.findUnique({
     where: { id: store.id },
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     config_version: current?.configVersion ?? 0,
     ...(newer ? { config: current!.config } : {}),
     store: current ? { name: current.name, url: current.url } : undefined,
+    plan,
     server_time: Math.floor(Date.now() / 1000),
   });
 }
