@@ -73,10 +73,10 @@ export function ProblemSection() {
               className="group relative overflow-hidden rounded-2xl border border-ink/10 bg-white/55 p-5 transition-colors duration-300 hover:bg-white/80 sm:p-6"
             >
               <div className="flex items-start justify-between">
-                <span className="font-mono text-[10px] tracking-[0.12em] text-ink/30">
+                <span className="font-mono text-[11px] tracking-[0.12em] text-ink/40">
                   {problem.number}
                 </span>
-                <problem.icon className="h-4 w-4 text-ink/30" strokeWidth={1.6} />
+                <problem.icon className="h-4 w-4 text-ink/40" strokeWidth={1.6} />
               </div>
 
               <MiniVisual kind={problem.visual} />
@@ -84,11 +84,11 @@ export function ProblemSection() {
               <h3 className="mt-6 text-[18px] font-semibold tracking-[-0.022em] text-ink">
                 {problem.title}
               </h3>
-              <p className="mt-2 max-w-[430px] text-[13.5px] leading-[1.65] text-ink/55">
+              <p className="mt-2 max-w-[460px] text-[14.5px] leading-[1.65] text-ink/65">
                 {problem.body}
               </p>
-              <p className="mt-5 flex items-center gap-2 border-t border-ink/10 pt-3 font-mono text-[10px] uppercase tracking-[0.06em] text-ink/35">
-                <span className="h-1 w-1 rounded-full bg-rose/70" />
+              <p className="mt-5 flex items-center gap-2 border-t border-ink/10 pt-3 font-mono text-[11px] uppercase tracking-[0.06em] text-ink/55">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#c23b3b]/80" />
                 {problem.symptom}
               </p>
             </article>
@@ -136,119 +136,127 @@ export function ProblemSection() {
   );
 }
 
+/** Readable-on-light status colours (the base rose/amber are too pale for text on paper). */
+const ROSE = "text-[#c23b3b]";
+const AMBER = "text-[#a35f07]";
+
+function Panel({ children }: { children: React.ReactNode }) {
+  return <div className="mt-5 rounded-xl border border-ink/10 bg-paper p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">{children}</div>;
+}
+
+function Badge({ tone, children }: { tone: "rose" | "amber"; children: React.ReactNode }) {
+  return (
+    <span
+      className={
+        tone === "rose"
+          ? `rounded-md border border-[#c23b3b]/20 bg-[#c23b3b]/[0.07] px-2 py-0.5 font-mono text-[10.5px] font-medium tracking-[0.04em] ${ROSE}`
+          : `rounded-md border border-[#a35f07]/20 bg-[#f4a63a]/[0.12] px-2 py-0.5 font-mono text-[10.5px] font-medium tracking-[0.04em] ${AMBER}`
+      }
+    >
+      {children}
+    </span>
+  );
+}
+
+function Footnote({ left, right, tone = "rose" }: { left: string; right: string; tone?: "rose" | "amber" }) {
+  return (
+    <div className="mt-3 flex items-center justify-between border-t border-ink/[0.07] pt-2.5 font-mono text-[11px]">
+      <span className="text-ink/45">{left}</span>
+      <span className={tone === "rose" ? ROSE : AMBER}>{right}</span>
+    </div>
+  );
+}
+
 function MiniVisual({ kind }: { kind: (typeof PROBLEMS)[number]["visual"] }) {
   if (kind === "stock") {
     return (
-      <div className="mt-5 rounded-lg border border-white/8 bg-[#0b0d11] p-3">
+      <Panel>
         <div className="flex items-center justify-between">
-          <span className="text-[9.5px] text-paper/60">Aster Linen Shirt</span>
-          <span className="rounded bg-rose/10 px-1.5 py-0.5 font-mono text-[7.5px] text-rose">
-            SOLD OUT
-          </span>
+          <span className="text-[13.5px] font-medium text-ink/80">Aster Linen Shirt</span>
+          <Badge tone="rose">M SOLD OUT</Badge>
         </div>
-        <div className="mt-2.5 flex gap-1">
+        <div className="mt-3 flex gap-1.5">
           {["S", "M", "L", "XL"].map((size) => (
             <span
               key={size}
               className={
                 size === "M"
-                  ? "flex h-6 flex-1 items-center justify-center rounded border border-rose/25 bg-rose/5 font-mono text-[8px] text-rose/60 line-through"
-                  : "flex h-6 flex-1 items-center justify-center rounded border border-white/9 font-mono text-[8px] text-paper/45"
+                  ? "flex h-8 flex-1 items-center justify-center rounded-md border border-[#c23b3b]/30 bg-[#c23b3b]/[0.05] font-mono text-[12px] text-[#c23b3b] line-through"
+                  : "flex h-8 flex-1 items-center justify-center rounded-md border border-ink/12 bg-white font-mono text-[12px] text-ink/70"
               }
             >
               {size}
             </span>
           ))}
         </div>
-        <div className="mt-2 flex items-center justify-between font-mono text-[7.5px]">
-          <span className="text-paper/25">cached 3h ago · TTL 10:00</span>
-          <span className="text-rose/60">still addable</span>
-        </div>
-      </div>
+        <Footnote left="cached 3h ago" right="M still addable to cart" />
+      </Panel>
     );
   }
 
   if (kind === "price") {
     return (
-      <div className="mt-5 rounded-lg border border-white/8 bg-[#0b0d11] p-3">
+      <Panel>
         <div className="flex items-center justify-between">
-          <span className="text-[9.5px] text-paper/60">Coast Runner · archive</span>
-          <span className="font-mono text-[7.5px] text-paper/25">category / running</span>
+          <span className="text-[13.5px] font-medium text-ink/80">Coast Runner</span>
+          <Badge tone="amber">SALE ENDED</Badge>
         </div>
-        <div className="mt-2.5 flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-[18px] tracking-[-0.03em] text-paper/45 line-through">
-              €129
-            </span>
-            <span className="font-display text-[18px] tracking-[-0.03em] text-paper">
-              €149
-            </span>
+        <div className="mt-3 grid grid-cols-2 gap-1.5">
+          <div className="rounded-md border border-[#c23b3b]/25 bg-white px-3 py-2">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink/45">Category page</p>
+            <p className={`mt-0.5 font-display text-[20px] tracking-[-0.03em] ${ROSE}`}>€129</p>
           </div>
-          <span className="rounded bg-amber/10 px-1.5 py-0.5 font-mono text-[7.5px] text-amber">
-            SALE ENDED
-          </span>
+          <div className="rounded-md border border-ink/12 bg-white px-3 py-2">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink/45">Cart charges</p>
+            <p className="mt-0.5 font-display text-[20px] tracking-[-0.03em] text-ink">€149</p>
+          </div>
         </div>
-        <div className="mt-2 flex items-center justify-between font-mono text-[7.5px]">
-          <span className="text-paper/25">cart reads €149</span>
-          <span className="text-rose/60">page reads €129</span>
-        </div>
-      </div>
+        <Footnote left="archive cached before the sale ended" right="€20 mismatch" />
+      </Panel>
     );
   }
 
   if (kind === "purge") {
     return (
-      <div className="mt-5 rounded-lg border border-white/8 bg-[#0b0d11] p-3">
-        <div className="flex items-center justify-between font-mono text-[7.5px] text-paper/30">
-          <span>PURGE SCOPE</span>
-          <span className="text-rose/60">FULL STOREFRONT</span>
+      <Panel>
+        <div className="flex items-center justify-between">
+          <span className="text-[13.5px] font-medium text-ink/80">One stock change</span>
+          <Badge tone="rose">FULL PURGE</Badge>
         </div>
-        <div className="mt-2.5 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/5">
-              <div className="h-full w-full rounded-sm bg-gradient-to-r from-rose/50 to-rose/20" />
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink/[0.07]">
+              <div className="h-full w-full rounded-full bg-[#c23b3b]/70" />
             </div>
-            <span className="w-14 font-mono text-[7.5px] text-paper/40">20,000 URLs</span>
+            <span className="w-24 text-right font-mono text-[11px] text-ink/70">20,000 cleared</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/5">
-              <div className="h-full w-[8%] rounded-sm bg-mint/60" />
+          <div className="flex items-center gap-3">
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink/[0.07]">
+              <div className="h-full w-[6%] rounded-full bg-mint-deep" />
             </div>
-            <span className="w-14 font-mono text-[7.5px] text-mint/60">5 needed</span>
+            <span className="w-24 text-right font-mono text-[11px] text-mint-deep">5 needed</span>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-between font-mono text-[7.5px]">
-          <span className="text-paper/25">origin warmup</span>
-          <span className="text-amber/70">1h 40m queue</span>
-        </div>
-      </div>
+        <Footnote left="pages to re-render" right="1h 40m queue" tone="amber" />
+      </Panel>
     );
   }
 
   return (
-    <div className="mt-5 rounded-lg border border-white/8 bg-[#0b0d11] p-3">
+    <Panel>
       <div className="flex items-center justify-between">
-        <span className="text-[9.5px] text-paper/60">Shared cache · /cart-fragments</span>
-        <span className="rounded bg-rose/10 px-1.5 py-0.5 font-mono text-[7.5px] text-rose">
-          LEAK
-        </span>
+        <span className="text-[13.5px] font-medium text-ink/80">Shared cache · cart fragment</span>
+        <Badge tone="rose">LEAK</Badge>
       </div>
-      <div className="mt-2.5 flex items-center justify-between rounded border border-white/8 bg-white/[0.02] px-2 py-1.5">
-        <div className="flex items-center gap-1.5">
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent/20 font-mono text-[7px] text-accent-hi">
-            A
-          </span>
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-mint/15 font-mono text-[7px] text-mint">
-            B
-          </span>
-          <span className="text-[8px] text-paper/45">same response</span>
+      <div className="mt-3 flex items-center justify-between rounded-md border border-ink/12 bg-white px-3 py-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 font-mono text-[11px] font-medium text-accent-deep">A</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mint/20 font-mono text-[11px] font-medium text-mint-deep">B</span>
+          <span className="text-[12.5px] text-ink/60">get the same response</span>
         </div>
-        <span className="font-mono text-[8px] text-paper/70">2 items · €148</span>
+        <span className="font-mono text-[12px] text-ink/80">2 items · €148</span>
       </div>
-      <div className="mt-2 flex items-center justify-between font-mono text-[7.5px]">
-        <span className="text-paper/25">no session key</span>
-        <span className="text-rose/60">customer A sees B</span>
-      </div>
-    </div>
+      <Footnote left="no session in the cache key" right="shopper A sees B's cart" />
+    </Panel>
   );
 }
