@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       <h3>Usage and support data</h3>
       <ul>
         <li>Pages viewed in the dashboard, coarse region, browser type and referral source.</li>
-        <li>Support correspondence and any request IDs you share with us.</li>
+        <li>Support correspondence and any diagnostics files you share with us.</li>
       </ul>
 
       <h2>3. What we do not collect</h2>
