@@ -7,7 +7,7 @@ Requires PHP: 8.1
 Requires Plugins: woocommerce
 WC requires at least: 8.2
 WC tested up to: 9.9
-Stable tag: 2.3.4
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,30 @@ Silo does not minify assets, optimise images, clean the database or touch anythi
 3. Open WooCommerce → Silo, paste the key and choose Connect & scan catalog.
 4. Watch the scan map the catalog. When it completes, caching and invalidation are live and priority pages warm in the background.
 
+== Developer hooks ==
+
+`silo_extra_urls` (filter): extra URLs to clear and rewarm when a product's stock, price or catalog data changes.
+
+    add_filter( 'silo_extra_urls', function ( $urls, $product_id, $product ) {
+        $created = $product->get_date_created();
+        if ( $created && $created->getTimestamp() > time() - 30 * DAY_IN_SECONDS ) {
+            $urls[] = home_url( '/new-products/' );
+        }
+        return $urls;
+    }, 10, 3 );
+
+`silo_invalidated` (action): runs after Silo has cleared a change's pages on your store, before they are rewarmed. Receives the product IDs, the URLs cleared and the event type (for example stock.changed, order.stock_reduced, price.updated).
+
+    add_action( 'silo_invalidated', function ( $product_ids, $urls, $type ) {
+        foreach ( $product_ids as $id ) {
+            my_refresh_stock_message( $id );
+        }
+    }, 10, 3 );
+
+`silo_brand_taxonomies` (filter): add a custom brand taxonomy so its archive pages are cleared with the product.
+
+`silo_layout_post_types` (filter): post types whose changes refresh every cached page (headers, footers, templates).
+
 == Frequently Asked Questions ==
 
 = How do I confirm a page is cached? =
@@ -58,6 +82,13 @@ No. When another page cache is active, Silo works alongside it automatically (Wo
 Deactivation purges cached files, removes the drop-in and the WP_CACHE line Silo added, and stops all scheduled work. Uninstall additionally deletes every option, both database tables and the cache directory.
 
 == Changelog ==
+
+= 2.4.0 =
+* New: WooCommerce Product Bundles. When a bundled product changes, the bundles that contain it and their categories are cleared and rewarmed.
+* New: brand pages from Perfect Brands and YITH Brands, as well as WooCommerce Brands and brand attributes.
+* New: Settings, "Also refresh these pages": list pages such as a bestsellers or new-products page to clear and rewarm after every stock, price or order change.
+* New: developer hooks silo_extra_urls, silo_invalidated and silo_brand_taxonomies.
+* New: Woodmart HTML blocks and layouts, and WPBakery templates, are tracked like other theme templates.
 
 = 2.3.4 =
 * Change: the trial notice appears two days before the trial ends and shows how many days are left.

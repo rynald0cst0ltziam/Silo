@@ -78,7 +78,7 @@ export function llmsFullTxt(): string {
     "",
     "## Other caches and CDNs",
     "",
-    "The connector detects existing page caches and can work alongside them instead of replacing them. Supported: WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize. Host and CDN layers: Cloudflare (purged through its API with a zone ID and token), Kinsta, WP Engine, Pantheon, SpinupWP and Nginx Helper. Page builders and themes: Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, block themes, Astra, Kadence, GeneratePress, Blocksy and Flatsome.",
+    "The connector detects existing page caches and can work alongside them instead of replacing them. Supported: WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize. Host and CDN layers: Cloudflare (purged through its API with a zone ID and token), Kinsta, WP Engine, Pantheon, SpinupWP and Nginx Helper. Page builders and themes: Elementor, WPBakery, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, block themes, Woodmart, Astra, Kadence, GeneratePress, Blocksy and Flatsome. WooCommerce Product Bundles and brand plugins (WooCommerce Brands, Perfect Brands, YITH Brands) are supported. Developers can add pages with the silo_extra_urls filter and run code after a purge with the silo_invalidated action.",
     "",
     "## Plans and limits",
     "",

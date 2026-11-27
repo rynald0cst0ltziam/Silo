@@ -176,7 +176,15 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Which plugins, hosts and builders does Silo work with?",
-        a: "Cache plugins: WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize (Silo works alongside them and purges their cache in step). Hosts and CDN: Cloudflare, Kinsta, WP Engine, Pantheon, SpinupWP and Nginx Helper. Page builders and themes: Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, block themes, Astra, Kadence, GeneratePress, Blocksy and Flatsome. Languages and currencies: WPML, Polylang, TranslatePress, Weglot, WooCommerce Multilingual, WOOCS, CURCY, Aelia and YayCurrency. Platform: WooCommerce 8.2+, WordPress 6.4+, PHP 8.1+, HPOS and legacy orders, block cart and checkout, Product Blocks, the Store API and multisite.",
+        a: "Cache plugins: WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler and WP-Optimize (Silo works alongside them and purges their cache in step). Hosts and CDN: Cloudflare, Kinsta, WP Engine, Pantheon, SpinupWP and Nginx Helper. Page builders and themes: Elementor, WPBakery, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, block themes, Woodmart, Astra, Kadence, GeneratePress, Blocksy and Flatsome. Product types and brands: simple, variable, grouped, WooCommerce Product Bundles, WooCommerce Brands, Perfect Brands, YITH Brands and brand attributes. Languages and currencies: WPML, Polylang, TranslatePress, Weglot, WooCommerce Multilingual, WOOCS, CURCY, Aelia and YayCurrency. Platform: WooCommerce 8.2+, WordPress 6.4+, PHP 8.1+, HPOS and legacy orders, block cart and checkout, Product Blocks, the Store API and multisite.",
+      },
+      {
+        q: "What does Silo clear after an order?",
+        a: "For every product in the order: its product page, all its categories (including parent categories), its tags and brand pages, attribute pages, any grouped products or Product Bundles that contain it, and the shop page. Those pages are then rewarmed. Pages that list products but aren't catalog pages, like a bestsellers or new-products page, can be added under WooCommerce, Silo, Settings, Also refresh these pages.",
+      },
+      {
+        q: "Can developers add their own pages or run code after Silo clears a product?",
+        a: "Yes. The silo_extra_urls filter adds URLs to clear and rewarm for a product (for example a new-products page, only for products under 30 days old). The silo_invalidated action runs after Silo has cleared a change's pages, with the product IDs, the URLs and the event type, so you can refresh your own stock messages. silo_brand_taxonomies adds a custom brand taxonomy. Examples are in the plugin's readme.",
       },
       {
         q: "Does it work with Cloudflare and my host's cache?",
@@ -675,7 +683,7 @@ export const COMPATIBILITY_GROUPS: CompatibilityGroup[] = [
   {
     title: "Page builders and themes",
     note: "Layout and template changes refresh the right pages.",
-    items: ["Elementor", "Beaver Builder", "Divi", "Bricks", "Oxygen", "Breakdance", "Block themes", "Astra", "Kadence", "GeneratePress", "Blocksy", "Flatsome"],
+    items: ["Elementor", "WPBakery", "Beaver Builder", "Divi", "Bricks", "Oxygen", "Breakdance", "Block themes", "Woodmart", "Astra", "Kadence", "GeneratePress", "Blocksy", "Flatsome"],
   },
   {
     title: "Languages and currencies",

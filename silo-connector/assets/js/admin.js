@@ -1106,6 +1106,7 @@
 			'<div class="silo-range"><input type="range" min="1" max="8" step="1" value="' + esc( set.warmup_concurrency || 4 ) + '" data-setting="warmup_concurrency"><span>' + esc( set.warmup_concurrency || 4 ) + '</span></div></div>' +
 			'</div></div>' +
 			compatCard() +
+			refreshCard() +
 			'<div class="silo-card silo-danger silo-mt"><div class="silo-card-head"><h3>Danger zone</h3></div>' +
 			'<div class="silo-toggle-row"><div><div class="t">Purge all</div><div class="d">Remove every cached page and Store API entry and reset statistics on both sides. Priority pages are re-warmed.</div></div>' + purgeButton() + '</div>' +
 			'<div class="silo-toggle-row"><div><div class="t">Disconnect</div><div class="d">Forget the store key, stop caching and purge cached pages. The store stays in your Silo account.</div></div>' +
@@ -1156,6 +1157,20 @@
 			'</div>' +
 			'<div class="silo-cf-actions"><button type="submit" class="silo-btn">' + ( cf.zone ? 'Update' : 'Connect Cloudflare' ) + '</button>' +
 			( cf.zone ? '<button type="button" class="silo-link" data-act="cf-remove">Remove</button>' : '' ) + '</div>' +
+			'</form></div>'
+		);
+	}
+
+	function refreshCard() {
+		const urls = ( ( S.state.settings || {} ).refresh_urls || [] ).join( '\n' );
+		return (
+			'<div class="silo-card silo-mt"><div class="silo-card-head"><h3>Also refresh these pages</h3></div>' +
+			'<p class="silo-note">Pages that list products but aren\u2019t product, category or shop pages, such as a bestsellers or new-products page. Silo clears and rewarms them after every stock, price or order change. One per line, full URL or path (up to 20).</p>' +
+			'<form data-form="refresh" class="silo-refresh-form">' +
+			'<label class="silo-sr" for="silo-refresh-urls">Pages to refresh</label>' +
+			'<textarea id="silo-refresh-urls" name="refresh_urls" rows="5" spellcheck="false" placeholder="/bestsellers/&#10;/new-products/">' + esc( urls ) + '</textarea>' +
+			'<div class="silo-cf-actions"><button type="submit" class="silo-btn">Save pages</button>' +
+			'<span class="silo-hint">Developers: use the silo_extra_urls filter to add pages per product, and the silo_invalidated action to run your own code after Silo clears a product.</span></div>' +
 			'</form></div>'
 		);
 	}
@@ -1476,6 +1491,10 @@
 		if ( 'connect' === form.getAttribute( 'data-form' ) ) {
 			ev.preventDefault();
 			doConnect( form );
+		}
+		if ( 'refresh' === form.getAttribute( 'data-form' ) ) {
+			ev.preventDefault();
+			saveSetting( 'refresh_urls', form.refresh_urls.value );
 		}
 		if ( 'cloudflare' === form.getAttribute( 'data-form' ) ) {
 			ev.preventDefault();

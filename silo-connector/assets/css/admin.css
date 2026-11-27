@@ -2377,3 +2377,32 @@ body.silo-screen #wpbody-content > .updated {
 .silo-meter span.is-rose {
 	background: #ff6363;
 }
+
+
+/* Extra pages to refresh -------------------------------------------------- */
+
+.silo-refresh-form textarea {
+	width: 100%;
+	min-height: 120px;
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 0;
+	background: rgba(255, 255, 255, 0.03);
+	color: var(--paper);
+	font-family: var(--code);
+	font-size: 14px;
+	line-height: 1.6;
+	box-shadow: none;
+}
+
+.silo-refresh-form textarea:focus {
+	border-color: rgba(61, 107, 255, 0.6);
+	outline: none;
+	box-shadow: none;
+}
+
+.silo-hint {
+	font-size: 13px;
+	color: var(--p60);
+}

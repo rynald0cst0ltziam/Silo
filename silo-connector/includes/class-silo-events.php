@@ -479,7 +479,7 @@ class Silo_Events {
 	 * @param string $taxonomy Taxonomy.
 	 */
 	private static function is_product_taxonomy( string $taxonomy ): bool {
-		return in_array( $taxonomy, array( 'product_cat', 'product_tag', 'product_brand' ), true ) || str_starts_with( $taxonomy, 'pa_' );
+		return in_array( $taxonomy, array_merge( array( 'product_cat', 'product_tag' ), self::brand_taxonomies() ), true ) || str_starts_with( $taxonomy, 'pa_' );
 	}
 
 	/**
@@ -693,6 +693,11 @@ class Silo_Events {
 			'et_footer_layout',
 			'bricks_template',
 			'ct_template',
+			'templatera',
+			'vc_grid_item',
+			'cms_block',
+			'woodmart_layout',
+			'woodmart_slide',
 			'breakdance_template',
 			'breakdance_header',
 			'breakdance_footer',
@@ -847,6 +852,22 @@ class Silo_Events {
 			$pages   = Silo_Page_Cache::purge_urls( $event['urls'] );
 			$api     = Silo_Store_API_Cache::purge( $event['payload']['store_api']['mode'], $event['payload']['store_api']['product_ids'] );
 
+			$product_ids = array();
+			foreach ( array_merge( array( $event['payload'] ), (array) ( $event['payload']['items'] ?? array() ) ) as $item ) {
+				if ( ! empty( $item['product_id'] ) ) {
+					$product_ids[] = (int) $item['product_id'];
+				}
+			}
+			/**
+			 * Fires after Silo has cleared a change's pages on this store, before they are
+			 * rewarmed. Use it to refresh your own stock messages or fragments.
+			 *
+			 * @param int[]    $product_ids Products that changed.
+			 * @param string[] $urls        URLs cleared.
+			 * @param string   $type        Event type, e.g. stock.changed, order.stock_reduced, price.updated.
+			 */
+			do_action( 'silo_invalidated', array_values( array_unique( $product_ids ) ), array_values( array_unique( $event['urls'] ) ), (string) $event['type'] );
+
 			Silo_Log::insert(
 				array(
 					'type'     => $event['type'],
@@ -957,9 +978,11 @@ class Silo_Events {
 			'product'         => 'publish' === $product->get_status() || 'private' === $product->get_status() ? (string) get_permalink( $id ) : '',
 			'categories'      => self::term_urls( $id, 'product_cat', true ),
 			'tags'            => self::term_urls( $id, 'product_tag' ),
-			'brands'          => taxonomy_exists( 'product_brand' ) ? self::term_urls( $id, 'product_brand' ) : array(),
+			'brands'          => self::brand_urls( $id ),
 			'attributes'      => self::attribute_urls( $product ),
 			'grouped_parents' => self::grouped_parents( $id ),
+			'bundles'         => self::bundle_urls( $id ),
+			'extra'           => self::extra_urls( $id, $product ),
 			'shop'            => function_exists( 'wc_get_page_permalink' ) ? (string) wc_get_page_permalink( 'shop' ) : '',
 			'home'            => Silo_Settings::get( 'cache_front_page' ) ? home_url( '/' ) : '',
 			'previous'        => array(),
@@ -1034,6 +1057,113 @@ class Silo_Events {
 			}
 		}
 		return array_values( array_unique( $urls ) );
+	}
+
+	/**
+	 * Brand taxonomies in use: WooCommerce Brands, Perfect Brands and YITH Brands.
+	 * Brands stored as an attribute (such as pa_brand) are covered as attributes.
+	 */
+	private static function brand_taxonomies(): array {
+		$taxonomies = array_values( array_filter( array( 'product_brand', 'pwb-brand', 'yith_product_brand' ), 'taxonomy_exists' ) );
+		/**
+		 * Filters the taxonomies treated as product brands.
+		 *
+		 * @param string[] $taxonomies Brand taxonomies that exist on this site.
+		 */
+		return (array) apply_filters( 'silo_brand_taxonomies', $taxonomies );
+	}
+
+	/**
+	 * Brand archive URLs for a product.
+	 *
+	 * @param int $product_id Product ID.
+	 */
+	private static function brand_urls( int $product_id ): array {
+		$urls = array();
+		foreach ( self::brand_taxonomies() as $taxonomy ) {
+			$urls = array_merge( $urls, self::term_urls( $product_id, (string) $taxonomy ) );
+		}
+		return array_values( array_unique( $urls ) );
+	}
+
+	/**
+	 * Bundles (WooCommerce Product Bundles) that contain a product: their page shows the
+	 * bundled item's stock, so it changes when the item sells.
+	 *
+	 * @param int $product_id Product ID.
+	 * @return int[]
+	 */
+	private static function bundle_ids( int $product_id ): array {
+		global $wpdb;
+		$ids = array();
+		if ( function_exists( 'wc_pb_get_bundled_product_map' ) ) {
+			$map = wc_pb_get_bundled_product_map( $product_id );
+			$ids = is_array( $map ) ? array_map( 'intval', $map ) : array();
+		} else {
+			$table = $wpdb->prefix . 'woocommerce_bundled_items';
+			if ( $table === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) ) {
+				$ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT bundle_id FROM %i WHERE product_id = %d LIMIT 20', $table, $product_id ) ) );
+			}
+		}
+		return array_values( array_unique( array_filter( $ids ) ) );
+	}
+
+	/**
+	 * Bundle pages that contain a product.
+	 *
+	 * @param int $product_id Product ID.
+	 */
+	private static function bundle_urls( int $product_id ): array {
+		$urls = array();
+		foreach ( self::bundle_ids( $product_id ) as $bundle_id ) {
+			if ( 'publish' === get_post_status( $bundle_id ) ) {
+				$urls[] = (string) get_permalink( $bundle_id );
+			}
+		}
+		return array_values( array_filter( $urls ) );
+	}
+
+	/**
+	 * Extra pages refreshed with a product: the bundles' categories, the pages listed in
+	 * Settings (for example a bestsellers or new-products page), and anything a site adds
+	 * through the silo_extra_urls filter.
+	 *
+	 * @param int        $product_id Product ID.
+	 * @param WC_Product $product    Product.
+	 */
+	private static function extra_urls( int $product_id, $product ): array {
+		$urls = array();
+		foreach ( self::bundle_ids( $product_id ) as $bundle_id ) {
+			$urls = array_merge( $urls, self::term_urls( $bundle_id, 'product_cat', true ) );
+		}
+		$urls = array_merge( $urls, Silo_Settings::refresh_urls() );
+		/**
+		 * Filters extra URLs to clear and rewarm when a product's stock, price or catalog
+		 * data changes. Return absolute URLs on this site.
+		 *
+		 * Example: refresh a "New products" page only for products under 30 days old.
+		 *
+		 *     add_filter( 'silo_extra_urls', function ( $urls, $product_id, $product ) {
+		 *         $created = $product->get_date_created();
+		 *         if ( $created && $created->getTimestamp() > time() - 30 * DAY_IN_SECONDS ) {
+		 *             $urls[] = home_url( '/new-products/' );
+		 *         }
+		 *         return $urls;
+		 *     }, 10, 3 );
+		 *
+		 * @param string[]   $urls       URLs to refresh.
+		 * @param int        $product_id Product ID.
+		 * @param WC_Product $product    Product.
+		 */
+		$urls = (array) apply_filters( 'silo_extra_urls', $urls, $product_id, $product );
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		$keep = array();
+		foreach ( $urls as $url ) {
+			if ( is_string( $url ) && wp_parse_url( $url, PHP_URL_HOST ) === $host ) {
+				$keep[] = $url;
+			}
+		}
+		return array_values( array_unique( $keep ) );
 	}
 
 	/**

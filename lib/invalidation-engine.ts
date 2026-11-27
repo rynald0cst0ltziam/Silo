@@ -12,6 +12,10 @@ export type ProductUrls = {
   brands?: string[];
   attributes?: string[];
   grouped_parents?: string[];
+  /** Product Bundles that contain this product (their page shows its stock). */
+  bundles?: string[];
+  /** Extra pages: bundle categories, pages listed in the connector settings, the silo_extra_urls filter. */
+  extra?: string[];
   shop?: string;
   home?: string;
   previous?: string[];
@@ -106,8 +110,8 @@ export function resolveInvalidation(
     const urls = d.urls ?? legacyUrls(payload);
     const product = urls.product ? [urls.product] : [];
 
-    productPages.push(...product, ...(urls.grouped_parents ?? []), ...(urls.previous ?? []));
-    if (!deleted) warmProducts.push(...product, ...(urls.grouped_parents ?? []));
+    productPages.push(...product, ...(urls.grouped_parents ?? []), ...(urls.bundles ?? []), ...(urls.previous ?? []));
+    if (!deleted) warmProducts.push(...product, ...(urls.grouped_parents ?? []), ...(urls.bundles ?? []));
 
     if (membership || eventType === "product.updated" && (urls.previous?.length ?? 0) > 0) {
       const archives = [
@@ -116,6 +120,7 @@ export function resolveInvalidation(
         ...(urls.brands ?? []),
         ...(urls.attributes ?? []),
         ...(urls.terms ?? []),
+        ...(urls.extra ?? []),
         ...(urls.shop ? [urls.shop] : []),
         ...(urls.home ? [urls.home] : []),
       ];
@@ -127,6 +132,7 @@ export function resolveInvalidation(
         ...(urls.tags ?? []),
         ...(urls.attributes ?? []),
         ...(eventType === "term.deleted" ? [] : urls.terms ?? []),
+        ...(urls.extra ?? []),
         ...(urls.home ? [urls.home] : []),
       );
     }

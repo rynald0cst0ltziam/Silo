@@ -25,6 +25,7 @@ class Silo_Settings {
 			'cache_front_page'   => false,
 			'warmup_concurrency' => 4,
 			'cache_mode'         => 'auto', // auto | silo | coexist — see Silo_Compat.
+			'refresh_urls'       => array(), // Extra pages refreshed after stock or price changes.
 		);
 	}
 
@@ -59,6 +60,9 @@ class Silo_Settings {
 				$current[ $flag ] = (bool) filter_var( $changes[ $flag ], FILTER_VALIDATE_BOOLEAN );
 			}
 		}
+		if ( array_key_exists( 'refresh_urls', $changes ) ) {
+			$current['refresh_urls'] = self::clean_refresh_urls( $changes['refresh_urls'] );
+		}
 		if ( array_key_exists( 'cache_mode', $changes ) && in_array( $changes['cache_mode'], array( 'auto', 'silo', 'coexist' ), true ) ) {
 			$current['cache_mode'] = $changes['cache_mode'];
 		}
@@ -69,6 +73,36 @@ class Silo_Settings {
 		self::write_edge_config();
 		Silo_Compat::refresh_mode();
 		return $current;
+	}
+
+	/**
+	 * Pages to refresh after any stock or price change, as absolute URLs on this site.
+	 */
+	public static function refresh_urls(): array {
+		return array_values( array_filter( (array) self::get( 'refresh_urls' ), 'is_string' ) );
+	}
+
+	/**
+	 * Normalise a list of pages (one per line, or an array): paths become full URLs, other
+	 * hosts are dropped, at most 20 are kept.
+	 *
+	 * @param mixed $input Text or array.
+	 */
+	public static function clean_refresh_urls( $input ): array {
+		$lines = is_array( $input ) ? $input : preg_split( '/[\s,]+/', (string) $input );
+		$host  = wp_parse_url( home_url(), PHP_URL_HOST );
+		$urls  = array();
+		foreach ( (array) $lines as $line ) {
+			$line = trim( (string) $line );
+			if ( '' === $line ) {
+				continue;
+			}
+			$url = str_starts_with( $line, '/' ) ? home_url( $line ) : esc_url_raw( $line );
+			if ( '' !== $url && wp_parse_url( $url, PHP_URL_HOST ) === $host ) {
+				$urls[] = $url;
+			}
+		}
+		return array_slice( array_values( array_unique( $urls ) ), 0, 20 );
 	}
 
 	/**
