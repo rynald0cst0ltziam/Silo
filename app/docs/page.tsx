@@ -154,7 +154,7 @@ export default async function DocsPage() {
                   <LifeBuoy className="h-4 w-4 text-accent-hi" />
                   <p className="mt-2.5 text-[12px] font-medium">Stuck on a store?</p>
                   <p className="mt-1 text-[11px] leading-relaxed text-paper/40">
-                    Send the store URL and last request ID. A human replies.
+                    Send the store URL and the diagnostics file from WooCommerce → Silo → Status. A human replies.
                   </p>
                   <a
                     href="mailto:rynaldostoltz85@gmail.com"
@@ -390,7 +390,7 @@ x-silo-scope: product:1042`}</Code>
                   <Link href="/pricing" className="font-medium text-ink underline underline-offset-2">
                     Pricing has the full table
                   </Link>
-                  . For a connector incident, include the store URL, request ID and timestamp.
+                  . For a connector issue, include the store URL, the time it happened and the diagnostics file from WooCommerce → Silo → Status.
                 </p>
 
                 <div className="mt-8 flex flex-col justify-between gap-4 rounded-xl bg-ink p-6 text-paper sm:flex-row sm:items-center">
