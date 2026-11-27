@@ -196,7 +196,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Does Silo work with Elementor and other page builders?",
-        a: "Yes. Elementor, Beaver Builder, Divi, Bricks, Oxygen and Breakdance pages are cached like any other. When you save a product layout, only that product is purged; when you change a header, footer or theme template, or regenerate builder CSS, every cached page is refreshed so nothing references old styles.",
+        a: "Yes. Elementor, WPBakery, Beaver Builder, Divi, Bricks, Oxygen and Breakdance pages, and themes such as Woodmart, are cached like any other. When you save a product layout, only that product is purged; when you change a header, footer or theme template, or regenerate builder CSS, every cached page is refreshed so nothing references old styles.",
       },
       {
         q: "Is HPOS supported?",

@@ -1095,17 +1095,33 @@ class Silo_Events {
 	 */
 	private static function bundle_ids( int $product_id ): array {
 		global $wpdb;
+		static $cache = array();
+		if ( isset( $cache[ $product_id ] ) ) {
+			return $cache[ $product_id ];
+		}
 		$ids = array();
+
+		// Product Bundles' own helper, called defensively: a signature change in that plugin
+		// must never break a product save, so any error falls through to the table lookup.
 		if ( function_exists( 'wc_pb_get_bundled_product_map' ) ) {
-			$map = wc_pb_get_bundled_product_map( $product_id );
-			$ids = is_array( $map ) ? array_map( 'intval', $map ) : array();
-		} else {
+			try {
+				$product = wc_get_product( $product_id );
+				$map     = $product ? wc_pb_get_bundled_product_map( $product ) : array();
+				$ids     = is_array( $map ) ? array_map( 'intval', $map ) : array();
+			} catch ( \Throwable $e ) {
+				$ids = array();
+			}
+		}
+
+		if ( ! $ids ) {
 			$table = $wpdb->prefix . 'woocommerce_bundled_items';
 			if ( $table === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) ) {
 				$ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT bundle_id FROM %i WHERE product_id = %d LIMIT 20', $table, $product_id ) ) );
 			}
 		}
-		return array_values( array_unique( array_filter( $ids ) ) );
+
+		$cache[ $product_id ] = array_values( array_unique( array_filter( $ids ) ) );
+		return $cache[ $product_id ];
 	}
 
 	/**

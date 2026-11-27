@@ -34,7 +34,7 @@ Silo does not minify assets, optimise images, clean the database or touch anythi
 
 * WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, FlyingPress, SiteGround Optimizer, Hummingbird, Cache Enabler, WP-Optimize: Silo detects them and switches to work-alongside mode. Your plugin keeps serving pages; Silo purges exactly the affected pages in its cache on every stock, price, sale and order change, then rewarms them.
 * Host caches (Nginx Helper, WP Engine, Kinsta, Pantheon, SpinupWP) and Cloudflare (zone ID + API token) are purged in step with Silo.
-* Page builders: Elementor, Beaver Builder, Divi, Bricks, Oxygen and Breakdance layouts and templates are tracked, and builder CSS regeneration refreshes every cached page.
+* Page builders and themes: Elementor, WPBakery, Beaver Builder, Divi, Bricks, Oxygen, Breakdance and Woodmart layouts and templates are tracked, and builder CSS regeneration refreshes every cached page.
 
 == Installation ==
 

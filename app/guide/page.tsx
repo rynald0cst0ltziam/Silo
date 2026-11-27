@@ -236,7 +236,7 @@ export default function GuidePage() {
               { icon: RefreshCw, title: "Orders and refunds", body: "Stock that changes through an order, a cancellation or a refund is handled the same way as a manual edit." },
               { icon: ShieldCheck, title: "Theme and menu changes", body: "Changing your theme, menus, widgets or WooCommerce settings refreshes every saved page." },
               { icon: Plug, title: "Your other cache plugins", body: "Keep WP Rocket, LiteSpeed or your host's cache. Silo works alongside them and tells them exactly which pages to refresh." },
-              { icon: Package, title: "Page builders", body: "Saving an Elementor, Divi or Beaver Builder product layout refreshes that product. Changing a header or footer refreshes every page." },
+              { icon: Package, title: "Page builders", body: "Saving an Elementor, WPBakery, Divi or Beaver Builder product layout refreshes that product. Changing a header or footer refreshes every page." },
               { icon: Lock, title: "If something goes wrong", body: "If Silo can't be reached or your plan ends, your store simply shows live pages. It never shows an old price." },
             ].map((item) => (
               <div key={item.title} className="card-light p-5">

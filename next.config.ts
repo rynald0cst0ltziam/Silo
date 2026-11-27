@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "/api/connector/download": ["./silo-connector/**/*"],
     // Store settings reads the plugin header to show the latest version.
     "/dashboard/stores/[id]/settings": ["./silo-connector/silo-connector.php"],
+    "/docs": ["./silo-connector/silo-connector.php"],
   },
 };
 

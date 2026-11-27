@@ -11,6 +11,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { ConnectButton } from "@/components/connect/connect-button";
+import { latestConnectorVersion } from "@/lib/connector-release";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -29,41 +30,29 @@ const NAV = [
   { href: "#quickstart", label: "Quickstart", number: "01" },
   { href: "#requirements", label: "Requirements", number: "02" },
   { href: "#invalidation", label: "Invalidation events", number: "03" },
-  { href: "#troubleshooting", label: "Troubleshooting", number: "04" },
-  { href: "#support", label: "Limits & support", number: "05" },
+  { href: "#hooks", label: "Developer hooks", number: "04" },
+  { href: "#troubleshooting", label: "Troubleshooting", number: "05" },
+  { href: "#support", label: "Limits & support", number: "06" },
 ];
 
+const FULL_SET =
+  "Product page, categories (with parents), tags, brands, attribute pages, grouped products and bundles that contain it, the shop page, any extra pages you listed, and the matching Store API results";
+
 const EVENTS = [
-  {
-    event: "woocommerce_reduce_order_stock",
-    invalidates: "Product, variation, categories, Store API filter sets",
-  },
-  {
-    event: "woocommerce_variation_set_stock",
-    invalidates: "Variation payload, parent product, affected archives",
-  },
-  {
-    event: "woocommerce_product_set_stock",
-    invalidates: "Product page, category and tag archives",
-  },
-  {
-    event: "woocommerce_order_refunded",
-    invalidates: "Restored stock nodes and dependents",
-  },
-  {
-    event: "woocommerce_update_product",
-    invalidates: "Only if price, stock, status or permalink changed",
-  },
-  {
-    event: "edited_product_cat / edited_pa_*",
-    invalidates: "Re-mapped archives and products using the term",
-  },
+  { event: "Order placed (stock reduced)", invalidates: `For each product in the order: ${FULL_SET}` },
+  { event: "Stock changed (product or variation)", invalidates: FULL_SET },
+  { event: "Order cancelled or refunded (stock restored)", invalidates: `For each restored product: ${FULL_SET}` },
+  { event: "Price changed, or a scheduled sale starts or ends", invalidates: `${FULL_SET}. Scheduled sales are cleared at the exact minute they start or end.` },
+  { event: "Product edited (content only)", invalidates: "The product page and any grouped products or bundles that contain it" },
+  { event: "Product published, deleted, hidden or moved category", invalidates: FULL_SET },
+  { event: "Category, tag, brand or attribute edited", invalidates: "That archive page and the matching Store API results" },
+  { event: "Theme, menu, widget, template or builder CSS changed", invalidates: "Every cached page (they all share the header, footer and styles)" },
 ];
 
 const TROUBLE = [
   {
     q: "The page returns x-silo-cache: BYPASS",
-    a: "BYPASS is the safety boundary doing its job. Check for a WooCommerce session cookie, an Authorization header or a logged-in user. If the request is genuinely anonymous, confirm WooCommerce → Silo shows the connector online and that no other page cache is active on the same URL.",
+    a: "BYPASS is the safety boundary doing its job. Check for a WooCommerce session cookie, an Authorization header or a logged-in user. If the request is genuinely anonymous, confirm WooCommerce → Silo shows the connector online. If Silo is working alongside another cache plugin, that plugin serves the page, so check its header instead.",
   },
   {
     q: "The connector shows offline",
@@ -71,7 +60,7 @@ const TROUBLE = [
   },
   {
     q: "A variation is still stale after a stock change",
-    a: "Confirm the change came through WooCommerce rather than a direct database update. If it was direct SQL, WooCommerce never fired an event, so there is nothing for the connector to send. Run a targeted re-scan from the store settings; it diffs the variation matrix and repairs the graph.",
+    a: "Confirm the change came through WooCommerce rather than a direct database update. If it was direct SQL, WooCommerce never fired an event, so there is nothing for the connector to send. Changes made outside WooCommerce can be cleared with Purge all, and a rescan from Catalog re-reads the catalog.",
   },
   {
     q: "Warmup queue is stuck",
@@ -79,7 +68,7 @@ const TROUBLE = [
   },
   {
     q: "A customer sees another customer's cart",
-    a: "This must never happen with Silo. Capture the request ID from the response header, the store URL and the approximate time, then email rynaldostoltz85@gmail.com immediately. Silo disables itself for that store while the session boundary is investigated.",
+    a: "This must never happen with Silo. Run Purge all under WooCommerce → Silo straight away, then email rynaldostoltz85@gmail.com with the page URL, the x-silo-cache header value and the approximate time so we can investigate.",
   },
   {
     q: "Do I keep my existing cache plugin?",
@@ -87,7 +76,8 @@ const TROUBLE = [
   },
 ];
 
-export default function DocsPage() {
+export default async function DocsPage() {
+  const connector = await latestConnectorVersion();
   return (
     <>
       <section className="relative overflow-hidden bg-ink">
@@ -259,13 +249,14 @@ x-silo-scope: product:1042`}</Code>
                     ["HPOS", "Supported, including refunds", true],
                     ["Multisite", "One store key per subsite", true],
                     ["Other page caches", "Supported: Silo works alongside them", true],
-                    ["Page builders", "Elementor, Beaver Builder, Divi, Bricks, Oxygen, Breakdance", true],
+                    ["Page builders and themes", "Elementor, WPBakery, Beaver Builder, Divi, Bricks, Oxygen, Breakdance, Woodmart", true],
+                    ["Bundles and brands", "WooCommerce Product Bundles, WooCommerce Brands, Perfect Brands, YITH Brands", true],
                     ["Full-page CDN cache", "Cloudflare purged by API; others must honor private/no-store", true],
                   ].map(([label, value, supported], index) => (
                     <div
                       key={label as string}
                       className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                        index !== 10 ? "border-b border-ink/8" : ""
+                        index !== 11 ? "border-b border-ink/8" : ""
                       }`}
                     >
                       <span className="text-[12.5px] font-medium text-ink/70">{label}</span>
@@ -290,9 +281,9 @@ x-silo-scope: product:1042`}</Code>
               <section id="invalidation" className="mt-16 scroll-mt-28">
                 <SectionTitle number="03" title="What each event invalidates" />
                 <p className="mt-3 text-[14px] leading-relaxed text-ink/55">
-                  The connector listens to WooCommerce's public hooks, then sends a signed,
-                  minimal payload. Silo resolves the scope from the catalog graph; the plugin
-                  never lists URLs.
+                  The connector listens to WooCommerce&apos;s own hooks. It clears the affected
+                  pages on your server first, then sends Silo a signed description of the change,
+                  and Silo plans the warmup.
                 </p>
                 <div className="mt-5 overflow-hidden rounded-xl border border-ink/10">
                   <div className="grid grid-cols-[1.15fr_1fr] border-b border-ink/10 bg-ink/[0.025] px-4 py-2.5 font-mono text-[8px] uppercase tracking-[0.1em] text-ink/35">
@@ -316,18 +307,49 @@ x-silo-scope: product:1042`}</Code>
                 <div className="mt-4 rounded-xl border border-ink/10 border-l-2 border-l-accent bg-white/60 p-4">
                   <p className="flex items-center gap-2 text-[12px] font-medium text-ink/75">
                     <ShieldCheck className="h-3.5 w-3.5 text-accent-deep" />
-                    If the catalog graph version is stale
+                    Pages are cleared on your store first
                   </p>
                   <p className="mt-1 text-[11.5px] leading-relaxed text-ink/50">
-                    Silo refuses to guess. It stops serving cached HTML for that store, forwards
-                    to the origin, and asks the connector for a re-scan. A stale product is worse
-                    than an uncached one.
+                    Clearing happens on your own server the moment WooCommerce reports the change,
+                    before Silo is contacted. If Silo is unreachable, or the monthly event allowance
+                    is used up, stock and prices still stay correct; only warmup and logging wait.
                   </p>
                 </div>
               </section>
 
+              <section id="hooks" className="mt-16 scroll-mt-28">
+                <SectionTitle number="04" title="Developer hooks" />
+                <p className="mt-3 text-[14px] leading-relaxed text-ink/55">
+                  Add pages Silo should refresh, or run your own code after Silo clears a product.
+                  Put these in a small plugin or your theme&apos;s functions.php. For pages that
+                  are always the same, such as a bestsellers page, you don&apos;t need code: list
+                  them under WooCommerce → Silo → Settings → Also refresh these pages.
+                </p>
+                <p className="mt-5 text-[13px] font-medium text-ink/75">silo_extra_urls (filter): extra pages to clear and rewarm for a product</p>
+                <Code>{`add_filter( 'silo_extra_urls', function ( $urls, $product_id, $product ) {
+    // Refresh the new-products page only for products under 30 days old.
+    $created = $product->get_date_created();
+    if ( $created && $created->getTimestamp() > time() - 30 * DAY_IN_SECONDS ) {
+        $urls[] = home_url( '/new-products/' );
+    }
+    return $urls;
+}, 10, 3 );`}</Code>
+                <p className="mt-5 text-[13px] font-medium text-ink/75">silo_invalidated (action): runs after Silo clears a change&apos;s pages</p>
+                <Code>{`add_action( 'silo_invalidated', function ( $product_ids, $urls, $type ) {
+    // $type is e.g. stock.changed, order.stock_reduced, price.updated.
+    foreach ( $product_ids as $id ) {
+        my_refresh_stock_message( $id ); // your own code
+    }
+}, 10, 3 );`}</Code>
+                <p className="mt-4 text-[13px] leading-relaxed text-ink/55">
+                  Also available: <code>silo_brand_taxonomies</code> to add a custom brand taxonomy,
+                  and <code>silo_layout_post_types</code> for post types whose changes should refresh
+                  every page.
+                </p>
+              </section>
+
               <section id="troubleshooting" className="mt-16 scroll-mt-28">
-                <SectionTitle number="04" title="Troubleshooting" />
+                <SectionTitle number="05" title="Troubleshooting" />
                 <div className="mt-5 divide-y divide-ink/10 border-y border-ink/10">
                   {TROUBLE.map((item) => (
                     <details key={item.q} className="group">
@@ -346,10 +368,11 @@ x-silo-scope: product:1042`}</Code>
               </section>
 
               <section id="support" className="mt-16 scroll-mt-28">
-                <SectionTitle number="05" title="Limits & support" />
+                <SectionTitle number="06" title="Limits & support" />
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   {[
-                    { label: "Invalidation events", value: "100k / 500k / 2M", note: "per month" },
+                    { label: "Catalog events", value: "100k / 500k / 2M", note: "per month, shared by your stores" },
+                    { label: "Warmup per change", value: "up to 150 / 500 / 1,500", note: "pages" },
                     { label: "Event log retention", value: "30 / 90 / 180", note: "days" },
                     { label: "Support", value: "Email → dedicated", note: "by plan" },
                   ].map((item) => (
@@ -383,7 +406,7 @@ x-silo-scope: product:1042`}</Code>
 
               <p className="mt-10 flex items-center gap-2 border-t border-ink/10 pt-4 font-mono text-[9px] text-ink/30">
                 <Terminal className="h-3 w-3" />
-                Last updated November 16, 2026 · connector v0.9.0
+                Last updated November 27, 2026{connector ? ` · connector ${connector}` : ""}
               </p>
             </div>
           </div>
